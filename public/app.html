@@ -1,0 +1,1310 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACCESS · Off-Market Investment Network</title>
+<link rel="icon" type="image/svg+xml" href="/brand/favicon/favicon.svg">
+<link rel="icon" href="/brand/favicon/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/brand/favicon/apple-touch-icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Big+Shoulders+Display:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ACCESS · cool neutral canvas (not beige) so white cards pop, with tinted tiles */
+  --bg:#ECEEF2;--bg2:#FFFFFF;--card:#FFFFFF;--card2:#F1F3F7;--line:#E1E4EA;--line2:#CFD4DD;
+  --tx:#1A1C22;--mut:#5F636D;--mut2:#8A8F9A;--acc:#17418A;--acc2:#17418A;--accdim:#E9F0FA;
+  --gold:#B4882E;--bad:#C0492E;--badbg:#FBEAE5;--warn:#8A6A1E;--blue:#17418A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;line-height:1.5}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 clamp(18px,3.5vw,40px)}
+.mono{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+/* ── nav ── */
+.nav{position:sticky;top:0;z-index:60;background:rgba(10,12,16,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav .in{display:flex;align-items:center;gap:20px;height:62px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:18px;letter-spacing:.02em}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px 2px rgba(16,185,129,.6)}
+.brand .rb{width:30px;height:30px;border-radius:8px;display:block;flex:none}
+.brand small{font-weight:600;color:var(--mut);font-size:11px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+.nav .sp{flex:1}
+.nlink{color:var(--mut);font-weight:600;font-size:13.5px;padding:8px 10px;border-radius:8px;cursor:pointer}
+.nlink:hover{color:var(--tx);background:var(--card)}
+.who{font-size:12.5px;color:var(--mut);display:flex;align-items:center;gap:8px}
+.who .av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),#0c7a58);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#04150f}
+.btn{border:0;border-radius:11px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;padding:11px 18px;transition:transform .08s,box-shadow .15s,background .15s;white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn.acc{background:linear-gradient(135deg,var(--acc2),var(--acc));color:#04150f;box-shadow:0 6px 20px -6px rgba(16,185,129,.55)}
+.btn.acc:hover{box-shadow:0 10px 28px -6px rgba(16,185,129,.7)}
+.btn.ghost{background:var(--card2);color:var(--tx);border:1px solid var(--line2)}
+.btn.ghost:hover{border-color:#3a4552;background:#1b212a}
+.btn.sm{padding:8px 13px;font-size:12.5px;border-radius:9px}
+.btn.link{background:none;color:var(--acc2);padding:6px 4px}
+/* ── hero ── */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.hero::before{content:"";position:absolute;inset:-40% 0 auto 0;height:520px;background:
+  radial-gradient(600px 300px at 22% 20%,rgba(16,185,129,.20),transparent 60%),
+  radial-gradient(700px 320px at 85% 0%,rgba(91,140,255,.14),transparent 60%);pointer-events:none}
+.hero .in{position:relative;padding:64px 0 52px}
+.ey{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2);background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.28);padding:6px 12px;border-radius:100px}
+.hero h1{font-size:clamp(34px,5.4vw,58px);line-height:1.04;font-weight:900;letter-spacing:-.025em;margin:20px 0 0;max-width:14ch}
+.hero h1 .g{background:linear-gradient(120deg,var(--acc2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.sub{font-size:clamp(15px,2vw,18.5px);color:var(--mut);max-width:56ch;margin:18px 0 0;font-weight:450}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.trust{display:flex;gap:22px;flex-wrap:wrap;margin-top:26px;color:var(--mut2);font-size:12.5px;font-weight:600}
+.trust b{color:var(--mut)}
+.trust span{display:flex;align-items:center;gap:7px}
+.tick{color:var(--acc2)}
+/* ── stat strip ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:40px}
+.stats .s{background:var(--bg2);padding:18px 20px}
+.stats .s .v{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.stats .s .k{font-size:11.5px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+.stats .s .v.acc{color:var(--acc2)}
+@media(max-width:720px){.stats{grid-template-columns:1fr 1fr}}
+/* ── section ── */
+section{padding:40px 0}
+.shead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.shead h2{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.shead p{color:var(--mut);font-size:13.5px;margin-top:4px}
+/* ── filters ── */
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:20px}
+.filters select,.filters input{background:var(--bg2);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:9px 12px;font:inherit;font-size:13px;font-weight:600;height:38px}
+.filters select{appearance:none;-webkit-appearance:none;padding-right:32px;cursor:pointer;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6A63' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 11px center}
+.filters select:hover,.filters input:hover{border-color:var(--mut2)}
+.filters select:focus,.filters input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(23,65,138,.1)}
+.filters .fx{flex:1;min-width:120px}
+.chipset{display:flex;gap:7px;flex-wrap:wrap}
+.chip{border:1px solid var(--line2);background:var(--bg2);color:var(--mut);border-radius:100px;padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#04150f}
+/* ── deal grid — text-forward premium cards ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(332px,1fr));gap:18px}
+.deal{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color .15s,transform .12s,box-shadow .2s;display:flex;flex-direction:column;padding:18px 18px 15px}
+.deal::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--acc);opacity:0;transition:opacity .15s}
+.deal:hover{border-color:var(--line2);transform:translateY(-3px);box-shadow:0 22px 46px -28px rgba(30,26,18,.45)}
+.deal:hover::before{opacity:.55}
+.deal.feat{border-color:rgba(180,136,46,.5)}
+.deal.feat::before{background:var(--gold);opacity:1}
+.deal .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:9px}
+.deal .type{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--acc);padding-top:3px}
+.deal .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.bdg{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px;border-radius:6px;background:var(--card2);border:1px solid var(--line2);color:var(--mut);white-space:nowrap}
+.bdg.broad{color:var(--acc);border-color:rgba(23,65,138,.28)}
+.bdg.private{color:var(--gold);border-color:rgba(180,136,46,.42)}
+.bdg.pocket{color:var(--acc);border-color:rgba(23,65,138,.28)}
+.bdg.feat{color:var(--bg);background:var(--gold);border-color:var(--gold)}
+.bdg.mine{color:var(--acc);border-color:rgba(23,65,138,.28)}
+.deal .sub{font-family:'Big Shoulders Display',system-ui,sans-serif;font-size:23px;font-weight:700;line-height:1.04;letter-spacing:.01em}
+.deal .addr{display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--mut2)}
+.deal .addr.open{color:var(--acc)}
+.deal .desc{font-size:13px;color:var(--mut);line-height:1.5;margin-top:11px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:39px}
+.deal .kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+.deal .kpis .k{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--mut2);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.deal .kpis .v{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;margin-top:3px}
+.deal .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+.deal .price{font-family:'Big Shoulders Display',system-ui,sans-serif;font-size:27px;font-weight:800;letter-spacing:.01em;line-height:1;color:var(--tx)}
+.deal .fr{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.deal .comm{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--acc);font-weight:600;background:rgba(23,65,138,.07);border:1px solid rgba(23,65,138,.18);padding:4px 8px;border-radius:6px;white-space:nowrap}
+.deal .ago{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--mut2)}
+.empty{grid-column:1/-1;text-align:center;color:var(--mut);padding:60px 20px;border:1px dashed var(--line2);border-radius:16px}
+/* ── modal ── */
+.mbg{position:fixed;inset:0;background:rgba(5,7,10,.72);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:28px 16px;overflow-y:auto}
+.mbg.on{display:flex}
+body.mlock{overflow:hidden}
+.modal{background:var(--bg2);border:1px solid var(--line2);border-radius:18px;width:100%;max-width:540px;box-shadow:0 40px 100px -30px rgba(0,0,0,.9)}
+.modal.wide{max-width:620px}
+.mhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 0}
+.mhead h3{font-size:18px;font-weight:800;letter-spacing:-.01em}
+.mhead .x{background:var(--card);border:1px solid var(--line2);color:var(--mut);width:32px;height:32px;border-radius:9px;font-size:17px;cursor:pointer;flex:none}
+.mbody{padding:12px 20px 18px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px}
+.f{display:flex;flex-direction:column;gap:3px;margin-bottom:9px}
+.f.full{grid-column:1/-1}
+.f label{font-size:10.5px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+.f input,.f select,.f textarea{background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:9px 11px;font:inherit;font-size:13.5px}
+.f select{appearance:none;-webkit-appearance:none;padding-right:34px;cursor:pointer;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235F636D' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 12px center}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--acc)}
+.f .hint{font-size:11px;color:var(--mut2)}
+.priv{font-size:11px;color:var(--gold);font-weight:700}
+.mact{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+.msg{font-size:12.5px;color:var(--mut);align-self:center;margin-right:auto}
+/* detail sheet */
+.drow{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.drow span{color:var(--mut)}.drow b{font-weight:700}
+.reveal{background:var(--accdim);border:1px solid rgba(16,185,129,.35);border-radius:12px;padding:14px;margin:14px 0;font-size:14px}
+.reveal b{color:var(--acc2)}
+.pill{display:inline-block;font-size:11px;font-weight:800;padding:4px 10px;border-radius:100px}
+.pill.req{background:#2a2410;color:var(--warn)}.pill.appr{background:var(--accdim);color:var(--acc2)}.pill.dec{background:var(--badbg);color:var(--bad)}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{padding:9px 15px;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--mut);border:1px solid transparent}
+.tab.on{background:var(--card);color:var(--tx);border-color:var(--line2)}
+.reqrow{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:10px;flex-wrap:wrap}
+.reqrow .grow{flex:1;min-width:160px}
+.foot{border-top:1px solid var(--line);padding:30px 0;color:var(--mut2);font-size:12.5px}
+.foot .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+/* ── responsive nav: shrink/hide progressively so it never overflows ── */
+@media(max-width:1040px){.nav .in{gap:14px}.nav .nlink.hideM{display:none}}
+@media(max-width:620px){
+  .nav .in{gap:9px}
+  .brand{font-size:16px;letter-spacing:.02em}.brand small{display:none}.brand .rb{width:26px;height:26px}
+  .nlink{padding:6px 6px;font-size:13px}
+  .msg-txt{display:none}.msg-ico{display:inline;font-size:15px}
+  .nlink.ico{padding:6px 6px}
+  .btn.acc.sm{padding:8px 11px;font-size:12px}
+}
+@media(max-width:480px){.cta-txt{display:none}.nav .in{gap:8px}}
+@media(max-width:560px){.fgrid{grid-template-columns:1fr}input,select,textarea{font-size:16px!important}}
+/* ── ACCESS brand skin: Big Shoulders headings + Public Sans body + Plex Mono labels;
+   bone/gold accents on ink. Matches the ACCESS landing. Logo wordmark stays Archivo. ── */
+body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
+.brand{font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600}
+.hero h1,.shead h2,.stats .s .v,.deal .sub,.deal .price,.deal .kpis .v,.modal h3,.mhead h3{font-family:'Big Shoulders Display',system-ui,sans-serif;letter-spacing:.012em}
+.hero h1{font-weight:800;line-height:1.06}
+.ey,.mono,.brand small,.deal .type,.stats .s .k,.deal .kpis .k,.deal .comm,.deal .ago,.trust,.chip,.bdg,.deal .lock,.f label,.kick{font-family:'IBM Plex Mono',monospace}
+/* ── 11R light-mode overrides — neutralize every hardcoded dark value ── */
+.nav{background:rgba(245,244,241,.86)}
+.hero::before{background:radial-gradient(600px 300px at 20% 18%,rgba(23,65,138,.07),transparent 60%),radial-gradient(700px 320px at 85% 0%,rgba(23,65,138,.05),transparent 60%)}
+.ey{color:var(--acc);background:rgba(23,65,138,.07);border-color:rgba(23,65,138,.22)}
+.hero h1 .g{background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--acc)}
+.tick,.deal .type,.deal .comm,.stats .s .v.acc,.btn.link{color:var(--acc)}
+.btn.acc{background:var(--acc);color:#fff;box-shadow:0 6px 18px -6px rgba(23,65,138,.35)}
+.btn.acc:hover{box-shadow:0 10px 26px -8px rgba(23,65,138,.45)}
+.btn.ghost{background:var(--card);color:var(--tx);border:1px solid var(--line2)}
+.btn.ghost:hover{border-color:var(--acc);background:var(--card2)}
+.who .av{background:linear-gradient(135deg,var(--acc),#0E2E66);color:#fff}
+.nlink:hover{background:var(--card2)}
+.acctBtn:hover{border-color:var(--acc)}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.filters select:focus,.filters input:focus,.f input:focus,.f select:focus,.f textarea:focus,.mcRow input:focus{border-color:var(--acc)}
+.deal:hover{box-shadow:0 16px 38px -22px rgba(30,26,18,.35)}
+.deal .ph{background:linear-gradient(135deg,#EEEBE4,#F7F5F1);color:#C7C1B4}
+.deal .lock,.bdg{background:rgba(255,255,255,.82);backdrop-filter:blur(6px)}
+.deal .lock{color:var(--mut)}
+.bdg{color:var(--tx);border-color:var(--line2)}
+.bdg.broad{color:var(--acc);border-color:rgba(23,65,138,.35)}
+.bdg.private{color:var(--gold);border-color:rgba(180,136,46,.45)}
+.bdg.pocket{color:var(--acc);border-color:rgba(23,65,138,.30)}
+.mbg{background:rgba(28,26,22,.42)}
+.modal{box-shadow:0 30px 80px -30px rgba(30,26,18,.30)}
+.reveal{background:var(--accdim);border-color:rgba(23,65,138,.28)}
+.reveal b{color:var(--acc)}
+.pill.req{background:#FBF2DD;color:var(--warn)}
+.pill.appr{background:var(--accdim);color:var(--acc)}
+.pill.dec{background:var(--badbg);color:var(--bad)}
+.acctMenu{box-shadow:0 18px 50px rgba(30,26,18,.20)}
+#mcPanel{box-shadow:0 18px 50px rgba(30,26,18,.22)}
+/* nav: single row, never wraps */
+.nav .in{flex-wrap:nowrap}
+.nlink{white-space:nowrap}
+.nlink.ico{font-size:15px;padding:7px 8px;line-height:1}
+.msg-ico{display:none}
+/* account menu */
+.acct{position:relative}
+.acctBtn{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line2);border-radius:24px;padding:3px 8px 3px 3px;cursor:pointer}
+.acctBtn:hover{border-color:var(--gold)}
+.acctBtn .car{color:var(--mut);font-size:11px}
+.acctMenu{display:none;position:absolute;top:calc(100% + 10px);right:0;min-width:186px;background:var(--card,#fff);border:1px solid var(--line2,#D9D4C9);border-radius:12px;padding:6px;box-shadow:0 18px 50px rgba(30,26,18,.20);z-index:70}
+.acct.on .acctMenu{display:block}
+.acctMenu a{display:flex;align-items:center;gap:7px;padding:9px 11px;border-radius:8px;color:var(--tx);font-size:13.5px;font-weight:600;cursor:pointer;text-decoration:none}
+.acctMenu a:hover{background:var(--card)}
+.acctSep{height:1px;background:var(--line);margin:5px 6px}
+/* mortgage dropdown — anchored under the nav, top right */
+#mcPanel{display:none;position:fixed;top:112px;right:18px;width:300px;background:var(--card,#fff);border:1px solid var(--line2,#D9D4C9);border-radius:14px;padding:16px;box-shadow:0 22px 60px rgba(30,26,18,.22);z-index:130;font-family:inherit}
+#mcPanel.on{display:block}
+.mcHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;font-family:'Big Shoulders Display',system-ui,sans-serif;font-size:18px;font-weight:700}
+.mcHead .x{background:none;border:none;color:var(--mut,#9a988c);cursor:pointer;font-size:20px;line-height:1}
+.mcHead .x:hover{color:var(--tx)}
+.mcGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.mcRow{margin-bottom:9px}
+.mcRow label{display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut,#9a988c);margin-bottom:3px}
+.mcRow input{width:100%;background:var(--card,#14140F);border:1px solid var(--line2,#3a3a30);color:var(--tx,#EFECE4);border-radius:9px;padding:8px 9px;font:inherit;font-size:14px;box-sizing:border-box}
+.mcRow input:focus{outline:none;border-color:var(--gold)}
+.mcOut{margin-top:12px;border-top:1px solid var(--line,#2a2a22);padding-top:11px}
+.mcOut>div{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;font-size:13px;color:var(--mut,#9a988c)}
+.mcOut>div b{color:var(--tx,#EFECE4);font-family:'IBM Plex Mono',monospace}
+.mcOut .big{margin-top:6px;font-size:14px}
+.mcOut .big b{font-family:'Big Shoulders Display',system-ui,sans-serif;font-size:24px;color:var(--acc2,#E7C079)}
+.mcNote{margin-top:10px;font-size:10.5px;color:var(--mut2,#6b6a5f);line-height:1.4}
+.dmap{width:100%;height:220px;border:1px solid var(--line2,#3a3a30);border-radius:12px;margin:10px 0}
+@media(max-width:640px){#mcPanel{top:auto;bottom:14px;right:12px;left:12px;width:auto}}
+/* ── members hero: compact, welcoming workspace header (light & airy, not a wall) ── */
+:root{--navy:#0E1A2E;--bone:#F1EFEA}
+.hero{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#FFFFFF,var(--bg))}
+.hero .in{padding:22px clamp(18px,3.5vw,40px) 20px}
+.apphead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.apphead .ah-l h1{font-family:'Big Shoulders Display',system-ui,sans-serif;font-size:clamp(21px,2.6vw,28px);font-weight:700;line-height:1.05;margin:0}
+.apphead .ah-l .sub{margin-top:5px;font-size:13.5px;line-height:1.45;max-width:54ch;color:var(--mut)}
+.apphead .ah-r{display:flex;gap:9px;flex-wrap:wrap}
+.hero .stats{margin-top:18px}
+@media(max-width:560px){.hero .in{padding:18px 16px 16px}.apphead .ah-r{width:100%}.apphead .ah-r .btn{flex:1}}
+/* ── color the tiles: tinted stat cards + type-coded deal spines ── */
+.hero .stats .s:nth-child(1){background:#EAF0FB}
+.hero .stats .s:nth-child(2){background:#FAF3E4}
+.hero .stats .s:nth-child(3){background:#E8F5EF}
+.hero .stats .s:nth-child(4){background:#EFEDFA}
+.hero .stats .s:nth-child(1) .v{color:#17418A}
+.hero .stats .s:nth-child(2) .v{color:#9A7423}
+.hero .stats .s:nth-child(3) .v{color:#2E7D63}
+.hero .stats .s:nth-child(4) .v{color:#5B54A8}
+.deal::before{opacity:.9;background:var(--tc,var(--acc))}
+.deal:hover::before{opacity:1}
+.deal.feat::before{background:var(--gold);opacity:1}
+.deal .type{color:var(--tc,var(--acc))}
+.deal .comm{color:var(--tc,var(--acc));background:color-mix(in srgb,var(--tc,var(--acc)) 8%,transparent);border-color:color-mix(in srgb,var(--tc,var(--acc)) 22%,transparent)}
+/* ── marketplace browse layout ── */
+.mktbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 0 16px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.mksel{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.mksel select,.sortbar select{appearance:none;-webkit-appearance:none;background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:8px 30px 8px 12px;font:inherit;font-size:13px;font-weight:600;color:var(--tx);cursor:pointer;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235F636D' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 10px center}
+.mksel select{font-weight:700}
+.mktabs{display:flex;gap:6px;flex-wrap:wrap}
+.mtab{border:1px solid var(--line2);background:var(--card);color:var(--mut);border-radius:100px;padding:6px 13px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.mtab .ct{color:var(--mut2);font-size:11px;font-weight:700}
+.mtab.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.mtab.on .ct{color:rgba(255,255,255,.75)}
+.soonpill{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);background:rgba(23,65,138,.08);border:1px solid rgba(23,65,138,.2);border-radius:100px;padding:6px 12px;display:inline-flex;align-items:center;gap:7px}
+.soonpill .dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:soonpulse 1.8s infinite}
+@keyframes soonpulse{0%{box-shadow:0 0 0 0 rgba(23,65,138,.4)}70%{box-shadow:0 0 0 6px rgba(23,65,138,0)}100%{box-shadow:0 0 0 0 rgba(23,65,138,0)}}
+.mktlayout{display:grid;grid-template-columns:250px 1fr;gap:22px;align-items:start}
+.rail{position:sticky;top:86px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.rail h3{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.rail h3 a{color:var(--acc);font-size:11px;cursor:pointer;text-transform:none;letter-spacing:0}
+.rail .fg{border-top:1px solid var(--line);padding:12px 0}
+.rail .fg:first-of-type{border-top:none;padding-top:0}
+.rail .lbl{font-size:12px;font-weight:700;margin-bottom:9px}
+.ck{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);padding:4px 0;cursor:pointer}
+.ck input{width:15px;height:15px;accent-color:var(--acc);flex:none}
+.ck .sw{width:9px;height:9px;border-radius:2px;margin-left:auto;flex:none}
+.rng{display:flex;gap:8px}
+.rng input{width:100%;background:var(--card2);border:1px solid var(--line2);border-radius:8px;padding:8px 9px;font:inherit;font-size:13px;color:var(--tx)}
+.rng input:focus{outline:none;border-color:var(--acc)}
+.rail .save{width:100%;margin-top:14px;background:transparent;color:var(--acc);border:1px dashed var(--line2);border-radius:9px;padding:10px;font:inherit;font-weight:600;font-size:12.5px;cursor:pointer}
+.rail .save:hover{border-color:var(--acc);background:rgba(23,65,138,.04)}
+.sortbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.sortbar .count{font-size:14px;font-weight:600}.sortbar .count b{font-family:'Big Shoulders Display',system-ui,sans-serif;font-size:20px;color:var(--acc)}
+.sortbar .r{margin-left:auto;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.sortbar input{background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:8px 12px;font:inherit;font-size:13px;color:var(--tx);width:190px}
+.sortbar input:focus{outline:none;border-color:var(--acc)}
+.railtog{display:none}
+/* ── guided tour ── */
+#tourWrap{display:none;position:fixed;inset:0;z-index:400}
+#tourWrap.on{display:block}
+#tourOv{position:fixed;inset:0;background:rgba(15,20,32,.55);opacity:0;transition:opacity .2s}
+#tourWrap.centered #tourOv{opacity:1}
+#tourRing{position:fixed;border-radius:12px;border:2px solid var(--acc);box-shadow:0 0 0 9999px rgba(15,20,32,.55);transition:all .28s cubic-bezier(.4,0,.2,1);pointer-events:none;display:none}
+#tourWrap.centered #tourRing{display:none}
+#tourCard{position:fixed;width:320px;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line2);border-radius:14px;box-shadow:0 24px 60px -20px rgba(15,20,32,.5);padding:18px;z-index:402;transition:left .28s cubic-bezier(.4,0,.2,1),top .28s cubic-bezier(.4,0,.2,1)}
+#tourCard .tstep{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--acc);margin-bottom:6px}
+#tourCard h4{font-family:'Big Shoulders Display',system-ui,sans-serif;font-size:20px;font-weight:700;margin:0 0 6px}
+#tourCard p{font-size:13.5px;color:var(--mut);line-height:1.5;margin:0}
+.tdots{display:flex;gap:6px;margin:14px 0 12px}
+.tdot{width:7px;height:7px;border-radius:50%;background:var(--line2)}
+.tdot.on{background:var(--acc);transform:scale(1.15)}
+.tbtns{display:flex;align-items:center;justify-content:space-between}
+.tskip{background:none;border:none;color:var(--mut);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.tnav{display:flex;gap:8px}
+.tback{background:var(--card2);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.tnext{background:var(--acc);border:none;color:#fff;border-radius:9px;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+@media(max-width:560px){#tourCard{left:12px!important;right:12px;width:auto;bottom:14px;top:auto!important}}
+@media(max-width:860px){
+  .mktlayout{grid-template-columns:1fr}
+  .rail{position:fixed;top:0;left:0;bottom:0;width:290px;max-width:86vw;z-index:150;border-radius:0;overflow-y:auto;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 50px rgba(0,0,0,.35)}
+  .rail.open{transform:translateX(0)}
+  .railtog{display:inline-flex}
+  .sortbar input{width:140px}
+}
+</style>
+<style id="ax-dark-fix">
+/* ACCESS dark-mode fix — flip hardcoded LIGHT surfaces/text that don't respond to html.dark */
+/* photo placeholder: light gradient -> flat dark tile */
+html.dark .deal .ph{background:#20252F!important;color:#8A92A0!important}
+/* lock chip + badges: translucent white -> translucent dark */
+html.dark .deal .lock,html.dark .bdg{background:rgba(32,37,47,.85)!important}
+/* status pill (requested): pale yellow -> dark panel */
+html.dark .pill.req{background:#171B22!important;color:#D9B25A!important}
+/* account menu + mortgage panel: var(--card,#fff)/light border fallbacks -> dark */
+html.dark .acctMenu{background:#20252F!important;border-color:#2A303C!important}
+html.dark #mcPanel{background:#20252F!important;border-color:#2A303C!important}
+/* hero header: white gradient -> flat dark panel */
+html.dark .hero{background:#171B22!important}
+/* stat tiles: light tints -> dark cards */
+html.dark .hero .stats .s:nth-child(1),
+html.dark .hero .stats .s:nth-child(2),
+html.dark .hero .stats .s:nth-child(3),
+html.dark .hero .stats .s:nth-child(4){background:#20252F!important}
+/* stat values: dark colored text -> brightened readable tints */
+html.dark .hero .stats .s:nth-child(1) .v{color:#6E9BFF!important}
+html.dark .hero .stats .s:nth-child(2) .v{color:#D9B25A!important}
+html.dark .hero .stats .s:nth-child(3) .v{color:#3EE0B0!important}
+html.dark .hero .stats .s:nth-child(4) .v{color:#9B93E0!important}
+/* gate banner (JS-injected light surface) */
+html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
+</style></head>
+<body>
+
+<div class="nav"><div class="wrap in">
+  <div class="brand"><svg class="rb" viewBox="0 0 64 64" aria-label="ACCESS"><rect x="5" y="15" width="54" height="34" rx="8" fill="#1C1C1A"/><rect x="12" y="22" width="15" height="12" rx="2.6" fill="#B4882E"/><rect x="12" y="40" width="30" height="3.2" rx="1.6" fill="#F5F4F1" opacity=".32"/></svg>access<small>Off-Market</small></div>
+  <div class="sp"></div>
+  <span class="nlink hideM" onclick="scrollTo(0,document.getElementById('feed').offsetTop-70)">Deal feed</span>
+  <span class="nlink hideM" onclick="openBuyBox()">Client needs</span>
+  <span class="nlink hideM" onclick="openMarket()">Market</span>
+  <span class="nlink hideM" onclick="openBoard()">Board</span>
+  <span class="nlink hideM" onclick="openDirectory()">Members</span>
+  <span class="nlink" onclick="openMsgs()" title="Messages"><span class="msg-txt">Messages</span><span class="msg-ico">✉</span> <span id="msgDot" style="display:none;color:var(--gold)">●</span></span>
+  <span class="nlink ico" onclick="startTour(true)" title="Replay the tour" aria-label="Replay the tour"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="12" cy="12" r="9.2"/><path d="M9.4 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.4 2-2.4 3.6"/><line x1="12" y1="17.2" x2="12" y2="17.25"/></svg></span>
+  <span class="nlink ico" onclick="mcToggle(event)" title="Mortgage calculator" aria-label="Mortgage calculator"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><rect x="4" y="2.5" width="16" height="19" rx="2.2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8.5" y1="12" x2="8.5" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="15.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="8.5" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/><line x1="15.5" y1="15.5" x2="15.5" y2="18.5"/></svg></span>
+  <span class="nlink ico" onclick="openNotifs()" title="Alerts" style="position:relative"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5"/><path d="M13.7 20.5a2 2 0 0 1-3.4 0"/></svg><span id="notifBadge" style="display:none;position:absolute;top:-3px;right:-4px;background:var(--gold);color:var(--bg);font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:9px;padding:0 4px;line-height:16px;text-align:center">0</span></span>
+  <button class="btn acc sm" onclick="openSubmit()">＋<span class="cta-txt"> Post a deal</span></button>
+  <div class="acct" id="acct">
+    <button class="acctBtn" onclick="toggleAcct(event)" aria-label="Account menu"><span class="who" id="who"></span><span class="car">▾</span></button>
+    <div class="acctMenu" id="acctMenu">
+      <a onclick="close_acct();openActivity()">My activity <span id="reqDot" style="display:none;color:var(--acc2)">●</span></a>
+      <a onclick="close_acct();openProfile()">Profile</a>
+      <a onclick="close_acct();openReferral()">Refer &amp; earn <span style="color:var(--gold)">◆</span></a>
+      <a id="adminLink" style="display:none;color:var(--gold)" onclick="close_acct();openAdmin()">Admin <span id="adminDot" style="display:none"></span></a>
+      <div class="acctSep"></div>
+      <a href="/logout">Sign out</a>
+    </div>
+  </div>
+</div></div>
+
+<div class="hero"><div class="wrap in">
+  <div class="apphead">
+    <div class="ah-l">
+      <h1>Live off-market deals</h1>
+      <p class="sub">Investment property moving agent-to-agent across Massachusetts — before it hits the market.</p>
+    </div>
+    <div class="ah-r">
+      <button class="btn ghost sm" onclick="openBuyBox()">Post a client need</button>
+      <button class="btn acc sm" onclick="openSubmit()">＋ Post a deal</button>
+    </div>
+  </div>
+  <div class="stats" id="stats">
+    <div class="s"><div class="v mono">—</div><div class="k">Live deals</div></div>
+    <div class="s"><div class="v mono acc">—</div><div class="k">Total value</div></div>
+    <div class="s"><div class="v mono">—</div><div class="k">Submarkets</div></div>
+    <div class="s"><div class="v mono">—</div><div class="k">Avg. commission</div></div>
+  </div>
+</div></div>
+
+<section id="feed"><div class="wrap">
+  <!-- market bar -->
+  <div class="mktbar">
+    <div class="mksel">Market <select id="fMarket" onchange="render()"><option value="MA">Massachusetts</option></select></div>
+    <div class="mktabs" id="regionTabs"></div>
+    <span class="soonpill"><span class="dot"></span>Coming soon · <b id="soonCity2">Providence, RI</b></span>
+  </div>
+  <div class="mktlayout">
+    <!-- filter rail -->
+    <aside class="rail" id="rail">
+      <h3>Filters <a onclick="clearFilters()">Clear all</a></h3>
+      <div class="fg"><div class="lbl">Property type</div><div id="typeChecks"></div></div>
+      <div class="fg"><div class="lbl">Price</div><div class="rng"><input id="fMin" inputmode="numeric" placeholder="Min $" oninput="render()"><input id="fMax" inputmode="numeric" placeholder="Max $" oninput="render()"></div></div>
+      <div class="fg"><div class="lbl">Cap rate</div><div class="rng"><input id="fCap" inputmode="decimal" placeholder="Min %" oninput="render()"></div></div>
+      <div class="fg"><div class="lbl">Units</div><div class="rng"><input id="fUmin" inputmode="numeric" placeholder="Min" oninput="render()"><input id="fUmax" inputmode="numeric" placeholder="Max" oninput="render()"></div></div>
+      <div class="fg"><div class="lbl">Distribution</div><div id="distChecks">
+        <label class="ck"><input type="checkbox" value="broad" onchange="render()">Broad</label>
+        <label class="ck"><input type="checkbox" value="private" onchange="render()">Private</label>
+        <label class="ck"><input type="checkbox" value="pocket" onchange="render()">Pocket</label>
+      </div></div>
+      <div class="fg"><label class="ck"><input type="checkbox" id="fShown" onchange="render()">Address shown only</label></div>
+      <button class="save" onclick="saveSearch()">★ Save this search &amp; alert me</button>
+    </aside>
+    <!-- results -->
+    <main class="results">
+      <div class="sortbar">
+        <div class="count"><b id="rCount">—</b> <span id="rLabel">deals</span></div>
+        <div class="r">
+          <input id="fSearch" placeholder="Search keyword…" oninput="render()">
+          <select id="fSort" onchange="render()"><option value="new">Sort: Newest</option><option value="priceHigh">Price: high → low</option><option value="priceLow">Price: low → high</option><option value="cap">Cap rate</option></select>
+          <button class="btn ghost sm railtog" onclick="document.getElementById('rail').classList.toggle('open')">Filters</button>
+          <button class="btn ghost sm" onclick="loadAll()" title="Refresh">↻</button>
+        </div>
+      </div>
+      <div class="grid" id="grid"><div class="empty">Loading deals…</div></div>
+    </main>
+  </div>
+</div></section>
+
+<div class="foot"><div class="wrap in">
+  <div>ACCESS — a Citicore Properties Inc network. Invite-only. Not an MLS.</div>
+  <div>Deals shown are broker/owner submitted. Verify all figures independently.</div>
+</div></div>
+
+<!-- SUBMIT DEAL -->
+<div class="mbg" id="mSubmit" onclick="if(event.target===this)close_('mSubmit')"><div class="modal wide">
+  <div class="mhead"><h3>Post a deal</h3><button class="x" onclick="close_('mSubmit')">×</button></div>
+  <div class="mbody">
+    <div class="f full"><label>Property address</label><input id="sAddr" class="gaddr" autocomplete="off" placeholder="Start typing the address…"></div>
+    <div class="f full" style="display:flex;flex-direction:row;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:8px 11px;margin-top:-3px">
+      <input type="checkbox" id="sHideAddr" style="width:16px;height:16px;accent-color:var(--gold);flex:none">
+      <label for="sHideAddr" style="margin:0;cursor:pointer;font-size:12.5px;color:var(--tx);text-transform:none;letter-spacing:0;font-weight:500;font-family:'Public Sans',system-ui,sans-serif">Hide the exact address <span style="color:var(--mut)">— shown on a map if left unchecked</span></label>
+    </div>
+    <div class="fgrid">
+      <div class="f"><label>Submarket / neighborhood</label><input id="sSub" placeholder="e.g. South Boston"></div>
+      <div class="f"><label>Asset type</label><select id="sType"></select></div>
+      <div class="f"><label>Asking price ($)</label><input id="sPrice" inputmode="decimal" placeholder="0"></div>
+      <div class="f"><label>Buyer-broker commission (%)</label><input id="sComm" inputmode="decimal" placeholder="2.5"></div>
+      <div class="f"><label>Units</label><input id="sUnits" inputmode="numeric" placeholder="0"></div>
+      <div class="f"><label>Cap rate (%)</label><input id="sCap" inputmode="decimal" placeholder="0"></div>
+      <div class="f"><label>NOI ($)</label><input id="sNoi" inputmode="decimal" placeholder="0"></div>
+      <div class="f"><label>Square feet</label><input id="sSf" inputmode="numeric" placeholder="0"></div>
+    </div>
+    <div class="f full"><label>Public description <span class="hint">— what everyone sees</span></label><textarea id="sDesc" rows="2" placeholder="6-unit value-add, all 2BRs, below-market rents, off-street parking…"></textarea></div>
+    <div class="f full"><label>Documents <span class="hint">— optional (OM, rent roll, T-12, photos)</span></label>
+      <input type="file" id="sDocs" multiple onchange="uploadDocs()" style="font-size:13px;color:var(--mut)">
+      <div id="sDocList" style="margin-top:8px;display:flex;flex-direction:column;gap:5px"></div>
+    </div>
+    <div class="f full"><label>Distribution</label>
+      <select id="sDist"><option value="broad">Broad — everyone in the network sees it</option><option value="private">Private — visible, intro requires your approval</option><option value="pocket">Pocket — only matched client needs see it</option></select>
+    </div>
+    <div class="mact"><span class="msg" id="sMsg"></span><button class="btn ghost" onclick="close_('mSubmit')">Cancel</button><button class="btn acc" onclick="submitDeal()">Post deal</button></div>
+  </div>
+</div></div>
+
+<!-- BUY BOX -->
+<div class="mbg" id="mBuy" onclick="if(event.target===this)close_('mBuy')"><div class="modal">
+  <div class="mhead"><h3>Post a client need</h3><button class="x" onclick="close_('mBuy')">×</button></div>
+  <div class="mbody">
+    <p style="color:var(--mut);font-size:13.5px;margin-bottom:14px">Tell the network what your client is looking for. When a matching deal is posted, you'll be first to know.</p>
+    <div class="fgrid">
+      <div class="f"><label>Your name</label><input id="bName" placeholder="Name"></div>
+      <div class="f"><label>Firm</label><input id="bFirm" placeholder="Company"></div>
+      <div class="f"><label>Min price ($)</label><input id="bMin" inputmode="decimal" placeholder="0"></div>
+      <div class="f"><label>Max price ($)</label><input id="bMax" inputmode="decimal" placeholder="0"></div>
+    </div>
+    <div class="f full"><label>Asset types</label><input id="bTypes" placeholder="e.g. Multifamily, Mixed-use, Development"></div>
+    <div class="f full"><label>Target submarkets</label><input id="bSubs" placeholder="e.g. South Boston, Dorchester, Cambridge"></div>
+    <div class="f full"><label>Criteria / notes</label><textarea id="bNotes" rows="2" placeholder="Cash, 1031 buyer, value-add 6–20 units, will close in 30 days…"></textarea></div>
+    <div class="mact"><span class="msg" id="bMsg"></span><button class="btn ghost" onclick="close_('mBuy')">Cancel</button><button class="btn acc" onclick="submitBuyBox()">Post client need</button></div>
+  </div>
+</div></div>
+
+<!-- DEAL DETAIL -->
+<div class="mbg" id="mDetail" onclick="if(event.target===this)close_('mDetail')"><div class="modal wide"><div id="detailBody"></div></div></div>
+
+<!-- ACTIVITY -->
+<div class="mbg" id="mActivity" onclick="if(event.target===this)close_('mActivity')"><div class="modal wide">
+  <div class="mhead"><h3>My activity</h3><button class="x" onclick="close_('mActivity')">×</button></div>
+  <div class="mbody"><div class="tabs" id="actTabs"></div><div id="actBody"></div></div>
+</div></div>
+
+<!-- MESSAGES (member-to-member conversations) -->
+<div class="mbg" id="mMsgs" onclick="if(event.target===this)close_('mMsgs')"></div>
+<!-- CONTACT AGENT -->
+<div class="mbg" id="mContact" onclick="if(event.target===this)close_('mContact')"></div>
+<!-- ALERTS / NOTIFICATIONS -->
+<div class="mbg" id="mNotifs" onclick="if(event.target===this)close_('mNotifs')"></div>
+<!-- MARKET PULSE -->
+<div class="mbg" id="mMarket" onclick="if(event.target===this)close_('mMarket')"></div>
+<!-- BROADCAST BOARD -->
+<div class="mbg" id="mBoard" onclick="if(event.target===this)close_('mBoard')"></div>
+<!-- MEMBER PROFILE -->
+<div class="mbg" id="mProfile" onclick="if(event.target===this)close_('mProfile')"></div>
+<!-- ADMIN PANEL -->
+<div class="mbg" id="mAdmin" onclick="if(event.target===this)close_('mAdmin')"></div>
+<div class="mbg" id="mDirectory" onclick="if(event.target===this)close_('mDirectory')"></div>
+<div class="mbg" id="mReferral" onclick="if(event.target===this)close_('mReferral')"></div>
+
+<!-- MORTGAGE CALCULATOR — nav-anchored dropdown, top right -->
+<div id="mcPanel" role="dialog" aria-label="Mortgage calculator">
+  <div class="mcHead"><b>Mortgage calculator</b><button class="x" onclick="mcClose()" aria-label="Close">×</button></div>
+  <div class="mcRow"><label>Purchase price</label><input id="mcPrice" inputmode="decimal" placeholder="1,000,000" oninput="mcCalc()"></div>
+  <div class="mcGrid">
+    <div class="mcRow"><label>Down (%)</label><input id="mcDown" inputmode="decimal" value="25" oninput="mcCalc()"></div>
+    <div class="mcRow"><label>Rate (%)</label><input id="mcRate" inputmode="decimal" value="6.75" oninput="mcCalc()"></div>
+    <div class="mcRow"><label>Term (yrs)</label><input id="mcTerm" inputmode="numeric" value="30" oninput="mcCalc()"></div>
+  </div>
+  <div class="mcOut">
+    <div><span>Loan amount</span><b id="mcLoan">—</b></div>
+    <div><span>Down payment</span><b id="mcDownAmt">—</b></div>
+    <div class="big"><span>Monthly P&amp;I</span><b id="mcPay">—</b></div>
+  </div>
+  <div class="mcNote">Estimate only — principal &amp; interest. Excludes taxes, insurance &amp; fees.</div>
+</div>
+
+<!-- GUIDED TOUR -->
+<div id="tourWrap">
+  <div id="tourOv"></div>
+  <div id="tourRing"></div>
+  <div id="tourCard">
+    <div class="tstep"><span id="tourStepN"></span></div>
+    <h4 id="tourTitle"></h4>
+    <p id="tourBody"></p>
+    <div class="tdots" id="tourDots"></div>
+    <div class="tbtns">
+      <button class="tskip" onclick="endTour()">Skip</button>
+      <div class="tnav">
+        <button class="tback" id="tourBack" onclick="tourGo(-1)">Back</button>
+        <button class="tnext" id="tourNext" onclick="tourGo(1)">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var ME={role:'guest',email:'',name:''};
+var LISTINGS=[];
+var TYPES=['Multifamily','Mixed-use','Development site','Retail / Commercial','Condo / Conversion','Industrial','Land','Single-family'];
+var TYPEF='', ACTTAB='mydeals';
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function uid(p){return (p||'x')+Date.now().toString(36)+Math.floor(Math.random()*1e5).toString(36);}
+function num(v){var f=parseFloat(String(v==null?'':v).replace(/[^0-9.]/g,''));return isFinite(f)?f:0;}
+function money(n){n=Math.round(num(n));if(!n)return '—';if(n>=1e6)return '$'+(n/1e6).toFixed(n%1e6?2:1).replace(/\.0$/,'')+'M';if(n>=1e3)return '$'+Math.round(n/1e3)+'K';return '$'+n.toLocaleString('en-US');}
+function moneyFull(n){n=Math.round(num(n));return n?'$'+n.toLocaleString('en-US'):'—';}
+function ago(iso){try{var s=(Date.now()-new Date(iso))/1000;if(s<3600)return Math.max(1,Math.round(s/60))+'m ago';if(s<86400)return Math.round(s/3600)+'h ago';return Math.round(s/86400)+'d ago';}catch(e){return '';}}
+function initials(n){n=String(n||'').trim();if(!n)return '?';var p=n.split(/\s+/);return ((p[0]||'')[0]+(p.length>1?(p[p.length-1]||'')[0]:'')).toUpperCase();}
+
+/* ── data (all reads/writes go through the secure /api/pm/* API — addresses are
+   redacted server-side and only revealed to the seller or an approved buyer) ── */
+var SENT=[],INBOUND=[],BUYBOX=null;   // SENT = intros I sent; INBOUND = intros on my listings
+function api(path,body){
+  var opt={credentials:'include',cache:'no-store'};
+  if(body){opt.method='POST';opt.headers={'Content-Type':'application/json'};opt.body=JSON.stringify(body);}
+  return fetch(path,opt).then(function(r){return r.json().catch(function(){return {ok:false};});}).catch(function(){return {ok:false,net:true};});
+}
+// Normalize a server listing (backend field names) into the shape the UI renders.
+function nL(l){
+  if(!l)return null;
+  return {id:l.id,byEmail:String(l.owner||''),by:l.ownerName||'',at:l.createdAt||l.updatedAt||'',
+    status:(l.status==='off'?'off':l.status==='mls'?'mls':'live'),mlsAt:l.mlsAt||'',
+    addressHidden:(l.addressHidden!==false),addr:l.address||'',hideAddress:!!l.hideAddress,
+    submarket:l.area||l.city||'',city:l.city||'',area:l.area||'',state:l.state||'',zip:l.zip||l.zipPrefix||'',
+    type:l.propType||'',price:l.price,commission:l.commissionPct,commNotes:l.commissionNotes||'',
+    units:l.units,cap:l.capRate,noi:l.noi,sf:l.sqft,gross:l.grossIncome,exp:l.expenses,
+    beds:l.beds,baths:l.baths,yb:l.yearBuilt,desc:l.notes||'',dist:l.dist||'broad',
+    docs:Array.isArray(l.docs)?l.docs:[],views:l.views||0,featured:!!l.featured,
+    expiresAt:l.expiresAt||'',expired:!!l.expired};
+}
+var PROFILE=null, APPROVED=true, BBMATCHES=[], PAYCFG={enabled:false,membership:false,prices:{renew:10,feature:25}};
+// api() with a timeout so one slow/hanging Apps Script call can never resolve late
+// and freeze the page. Always resolves.
+function apiT(path,ms){return Promise.race([api(path),new Promise(function(r){setTimeout(function(){r({ok:false,timeout:true});},ms||9000);})]);}
+function loadAll(){
+  // Load the deal feed FIRST and render it right away. Everything else (intros,
+  // client-needs, profile, pay status) loads in the background — Google Apps Script
+  // hangs when hit with 5 parallel reads, so we never make the deals wait on them.
+  apiT('/api/pm/feed',12000).then(function(feed){
+    feed=feed||{};
+    if(feed.me){ME=Object.assign({},ME,feed.me);var w=$('who');if(ME.name||ME.email)w.innerHTML='<span class="av">'+initials(ME.name||ME.email)+'</span>';
+      var gn=$('heroGreet');if(gn){var fn=String(ME.name||'').trim().split(/\s+/)[0];gn.textContent=fn?('Welcome back, '+fn+'.'):'Welcome back.';}}
+    LISTINGS=(feed.listings||[]).map(nL).filter(Boolean);
+    $('adminLink').style.display=(ME.role==='owner')?'':'none';
+    if(ME.role==='owner')loadAdminDot();
+    fillFilters();render();renderStats();maybeAutoTour();
+    // ── background loads — each updates the view as it returns, none can block it ──
+    apiT('/api/pm/pay/status').then(function(pay){if(pay&&pay.ok){PAYCFG={enabled:!!pay.enabled,membership:!!pay.membership,prices:pay.prices||PAYCFG.prices};render();}});
+    apiT('/api/pm/intros').then(function(intr){intr=intr||{};SENT=intr.asBuyer||[];INBOUND=intr.asSeller||[];render();updateReqDot();});
+    apiT('/api/pm/buybox').then(function(bb){bb=bb||{};BUYBOX=bb.buybox||null;BBMATCHES=(bb.matches||[]).map(nL).filter(Boolean);});
+    apiT('/api/pm/profile').then(function(pf){pf=pf||{};PROFILE=pf.profile||null;APPROVED=(pf.approved!==false);renderGate();});
+    loadThreads(function(){});loadNotifs(function(){});
+  });
+}
+function loadAdminDot(){Promise.all([api('/api/pm/admin/members'),api('/api/pm/admin/requests')]).then(function(r){var n=((r[0]&&r[0].pending)||0)+((r[1]&&r[1].pending)||0);var d=$('adminDot');if(d){d.style.display=n?'':'none';d.textContent=' '+n;}});}
+// Approval gate banner for outside members awaiting review.
+function renderGate(){
+  var el=$('gateBar');
+  if(!APPROVED&&ME.role==='member'){
+    if(!el){el=document.createElement('div');el.id='gateBar';el.style.cssText='background:#FBF2DD;border-bottom:1px solid var(--gold);color:#5A4A1E;padding:11px 18px;text-align:center;font-size:13.5px';document.body.insertBefore(el,document.body.firstChild);}
+    var pending=PROFILE&&PROFILE.status==='pending';
+    el.innerHTML=pending?'⏳ Your membership is pending approval. You can browse, but posting & messaging unlock once approved. <b style="cursor:pointer;text-decoration:underline" onclick="openProfile()">Review your profile →</b>'
+      :'👋 Complete your member profile (license # + brokerage required) to get approved. <b style="cursor:pointer;text-decoration:underline" onclick="openProfile()">Set up profile →</b>';
+  } else if(el){el.remove();}
+}
+
+/* ── visibility / gating ── */
+function isMine(d){return d.byEmail&&ME.email&&d.byEmail.toLowerCase()===String(ME.email).toLowerCase();}
+function myIntro(dealId){return SENT.filter(function(x){return x.listingId===dealId;}).sort(function(a,b){return String(b.createdAt).localeCompare(String(a.createdAt));})[0];}
+function introLabel(s){return s==='approved'?'Approved':s==='declined'?'Declined':'Requested — awaiting seller';}
+// Address visibility is decided server-side: an entitled viewer receives the address
+// in the feed (addressHidden:false). Never trust the client to unlock it.
+function canSeeAddress(d){return !d.addressHidden;}
+
+/* ── stats ── */
+function renderStats(){
+  var live=LISTINGS.filter(function(d){return d.status!=='off'&&d.status!=='mls';});
+  var val=live.reduce(function(a,d){return a+num(d.price);},0);
+  var comms=live.map(function(d){return num(d.commission);}).filter(function(x){return x>0;});
+  var avg=comms.length?(comms.reduce(function(a,b){return a+b;},0)/comms.length):0;
+  var subs={};live.forEach(function(d){if(d.submarket)subs[d.submarket]=1;});
+  var s=$('stats').querySelectorAll('.s .v');
+  s[0].textContent=live.length;s[1].textContent=money(val);s[2].textContent=Object.keys(subs).length||'—';s[3].textContent=avg?avg.toFixed(1)+'%':'—';
+}
+
+/* ── markets / filters ── */
+var REGION='all';
+var REGIONS=[
+ {k:'all',name:'All MA',cities:null},
+ {k:'boston',name:'Boston',cities:['boston','south boston','dorchester','roxbury','jamaica plain','east boston','charlestown','roslindale','hyde park','mattapan','allston','brighton','south end','fenway','back bay','downtown','west roxbury','brighton']},
+ {k:'north',name:'North Shore',cities:['lynn','salem','peabody','beverly','saugus','revere','chelsea','everett','malden','medford','somerville','gloucester','marblehead','swampscott','danvers','melrose','stoneham','winthrop']},
+ {k:'merrimack',name:'Merrimack Valley',cities:['lowell','lawrence','haverhill','methuen','andover','tewksbury','dracut','chelmsford','billerica']},
+ {k:'south',name:'South Shore',cities:['quincy','weymouth','braintree','randolph','milton','brockton','hingham','plymouth','marshfield','abington','rockland','holbrook','canton','stoughton']},
+ {k:'southeast',name:'Southeast',cities:['fall river','new bedford','taunton','dartmouth','somerset','swansea','attleboro','raynham','middleboro']},
+ {k:'metrowest',name:'MetroWest',cities:['framingham','natick','waltham','marlborough','newton','needham','wellesley','ashland','hudson','milford','watertown','dedham']},
+ {k:'worcester',name:'Worcester',cities:['worcester','fitchburg','leominster','shrewsbury','auburn','millbury','gardner','clinton','westborough','grafton']},
+ {k:'western',name:'Western MA',cities:['springfield','chicopee','holyoke','westfield','pittsfield','northampton','amherst','agawam','west springfield','ludlow']}
+];
+function regionMatch(d){
+  if(REGION==='all')return true;
+  var r=REGIONS.filter(function(x){return x.k===REGION;})[0]; if(!r||!r.cities)return true;
+  var loc=((d.submarket||'')+' '+(d.city||'')+' '+(d.area||'')).toLowerCase();
+  return r.cities.some(function(c){return loc.indexOf(c)>=0;});
+}
+function setRegion(k){REGION=k;renderRegionTabs();render();}
+function renderRegionTabs(){
+  var t=$('regionTabs'); if(!t)return;
+  t.innerHTML=REGIONS.map(function(r){var n=r.k==='all'?LISTINGS.filter(feedVisible).length:LISTINGS.filter(function(d){var sv=feedVisible(d);var save=REGION;REGION=r.k;var m=regionMatch(d);REGION=save;return sv&&m;}).length;
+    return '<span class="mtab'+(REGION===r.k?' on':'')+'" onclick="setRegion(\''+r.k+'\')">'+esc(r.name)+(n?' <span class="ct">'+n+'</span>':'')+'</span>';}).join('');
+}
+function typeChecked(){var s=[];$('typeChecks').querySelectorAll('input:checked').forEach(function(i){s.push(i.value);});return s;}
+function distChecked(){var s=[];$('distChecks').querySelectorAll('input:checked').forEach(function(i){s.push(i.value);});return s;}
+function clearFilters(){
+  $('typeChecks').querySelectorAll('input').forEach(function(i){i.checked=false;});
+  $('distChecks').querySelectorAll('input').forEach(function(i){i.checked=false;});
+  ['fMin','fMax','fCap','fUmin','fUmax','fSearch'].forEach(function(id){if($(id))$(id).value='';});
+  $('fShown').checked=false;$('fSort').value='new';render();
+}
+function fillFilters(){
+  // property-type checkboxes with the type's color swatch
+  var tc=$('typeChecks');
+  if(tc&&tc.children.length===0){
+    tc.innerHTML=TYPES.map(function(t){return '<label class="ck"><input type="checkbox" value="'+esc(t)+'" onchange="render()">'+esc(t)+'<span class="sw" style="background:'+typeColor(t)+'"></span></label>';}).join('');
+  }
+  renderRegionTabs();
+  if($('sType')&&!$('sType').options.length){$('sType').innerHTML=TYPES.map(function(t){return '<option>'+esc(t)+'</option>';}).join('');}
+}
+// Save the current filters as a client need (buy box) so matching deals alert you.
+function saveSearch(){
+  var types=typeChecked();
+  var body={markets:(REGION==='all'?'':(REGIONS.filter(function(r){return r.k===REGION;})[0]||{}).name||''),
+    propType:types.join(', '),
+    minPrice:($('fMin').value||'').trim(),maxPrice:($('fMax').value||'').trim(),
+    minUnits:($('fUmin').value||'').trim(),maxUnits:($('fUmax').value||'').trim(),
+    minCap:($('fCap').value||'').trim(),
+    notes:'Saved from browse'+($('fSearch').value?(' · "'+$('fSearch').value+'"'):''),contact:ME.email};
+  api('/api/pm/buybox',body).then(function(j){
+    if(j&&j.ok){BUYBOX=j.buybox||BUYBOX;
+      var b=document.querySelector('.rail .save');if(b){var o=b.innerHTML;b.innerHTML='✓ Saved — you\'ll be alerted';b.style.color='var(--acc)';setTimeout(function(){b.innerHTML=o;b.style.color='';},2200);}}
+    else{alert('Could not save — try again.');}
+  });
+}
+
+/* ── feed ── */
+function distBadge(d){var m={broad:'Broad',private:'Private',pocket:'Pocket'};return '<span class="bdg '+(d.dist||'broad')+'">'+(m[d.dist]||'Broad')+'</span>';}
+// Color-code each deal by asset type — adds variety to the feed and lets agents scan by type.
+function typeColor(t){t=String(t||'').toLowerCase();
+  if(t.indexOf('mixed')>=0)return '#B4882E';
+  if(t.indexOf('develop')>=0||t.indexOf('land')>=0)return '#2E8B6F';
+  if(t.indexOf('retail')>=0||t.indexOf('commercial')>=0)return '#6D5AA8';
+  if(t.indexOf('condo')>=0||t.indexOf('conversion')>=0)return '#B5566B';
+  if(t.indexOf('industrial')>=0)return '#4E6B8A';
+  if(t.indexOf('single')>=0)return '#2C7FA8';
+  return '#17418A';   // multifamily / default — ink-blue
+}
+function addrIcon(open){return open
+  ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5-6.5-10a6.5 6.5 0 0 1 13 0C18.5 16 12 21 12 21z"/><circle cx="12" cy="11" r="2.1"/></svg>'
+  : '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';}
+function dealCard(d){
+  var open=canSeeAddress(d);
+  var badges='';
+  if(d.featured)badges+='<span class="bdg feat">★ Featured</span>';
+  badges+=distBadge(d);
+  if(isMine(d))badges+='<span class="bdg mine">Yours</span>';
+  var kp='';
+  kp+='<div><div class="k">Units</div><div class="v">'+(num(d.units)||'—')+'</div></div>';
+  kp+='<div><div class="k">Cap</div><div class="v">'+(num(d.cap)?num(d.cap).toFixed(1)+'%':'—')+'</div></div>';
+  kp+='<div><div class="k">SF</div><div class="v">'+(num(d.sf)?Math.round(num(d.sf)/1000)+'k':'—')+'</div></div>';
+  var addrTxt=open?((d.addr&&esc(d.addr))||'Address shown'):'Address hidden';
+  return '<div class="deal'+(d.featured?' feat':'')+'" style="--tc:'+typeColor(d.type)+'" onclick="openDetail(\''+d.id+'\')">'
+    +'<div class="top"><div class="type">'+esc(d.type||'Investment')+'</div><div class="badges">'+badges+'</div></div>'
+    +'<div class="sub">'+esc(d.submarket||'Greater Boston')+'</div>'
+    +'<div class="addr'+(open?' open':'')+'">'+addrIcon(open)+addrTxt+'</div>'
+    +'<div class="desc">'+esc(d.desc||'Off-market opportunity.')+'</div>'
+    +'<div class="kpis">'+kp+'</div>'
+    +'<div class="foot"><div class="price">'+money(d.price)+'</div><div class="fr"><span class="comm">'+(num(d.commission)?num(d.commission).toFixed(1)+'% BBC':'—')+'</span><span class="ago">'+ago(d.at)+'</span></div></div>'
+    +'</div>';
+}
+function feedVisible(d){
+  if(d.status==='off'||d.status==='mls')return false;
+  if(d.dist==='pocket'&&!isMine(d)&&ME.role!=='owner')return false;   // pocket hidden from the general feed
+  return true;
+}
+function render(){
+  var g=$('grid'); if(!g)return;
+  var q=($('fSearch').value||'').toLowerCase(), sort=$('fSort').value;
+  var types=typeChecked(), dists=distChecked();
+  var pmin=num($('fMin').value),pmax=num($('fMax').value),capmin=num($('fCap').value),umin=num($('fUmin').value),umax=num($('fUmax').value),shown=$('fShown').checked;
+  var list=LISTINGS.filter(function(d){
+    if(!feedVisible(d))return false;
+    if(!regionMatch(d))return false;
+    if(types.length&&types.indexOf(d.type)<0)return false;
+    if(dists.length&&dists.indexOf(d.dist||'broad')<0)return false;
+    if(pmin&&num(d.price)&&num(d.price)<pmin)return false;
+    if(pmax&&num(d.price)&&num(d.price)>pmax)return false;
+    if(capmin&&num(d.cap)&&num(d.cap)<capmin)return false;
+    if(umin&&num(d.units)&&num(d.units)<umin)return false;
+    if(umax&&num(d.units)&&num(d.units)>umax)return false;
+    if(shown&&!canSeeAddress(d))return false;
+    if(q&&(d.type+' '+d.submarket+' '+d.desc+' '+(d.addr||'')).toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
+  var fs=function(a,b){return (b.featured?1:0)-(a.featured?1:0);};
+  if(sort==='priceHigh')list.sort(function(a,b){return fs(a,b)||num(b.price)-num(a.price);});
+  else if(sort==='priceLow')list.sort(function(a,b){return fs(a,b)||num(a.price)-num(b.price);});
+  else if(sort==='cap')list.sort(function(a,b){return fs(a,b)||num(b.cap)-num(a.cap);});
+  else list.sort(function(a,b){return fs(a,b)||new Date(b.at)-new Date(a.at);});
+  if($('rCount'))$('rCount').textContent=list.length;
+  if($('rLabel'))$('rLabel').textContent=(list.length===1?'deal':'deals')+' in '+(REGION==='all'?'Massachusetts':((REGIONS.filter(function(r){return r.k===REGION;})[0]||{}).name||'MA'));
+  g.innerHTML=list.length?list.map(dealCard).join(''):'<div class="empty">No deals match your filters.<br><br><button class="btn acc" onclick="clearFilters()">Clear filters</button></div>';
+}
+
+/* ── detail ── */
+function mapEmbed(addr){var q=encodeURIComponent(addr);return '<iframe class="dmap" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q='+q+'&output=embed"></iframe>';}
+function docsBlock(d){
+  if(!d.docs||!d.docs.length)return '';
+  return '<div style="margin:12px 0"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:6px">Documents</div>'
+    +d.docs.map(function(x){return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener" style="display:block;color:var(--acc2);font-size:13.5px;padding:3px 0;text-decoration:none">📎 '+esc(x.name||'Document')+'</a>';}).join('')+'</div>';
+}
+var SVG_LI='<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0zM.5 8h4V24h-4V8zM8 8h3.8v2.2h.05c.53-1 1.83-2.2 3.77-2.2 4.03 0 4.78 2.65 4.78 6.1V24h-4v-6.9c0-1.64-.03-3.75-2.29-3.75-2.3 0-2.65 1.79-2.65 3.63V24H8V8z"/></svg>';
+var SVG_IG='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>';
+var SVG_FB='<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.25-1.5 1.55-1.5H17V3.6c-.29-.04-1.3-.13-2.46-.13-2.43 0-4.09 1.48-4.09 4.21v2.35H7.7V13h2.75v8h3.05z"/></svg>';
+var SVG_X='<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18.24 2H21.5l-7.5 8.57L22.5 22h-6.86l-4.3-5.62L6.4 22H3.13l7.86-8.98L2.5 2h6.86l3.88 5.13L18.24 2zm-1.2 18h1.7L7.03 3.9H5.2L17.04 20z"/></svg>';
+var SVG_WEB='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18"/></svg>';
+function socialLinks(p){
+  var it=[];
+  var ic=function(svg,url,label){return '<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer nofollow" title="'+label+'" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid var(--line2);border-radius:9px;color:var(--tx);text-decoration:none">'+svg+'</a>';};
+  if(p.linkedin)it.push(ic(SVG_LI,p.linkedin,'LinkedIn'));
+  if(p.instagram)it.push(ic(SVG_IG,p.instagram,'Instagram'));
+  if(p.facebook)it.push(ic(SVG_FB,p.facebook,'Facebook'));
+  if(p.x)it.push(ic(SVG_X,p.x,'X (Twitter)'));
+  if(p.website)it.push(ic(SVG_WEB,p.website,'Website'));
+  return it.length?('<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+it.join('')+'</div>')
+    :'<div style="color:var(--mut2);font-size:12px;margin-top:8px">No social profiles added yet.</div>';
+}
+function loadDealAgent(email,fallbackName){
+  var box=$('detAgent'); if(!box)return;
+  box.innerHTML='<div style="color:var(--mut);font-size:12.5px">Loading agent…</div>';
+  api('/api/pm/profile/'+encodeURIComponent(email)).then(function(j){
+    var p=(j&&j.profile)||{};
+    var vb=p.verified?' <span title="License verified" style="color:var(--acc);font-weight:700;font-size:12px">✓ Verified</span>':'';
+    var sub=[p.brokerage,p.markets].filter(Boolean).map(esc).join(' · ');
+    box.innerHTML='<div style="border:1px solid var(--line);background:var(--card2);border-radius:12px;padding:14px">'
+      +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:6px">Listing agent</div>'
+      +'<div style="font-weight:700;font-size:15px">'+esc(p.name||fallbackName||email)+vb+'</div>'
+      +(sub?'<div style="color:var(--mut);font-size:13px;margin-top:2px">'+sub+'</div>':'')
+      +socialLinks(p)
+      +'</div>';
+  }).catch(function(){box.innerHTML='';});
+}
+function openDetail(id){
+  var d=LISTINGS.find(function(x){return x.id===id;});if(!d)return;
+  var seeAddr=canSeeAddress(d),mine=isMine(d),intro=myIntro(id);
+  if(!mine)api('/api/pm/view/'+d.id,{});   // count the view for seller analytics
+  var rows=[['Asset type',esc(d.type||'—')],['Submarket',esc(d.submarket||'—')],['Asking price',moneyFull(d.price)],['Units',num(d.units)||'—'],['Cap rate',num(d.cap)?num(d.cap).toFixed(2)+'%':'—'],['NOI',moneyFull(d.noi)],['Square feet',num(d.sf)?Math.round(num(d.sf)).toLocaleString('en-US'):'—'],['Buyer-broker commission',num(d.commission)?num(d.commission).toFixed(1)+'%':'—'],['Distribution',{broad:'Broad',private:'Private (approval)',pocket:'Pocket'}[d.dist]||'Broad'],['Posted',ago(d.at)+(d.by?(' · by '+esc(d.by)):'')]];
+  var addrBlock = seeAddr
+    ? '<div class="reveal"><span style="color:var(--acc);vertical-align:-2px;margin-right:6px">'+addrIcon(true)+'</span><b>'+esc(d.addr||'(no address on file)')+'</b></div>'+(d.addr?mapEmbed(d.addr):'')
+    : '<div class="reveal" style="background:var(--card);border-color:var(--line2)"><span style="color:var(--gold);vertical-align:-2px;margin-right:6px">'+addrIcon(false)+'</span><b style="color:var(--gold)">Address hidden by the lister.</b> Message the agent to learn more about the deal.</div>';
+  var renewLbl='↻ Renew 30 days'+(PAYCFG.enabled?(' ($'+PAYCFG.prices.renew+')'):'');
+  var featBtn=PAYCFG.enabled?(d.featured?'<button class="btn ghost" disabled style="opacity:.6">★ Featured</button>':'<button class="btn acc" onclick="featureDeal(\''+d.id+'\')">★ Feature ($'+PAYCFG.prices.feature+')</button>'):'';
+  var cta = mine
+    ? (d.status==='mls'
+        ? '<button class="btn acc" onclick="markMLS(\''+d.id+'\',false)">Relist to network</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>'
+        : '<button class="btn ghost" onclick="renewDeal(\''+d.id+'\')">'+renewLbl+'</button>'+featBtn+'<button class="btn ghost" onclick="toggleOff(\''+d.id+'\')">'+(d.status==='off'?'Relist':'Take off-market')+'</button><button class="btn ghost" onclick="markMLS(\''+d.id+'\',true)">Moved to MLS</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>')
+    : '<button class="btn acc" onclick="openContact(\''+d.id+'\')">Contact agent</button><button class="btn ghost" onclick="mcFromDeal('+num(d.price)+')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="4" y="2.5" width="16" height="19" rx="2.2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8.5" y1="12" x2="8.5" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="15.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="8.5" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/></svg>Calc payment</button>';
+  var expBadge=d.expiresAt?('<div class="drow"><span>Expires</span><b class="mono">'+ago2(d.expiresAt)+'</b></div>'):'';
+  $('detailBody').innerHTML=
+    '<div class="mhead"><div><h3>'+esc(d.submarket||'Off-market deal')+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★ Featured</span>':'')+'</h3><div style="color:var(--acc2);font-weight:700;font-size:12.5px;margin-top:3px">'+esc(d.type||'')+' · '+money(d.price)+'</div></div><button class="x" onclick="close_(\'mDetail\')">×</button></div>'
+    +'<div class="mbody">'
+      +(d.status==='mls'?'<div class="reveal" style="background:var(--card);border-color:var(--gold)"><b style="color:var(--gold)">✓ Moved to the MLS'+(d.mlsAt?(' · '+new Date(d.mlsAt).toLocaleDateString()):'')+'.</b> This deal is now public and has been removed from the ACCESS feed.</div>':'')
+      +(d.desc?'<p style="color:var(--mut);font-size:14px;margin-bottom:12px">'+esc(d.desc)+'</p>':'')
+      +addrBlock
+      +docsBlock(d)
+      +rows.map(function(r){return '<div class="drow"><span>'+r[0]+'</span><b class="mono">'+r[1]+'</b></div>';}).join('')
+      +expBadge
+      +(mine?'<div id="detAnalytics" style="margin-top:14px"></div><div id="detMatch" style="margin-top:12px"></div>':'<div id="detAgent" style="margin-top:14px"></div>')
+      +'<div class="mact" style="margin-top:16px">'+cta+'</div>'
+    +'</div>';
+  open_('mDetail');
+  if(!mine && d.byEmail) loadDealAgent(d.byEmail, d.by);
+  if(mine){
+    api('/api/pm/analytics/'+d.id).then(function(j){var el=$('detAnalytics');if(!el||!j||!j.ok)return;var a=j.analytics||{};
+      el.innerHTML='<div class="reveal"><b style="color:var(--acc2)">📊 Deal analytics</b>'
+        +'<div class="drow"><span>Views</span><b class="mono">'+(a.views||0)+'</b></div>'
+        +'<div class="drow"><span>Unique viewers</span><b class="mono">'+(a.uniqueViewers||0)+'</b></div>'
+        +'<div class="drow"><span>Matching client needs</span><b class="mono">'+(a.matches||0)+'</b></div>'
+        +'<div class="drow"><span>Message threads</span><b class="mono">'+(a.messageThreads||0)+'</b></div>'
+        +'<div class="drow"><span>Days left</span><b class="mono">'+(a.daysLeft==null?'—':a.daysLeft+'d')+'</b></div></div>';
+    });
+    api('/api/pm/matches/'+d.id).then(function(j){ var el=$('detMatch'); if(!el||!j||!j.ok)return;
+    if(!j.count){ el.innerHTML='<div class="reveal" style="background:var(--card);border-color:var(--line2)">No client needs match this yet.</div>'; return; }
+    var who=(j.buyers||[]).slice(0,6).map(function(b){return '<div class="drow"><span>'+esc(b.ownerName||b.owner)+(b.markets?(' <span style="color:var(--mut2)">· '+esc(b.markets)+'</span>'):'')+'</span><button class="btn link" style="padding:2px 4px" onclick="close_(\'mDetail\');openThread(\''+esc(b.contact||b.owner)+'\',\''+esc(d.id)+'\')">Message</button></div>';}).join('');
+    el.innerHTML='<div class="reveal"><b style="color:var(--gold)">🎯 '+j.count+' client need'+(j.count===1?'':'s')+' match this deal.</b>'+who+'</div>';
+  }); }
+}
+
+/* ── intro request ── */
+var _introDeal=null;
+function openIntro(id){_introDeal=id;close_('mDetail');
+  $('detailBody');
+  // reuse buy modal? build a small inline intro modal
+  var d=LISTINGS.find(function(x){return x.id===id;});
+  $('mActivity');
+  var html='<div class="mhead"><h3>Request introduction</h3><button class="x" onclick="close_(\'mIntro\')">×</button></div>'
+    +'<div class="mbody"><p style="color:var(--mut);font-size:13.5px;margin-bottom:12px">The seller sees your name &amp; note and approves before the address and documents are shared. No spam.</p>'
+    +'<div class="f full"><label>Your name</label><input id="iName" value="'+esc(ME.name||'')+'"></div>'
+    +'<div class="f full"><label>Firm</label><input id="iFirm" placeholder="Company"></div>'
+    +'<div class="f full"><label>A note to the seller</label><textarea id="iMsg" rows="3" placeholder="Cash buyer, 1031, can close in 30 days. Interested in the numbers on this one."></textarea></div>'
+    +'<div class="mact"><span class="msg" id="iMsgS"></span><button class="btn ghost" onclick="close_(\'mIntro\')">Cancel</button><button class="btn acc" onclick="sendIntro()">Send request</button></div></div>';
+  var m=$('mIntro');if(!m){m=document.createElement('div');m.className='mbg';m.id='mIntro';m.onclick=function(e){if(e.target===m)close_('mIntro');};document.body.appendChild(m);}
+  m.innerHTML='<div class="modal">'+html+'</div>';open_('mIntro');
+}
+function sendIntro(){
+  var d=LISTINGS.find(function(x){return x.id===_introDeal;});if(!d)return;
+  var name=($('iName').value||ME.name||'').trim(),firm=($('iFirm').value||'').trim();
+  if(!name){$('iMsgS').textContent='Add your name.';return;}
+  var note=($('iMsg').value||'').trim();
+  $('iMsgS').textContent='Sending…';
+  api('/api/pm/intro',{listingId:d.id,buyerName:name+(firm?(' · '+firm):''),message:note}).then(function(j){
+    if(j&&j.ok){$('iMsgS').textContent=j.already?'Request already sent ✓':'Sent ✓';setTimeout(function(){close_('mIntro');loadAll();},700);}
+    else{$('iMsgS').textContent='Failed — retry';}
+  });
+}
+
+/* ── document upload (optional) ── */
+var SUBMIT_DOCS=[];
+function renderDocList(){
+  $('sDocList').innerHTML=SUBMIT_DOCS.map(function(d,i){return '<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--acc2)">📎 '+esc(d.name)+' <span style="cursor:pointer;color:var(--mut)" onclick="SUBMIT_DOCS.splice('+i+',1);renderDocList()">✕</span></div>';}).join('');
+}
+function uploadDocs(){
+  var inp=$('sDocs'),files=inp&&inp.files?Array.prototype.slice.call(inp.files):[];
+  if(!files.length)return;
+  $('sMsg').textContent='Uploading '+files.length+' file'+(files.length>1?'s':'')+'…';
+  var done=0;
+  files.forEach(function(f){
+    var rd=new FileReader();
+    rd.onload=function(){
+      var data=String(rd.result||'');
+      api('/api/pm/upload',{name:f.name,mime:f.type,size:f.size,data:data}).then(function(j){
+        done++;
+        if(j&&j.ok&&j.url)SUBMIT_DOCS.push({name:j.name||f.name,url:j.url});
+        renderDocList();
+        if(done===files.length){$('sMsg').textContent=SUBMIT_DOCS.length?'Documents attached ✓':'Upload failed';setTimeout(function(){$('sMsg').textContent='';},1500);}
+      });
+    };
+    rd.readAsDataURL(f);
+  });
+  inp.value='';
+}
+/* ── submit deal ── */
+function submitDeal(){
+  var body={address:($('sAddr').value||'').trim(),area:($('sSub').value||'').trim(),propType:$('sType').value,
+    ownerName:ME.name||(PROFILE&&PROFILE.name)||'',price:($('sPrice').value||'').trim(),commissionPct:($('sComm').value||'').trim(),
+    units:($('sUnits').value||'').trim(),capRate:($('sCap').value||'').trim(),noi:($('sNoi').value||'').trim(),
+    sqft:($('sSf').value||'').trim(),notes:($('sDesc').value||'').trim(),dist:$('sDist').value,status:'active',
+    hideAddress:$('sHideAddr').checked,docs:SUBMIT_DOCS};
+  if(!body.area){$('sMsg').textContent='Add a submarket.';return;}
+  if(!num(body.price)){$('sMsg').textContent='Add an asking price.';return;}
+  $('sMsg').textContent='Posting…';
+  api('/api/pm/listing',body).then(function(j){
+    if(j&&j.error==='not_approved'){$('sMsg').textContent='Your membership isn’t approved yet.';return;}
+    $('sMsg').textContent=(j&&j.ok)?'Posted ✓':'Failed — retry';
+    if(j&&j.ok){['sAddr','sSub','sPrice','sComm','sUnits','sCap','sNoi','sSf','sDesc'].forEach(function(id){$(id).value='';});
+      $('sHideAddr').checked=false;SUBMIT_DOCS=[];renderDocList();
+      loadAll();setTimeout(function(){close_('mSubmit');$('sMsg').textContent='';},800);}
+  });
+}
+function markMLS(id,on){
+  if(on&&!confirm('Mark this deal as moved to the MLS?\n\nIt will be removed from the ACCESS feed and members can no longer contact you about it here. You can relist it later from “My activity.”'))return;
+  api('/api/pm/listing/mls',{id:id,on:on}).then(function(j){
+    if(j&&j.ok){close_('mDetail');loadAll();}
+    else alert((j&&j.error)||'Could not update — try again.');
+  });
+}
+function toggleOff(id){var d=LISTINGS.find(function(x){return x.id===id;});if(!d)return;
+  api('/api/pm/listing',{id:id,status:(d.status==='off'?'active':'off'),
+    address:d.addr,area:d.area,city:d.city,state:d.state,zip:d.zip,ownerName:d.by,propType:d.type,dist:d.dist,
+    price:d.price,commissionPct:d.commission,commissionNotes:d.commNotes,units:d.units,capRate:d.cap,noi:d.noi,
+    sqft:d.sf,grossIncome:d.gross,expenses:d.exp,beds:d.beds,baths:d.baths,yearBuilt:d.yb,notes:d.desc
+  }).then(function(){close_('mDetail');loadAll();});
+}
+function delDeal(id){if(!confirm('Delete this deal permanently?'))return;
+  api('/api/pm/listing/delete',{id:id}).then(function(){close_('mDetail');loadAll();});
+}
+function ago2(iso){try{var s=(new Date(iso)-Date.now())/1000;if(s<=0)return 'expired';if(s<86400)return 'in '+Math.max(1,Math.round(s/3600))+'h';return 'in '+Math.round(s/86400)+'d';}catch(e){return '';}}
+function renewDeal(id){
+  if(PAYCFG.enabled){ return payCheckout('renew',id); }        // paid renew via Stripe
+  api('/api/pm/renew',{id:id}).then(function(j){                // free fallback until Stripe is on
+    if(j&&j.ok){loadAll();openDetail(id);}
+    else{alert('Could not renew — try again.');}
+  });
+}
+function featureDeal(id){ if(PAYCFG.enabled) payCheckout('feature',id); }
+function payCheckout(kind,id){
+  api('/api/pm/checkout',{kind:kind,listingId:id}).then(function(j){
+    if(j&&j.ok&&j.url){ location.href=j.url; }
+    else if(j&&j.error==='not_configured'){ alert('Payments aren’t switched on yet.'); }
+    else { alert('Could not start checkout — try again.'); }
+  });
+}
+// Returning from Stripe checkout (?paid=SESSION): verify + apply, then clean the URL.
+function payReturn(){
+  var m=/[?&]paid=([^&]+)/.exec(location.search); if(!m) return;
+  var sid=decodeURIComponent(m[1]);
+  api('/api/pm/pay/confirm?session_id='+encodeURIComponent(sid)).then(function(j){
+    try{ history.replaceState(null,'',location.pathname); }catch(e){}
+    if(j&&j.ok){ var msg=j.kind==='feature'?'Deal featured ✓':j.kind==='membership'?'Membership active ✓':'Deal renewed ✓'; setTimeout(function(){alert(msg);},200); loadAll(); }
+    else if(j&&j.error==='unpaid'){ /* payment not completed */ }
+  });
+}
+
+/* ── member profile ── */
+function openProfile(){
+  var p=PROFILE||{};
+  var stat=p.status==='approved'?'<span class="pill appr">Approved</span>':p.status==='rejected'?'<span class="pill dec">Not approved</span>':(ME.role==='member'?'<span class="pill req">Pending review</span>':'<span class="pill appr">Hub member</span>');
+  $('mProfile').innerHTML='<div class="modal"><div class="mhead"><div><h3>My profile</h3><div style="margin-top:4px">'+stat+'</div></div><button class="x" onclick="close_(\'mProfile\')">×</button></div><div class="mbody">'
+    +'<p style="color:var(--mut);font-size:13px;margin-bottom:12px">License number and brokerage are required to be approved to post and message.</p>'
+    +'<div class="fgrid">'
+    +'<div class="f"><label>Full name</label><input id="pName" value="'+esc(p.name||ME.name||'')+'"></div>'
+    +'<div class="f"><label>Phone</label><input id="pPhone" value="'+esc(p.phone||'')+'"></div>'
+    +'<div class="f"><label>License # <span style="color:var(--gold)">*</span></label><input id="pLicense" value="'+esc(p.license||'')+'"></div>'
+    +'<div class="f"><label>Brokerage <span style="color:var(--gold)">*</span></label><input id="pBrokerage" value="'+esc(p.brokerage||'')+'"></div>'
+    +'</div>'
+    +'<div class="f full"><label>Markets you cover</label><input id="pMarkets" value="'+esc(p.markets||'')+'" placeholder="e.g. South Boston, Dorchester, Quincy"></div>'
+    +'<div class="f full"><label>Short bio</label><textarea id="pBio" rows="3" placeholder="Investment sales, 8 years, multifamily specialist…">'+esc(p.bio||'')+'</textarea></div>'
+    +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:6px 0 2px">Social profiles <span style="text-transform:none;letter-spacing:0">— shown on your deals so members can see you\'re legit</span></div>'
+    +'<div class="fgrid">'
+    +'<div class="f"><label>LinkedIn</label><input id="pLinkedin" value="'+esc(p.linkedin||'')+'" placeholder="URL or username"></div>'
+    +'<div class="f"><label>Instagram</label><input id="pInstagram" value="'+esc(p.instagram||'')+'" placeholder="@handle or URL"></div>'
+    +'<div class="f"><label>Facebook</label><input id="pFacebook" value="'+esc(p.facebook||'')+'" placeholder="URL or username"></div>'
+    +'<div class="f"><label>X (Twitter)</label><input id="pX" value="'+esc(p.x||'')+'" placeholder="@handle or URL"></div>'
+    +'</div>'
+    +'<div class="f full"><label>Website</label><input id="pWebsite" value="'+esc(p.website||'')+'" placeholder="yourbrokerage.com"></div>'
+    +'<div class="mact"><span class="msg" id="pMsg"></span><button class="btn ghost" onclick="close_(\'mProfile\')">Cancel</button><button class="btn acc" onclick="saveProfile()">Save profile</button></div></div></div>';
+  open_('mProfile');
+}
+function saveProfile(){
+  var gv=function(id){var el=$(id);return el?(el.value||'').trim():'';};
+  var body={name:gv('pName'),phone:gv('pPhone'),license:gv('pLicense'),
+    brokerage:gv('pBrokerage'),markets:gv('pMarkets'),bio:gv('pBio'),
+    linkedin:gv('pLinkedin'),instagram:gv('pInstagram'),facebook:gv('pFacebook'),x:gv('pX'),website:gv('pWebsite')};
+  if(!body.license||!body.brokerage){$('pMsg').textContent='License # and brokerage are required.';return;}
+  $('pMsg').textContent='Saving…';
+  api('/api/pm/profile',body).then(function(j){
+    if(j&&j.ok){PROFILE=j.profile;APPROVED=(j.approved!==false);$('pMsg').textContent='Saved ✓';renderGate();setTimeout(function(){close_('mProfile');},700);}
+    else{$('pMsg').textContent='Failed — retry';}
+  });
+}
+
+/* ── admin panel (owner) ── */
+function openAdmin(){
+  Promise.all([api('/api/pm/admin/members'),api('/api/pm/feed'),api('/api/pm/admin/requests')]).then(function(r){
+    var mj=r[0]||{},fj=r[1]||{},rj=r[2]||{};var members=(mj&&mj.members)||[];var deals=(fj.listings||[]).map(nL).filter(Boolean);var requests=(rj&&rj.requests)||[];
+    var reqRows=requests.length?requests.map(function(q){
+      var badge=q.status==='approved'?'<span class="pill appr">Approved</span>':q.status==='denied'?'<span class="pill dec">Denied</span>':'<span class="pill req">Pending</span>';
+      var act=q.status==='pending'?('<button class="btn acc sm" onclick="adminReq(\''+q.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="adminReq(\''+q.id+'\',\'denied\')">Deny</button>'):'';
+      return '<div class="reqrow"><div class="grow"><b>'+esc(q.name||q.email)+'</b> '+badge+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">Lic '+esc(q.license||'—')+' · '+esc(q.brokerage||'—')+(q.markets?(' · '+esc(q.markets)):'')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(q.email)+(q.phone?(' · '+esc(q.phone)):'')+(q.note?(' · “'+esc(q.note)+'”'):'')+'</div></div>'+act+'</div>';
+    }).join(''):'<div class="empty">No access requests yet.</div>';
+    var memRows=members.length?members.map(function(m){
+      var badge=m.status==='approved'?'<span class="pill appr">Approved</span>':m.status==='rejected'?'<span class="pill dec">Rejected</span>':'<span class="pill req">Pending</span>';
+      var act=m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+esc(m.email)+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\'rejected\')">Reject</button>')
+        :('<button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke':'Approve')+'</button>');
+      return '<div class="reqrow"><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">Lic '+esc(m.license||'—')+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+'</div></div>'+act+'</div>';
+    }).join(''):'<div class="empty">No members yet.</div>';
+    var dealRows=deals.length?deals.slice(0,40).map(function(d){
+      return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+money(d.price)+' · '+esc(d.by||d.byEmail)+'</span>'+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★</span>':'')+(d.expired?' <span class="pill dec">Expired</span>':'')+(d.status==='mls'?' <span class="pill dec">On MLS</span>':'')+'</div><button class="btn '+(d.featured?'ghost':'acc')+' sm" onclick="adminFeature(\''+d.id+'\','+(!d.featured)+')">'+(d.featured?'Unfeature':'Feature')+'</button></div>';
+    }).join(''):'<div class="empty">No deals.</div>';
+    $('mAdmin').innerHTML='<div class="modal wide"><div class="mhead"><h3>Admin</h3><button class="x" onclick="close_(\'mAdmin\')">×</button></div><div class="mbody">'
+      +'<div class="tabs"><span class="tab on" onclick="admTab(\'r\')" id="admTabR">Requests'+((rj.pending)?(' <span class="pill req">'+rj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'m\')" id="admTabM">Members'+((mj.pending)?(' <span class="pill req">'+mj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'d\')" id="admTabD">Deals</span></div>'
+      +'<div id="admRequests">'+reqRows+'</div><div id="admMembers" style="display:none">'+memRows+'</div><div id="admDeals" style="display:none">'+dealRows+'</div>'
+      +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
+        +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Sample data (preview only)</div>'
+        +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn acc sm" onclick="adminSeed(\'load\')">Load sample data</button><button class="btn ghost sm" onclick="adminSeed(\'clear\')">Clear sample data</button><span id="seedMsg" style="font-size:12.5px;color:var(--mut)"></span></div>'
+        +'<div style="color:var(--mut2);font-size:11.5px;margin-top:6px">Loads demo deals, members &amp; client-needs so you can see the site populated and check the totals. Clear before real launch.</div>'
+      +'</div>'
+      +'</div></div>';
+    open_('mAdmin');
+  });
+}
+function admTab(t){$('admRequests').style.display=t==='r'?'':'none';$('admMembers').style.display=t==='m'?'':'none';$('admDeals').style.display=t==='d'?'':'none';$('admTabR').classList.toggle('on',t==='r');$('admTabM').classList.toggle('on',t==='m');$('admTabD').classList.toggle('on',t==='d');}
+function adminReq(id,decision){api('/api/pm/admin/request/decide',{id:id,decision:decision}).then(function(){openAdmin();loadAdminDot();});}
+function adminApprove(email,status){api('/api/pm/admin/approve',{email:email,status:status}).then(function(){openAdmin();loadAdminDot();});}
+function adminFeature(id,on){api('/api/pm/admin/feature',{id:id,featured:on}).then(function(){openAdmin();loadAll();});}
+function adminSeed(mode){
+  var m=$('seedMsg'); if(m){m.style.color='var(--mut)';m.textContent=(mode==='clear'?'Clearing…':'Loading…');}
+  api('/api/pm/seed',{mode:mode}).then(function(j){
+    if(j&&j.ok){
+      if(m){m.style.color='var(--acc)';m.textContent=mode==='clear'?'Cleared ✓':('Loaded ✓ — '+(j.loaded?(j.loaded.listings+' deals · '+j.loaded.members+' members · '+j.loaded.clientNeeds+' needs'):''));}
+      loadAll(); setTimeout(openAdmin,700);
+    } else if(m){m.style.color='var(--bad)';m.textContent=(j&&j.error)||'Failed — try again.';}
+  });
+}
+
+/* ── member directory ── */
+var DIRLIST=[];
+function openReferral(){
+  api('/api/pm/referral').then(function(j){
+    if(!j||!j.ok){alert('Couldn’t load your referral link right now — try again in a moment.');return;}
+    var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');};
+    var stat=function(v,l){return '<div style="flex:1;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:12px 10px;text-align:center"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;color:var(--tx)">'+(v||0)+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-top:3px">'+l+'</div></div>';};
+    var refd=(j.referred||[]).map(function(e){return '<div style="font-size:12.5px;color:var(--mut);padding:5px 0;border-bottom:1px solid var(--line)">'+esc(e)+'</div>';}).join('');
+    $('mReferral').innerHTML='<div class="modal">'
+      +'<div class="mhead"><div><h3>Refer &amp; earn</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Invite agents you trust. Each approved member is <b>1 free month</b> for you.</div></div><button class="x" onclick="close_(\'mReferral\')">×</button></div>'
+      +'<div class="mbody">'
+        +'<div style="display:flex;gap:10px;margin-bottom:16px">'+stat(j.approved,'Joined')+stat(j.pending,'Pending')+stat(j.credits,'Free months')+'</div>'
+        +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:6px">Your invite link</div>'
+        +'<div style="display:flex;gap:8px"><input id="refLink" readonly value="'+esc(j.link)+'" onclick="this.select()" style="flex:1;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:10px 12px;font:inherit;font-size:13px"><button class="btn acc sm" onclick="copyRef()">Copy</button></div>'
+        +'<div id="refCopied" style="display:none;color:var(--acc);font-size:12px;font-weight:600;margin-top:7px">Copied ✓</div>'
+        +'<p style="color:var(--mut);font-size:12px;line-height:1.5;margin-top:14px">Share it by text or email. When an agent requests access through your link and gets approved, you earn a free month — applied when membership billing begins.</p>'
+        +(refd?('<div style="margin-top:12px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:4px">Agents you\'ve brought in</div>'+refd+'</div>'):'')
+      +'</div></div>';
+    open_('mReferral');
+  });
+}
+function copyRef(){var i=$('refLink');if(!i)return;try{i.select();document.execCommand('copy');}catch(e){}if(navigator.clipboard){navigator.clipboard.writeText(i.value).catch(function(){});}var c=$('refCopied');if(c)c.style.display='block';}
+function openDirectory(){
+  api('/api/pm/directory').then(function(j){
+    if(j&&j.error==='not_approved'){alert('The member directory unlocks once your membership is approved.');return;}
+    DIRLIST=(j&&j.members)||[];
+    var owner=ME.role==='owner';
+    $('mDirectory').innerHTML='<div class="modal wide">'
+      +'<div class="mhead"><div><h3>Member directory <span style="color:var(--mut);font-size:13px;font-weight:600">'+DIRLIST.length+'</span></h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Vetted ACCESS agents — search and reach out directly.</div></div><button class="x" onclick="close_(\'mDirectory\')">×</button></div>'
+      +'<div class="mbody"><div style="display:flex;gap:8px;margin-bottom:14px"><input id="dirSearch" placeholder="Search name, brokerage, market…" oninput="renderDirList(this.value)" style="flex:1;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:9px 12px;font:inherit;font-size:13.5px">'+(owner?'<button class="btn ghost sm" onclick="exportDirectory()" title="Download member list">⬇ Export CSV</button>':'')+'</div><div id="dirList"></div></div></div>';
+    renderDirList(''); open_('mDirectory');
+  });
+}
+function dirCard(m){
+  var me=String(ME.email||'').toLowerCase(), isMe=String(m.email||'').toLowerCase()===me;
+  var contact=[]; if(m.email)contact.push(esc(m.email)); if(m.phone)contact.push(esc(m.phone));
+  var lic=(ME.role==='owner'&&m.license)?(' · Lic '+esc(m.license)):'';
+  return '<div class="reqrow"><div style="width:36px;height:36px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12.5px;flex:none">'+esc(initials(m.name||m.email))+'</div>'
+    +'<div class="grow"><b>'+esc(m.name||m.email)+'</b> <span style="color:var(--mut);font-size:12.5px">'+esc(m.brokerage||'')+lic+'</span>'
+    +(m.markets?('<div style="color:var(--mut);font-size:12px;margin-top:2px">'+esc(m.markets)+'</div>'):'')
+    +'<div style="color:var(--mut2);font-size:11.5px;margin-top:2px">'+contact.join(' · ')+(contact.length?' · ':'')+m.deals+' deal'+(m.deals===1?'':'s')+'</div></div>'
+    +(isMe?'<span class="pill appr">You</span>':'<button class="btn ghost sm" onclick="close_(\'mDirectory\');openThread(\''+esc(m.email)+'\',\'\')">Message</button>')
+    +'</div>';
+}
+function renderDirList(q){
+  q=(q||'').toLowerCase();
+  var list=DIRLIST.filter(function(m){return !q||((m.name+' '+m.brokerage+' '+m.markets+' '+m.email).toLowerCase().indexOf(q)>=0);});
+  var el=$('dirList'); if(el)el.innerHTML=list.length?list.map(dirCard).join(''):'<div class="empty" style="padding:30px">No members match “'+esc(q)+'”.</div>';
+}
+function exportDirectory(){
+  var rows=[['Name','Email','Phone','Brokerage','License','Markets','Deals','Joined']];
+  DIRLIST.forEach(function(m){rows.push([m.name,m.email,m.phone,m.brokerage,m.license,m.markets,m.deals,m.joined]);});
+  var csv=rows.map(function(r){return r.map(function(c){c=String(c==null?'':c);return /[",\n]/.test(c)?('"'+c.replace(/"/g,'""')+'"'):c;}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='doors-members.csv';document.body.appendChild(a);a.click();a.remove();
+}
+
+/* ── buy box ── */
+function submitBuyBox(){
+  var name=($('bName').value||ME.name||'').trim();
+  if(!name){$('bMsg').textContent='Add your name.';return;}
+  var body={markets:($('bSubs').value||'').trim(),propType:($('bTypes').value||'').trim(),
+    minPrice:($('bMin').value||'').trim(),maxPrice:($('bMax').value||'').trim(),
+    notes:($('bNotes').value||'').trim(),contact:($('bFirm').value||'').trim()||ME.email};
+  $('bMsg').textContent='Posting…';
+  api('/api/pm/buybox',body).then(function(j){
+    $('bMsg').textContent=(j&&j.ok)?'Saved ✓':'Failed — retry';
+    if(j&&j.ok){BUYBOX=j.buybox||BUYBOX;renderStats();setTimeout(function(){close_('mBuy');$('bMsg').textContent='';},800);}
+  });
+}
+
+/* ── activity ── */
+function updateReqDot(){var pending=INBOUND.some(function(x){return x.status==='pending';});$('reqDot').style.display=pending?'':'none';}
+function openActivity(){ACTTAB='mydeals';renderActivity();open_('mActivity');}
+function pill(s){return '<span class="pill '+(s==='approved'?'appr':s==='declined'?'dec':'req')+'">'+(s==='approved'?'Approved':s==='declined'?'Declined':'Pending')+'</span>';}
+function renderActivity(){
+  var tabs=[['mydeals','My deals'],['requests','Intro requests'],['sent','My requests'],['buybox','My client needs']];
+  $('actTabs').innerHTML=tabs.map(function(t){return '<span class="tab'+(ACTTAB===t[0]?' on':'')+'" onclick="ACTTAB=\''+t[0]+'\';renderActivity()">'+t[1]+'</span>';}).join('');
+  var b=$('actBody'),h='';
+  if(ACTTAB==='mydeals'){
+    var mine=LISTINGS.filter(isMine);
+    h=mine.length?mine.map(function(d){var reqs=INBOUND.filter(function(x){return x.listingId===d.id&&x.status==='pending';}).length;return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+'</span>'+(d.status==='off'?' <span class="pill dec">Off-market</span>':'')+(d.status==='mls'?' <span class="pill dec" style="background:var(--gold);color:var(--bg)">Moved to MLS</span>':'')+(reqs?(' <span class="pill req">'+reqs+' pending intro'+(reqs>1?'s':'')+'</span>'):'')+'</div><button class="btn ghost sm" onclick="openDetail(\''+d.id+'\')">Open</button></div>';}).join(''):'<div class="empty">You haven\'t posted a deal yet.</div>';
+  } else if(ACTTAB==='requests'){
+    h=INBOUND.length?INBOUND.map(function(x){var sub=x.listing?(x.listing.area||x.listing.city||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(x.buyerName||x.buyer||'Buyer')+'</b> '+pill(x.status)+'<div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(sub)+' · '+esc(x.message||'(no note)')+'</div></div>'+(x.status==='pending'?'<button class="btn acc sm" onclick="setIntro(\''+x.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="setIntro(\''+x.id+'\',\'declined\')">Decline</button>':'<span style="color:var(--mut);font-size:12px">'+esc(x.buyer||'')+'</span>')+'</div>';}).join(''):'<div class="empty">No introduction requests yet.</div>';
+  } else if(ACTTAB==='sent'){
+    h=SENT.length?SENT.map(function(x){var l=x.listing?nL(x.listing):null;var sub=l?(l.submarket||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(sub||'Deal')+'</b> <span style="color:var(--mut)">· '+(l?money(l.price):'')+'</span> '+pill(x.status)+(x.status==='approved'&&l&&l.addr?('<div style="color:var(--acc2);font-size:13px;margin-top:4px">📍 '+esc(l.addr)+'</div>'):'')+'</div>'+(l?'<button class="btn ghost sm" onclick="openDetail(\''+l.id+'\')">Open</button>':'')+'</div>';}).join(''):'<div class="empty">You haven\'t requested any introductions yet.</div>';
+  } else {
+    var x=BUYBOX;
+    h=x?('<div class="reqrow"><div class="grow"><b>'+esc(x.propType||'Any type')+'</b> <span style="color:var(--mut)">· '+money(x.minPrice)+'–'+money(x.maxPrice)+'</span><div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(x.markets||'')+(x.notes?(' · '+esc(x.notes)):'')+'</div></div><button class="btn ghost sm" onclick="close_(\'mActivity\');openBuyBox()">Edit</button></div>'):'<div class="empty">No client needs posted yet. <button class="btn link" onclick="close_(\'mActivity\');openBuyBox()">Post one →</button></div>';
+    if(x){
+      h+='<div class="shead" style="margin:16px 0 6px"><h2 style="font-size:15px">Live deals matching your clients\' needs <span style="color:var(--gold)">'+BBMATCHES.length+'</span></h2></div>';
+      h+=BBMATCHES.length?BBMATCHES.map(function(d){return '<div class="reqrow" style="cursor:pointer" onclick="close_(\'mActivity\');openDetail(\''+d.id+'\')"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+(num(d.cap)?(' · '+num(d.cap).toFixed(1)+'% cap'):'')+'</span></div><span style="color:var(--acc2);font-size:12px">View →</span></div>';}).join(''):'<div class="empty" style="padding:16px">No live deals match yet — you\'ll get an alert the moment one is posted.</div>';
+    }
+  }
+  b.innerHTML=h;
+}
+function setIntro(id,status){api('/api/pm/intro/decide',{introId:id,decision:status}).then(function(){loadAll();setTimeout(renderActivity,300);});}
+
+/* ── messaging (TAN-style member-to-member conversations) ── */
+var THREADS=[];
+function loadThreads(cb){api('/api/pm/threads').then(function(j){THREADS=(j&&j.threads)||[];updateMsgDot();cb&&cb();});}
+function updateMsgDot(){var un=THREADS.some(function(t){return t.unread>0;});var d=$('msgDot');if(d)d.style.display=un?'':'none';}
+function openMsgs(){loadThreads(function(){renderThreads();open_('mMsgs');});}
+function renderThreads(){
+  var body=THREADS.length?THREADS.map(function(t){
+    var sub=t.listing?(esc(t.listing.area||'Deal')+' · '+money(t.listing.price)):'Direct message';
+    return '<div class="reqrow" style="cursor:pointer" onclick="openThread(\''+esc(t.other)+'\',\''+esc(t.listingId||'')+'\')"><div class="grow"><b>'+esc(t.otherName||t.other)+'</b>'+(t.unread?' <span class="pill req">'+t.unread+' new</span>':'')+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+sub+' — '+esc((t.last||'').slice(0,64))+'</div></div><span style="color:var(--mut2);font-size:12px">'+ago(t.at)+'</span></div>';
+  }).join(''):'<div class="empty">No messages yet. Open a deal and <b>Contact agent</b> to start a conversation.</div>';
+  $('mMsgs').innerHTML='<div class="modal wide"><div class="mhead"><h3>Messages</h3><button class="x" onclick="close_(\'mMsgs\')">×</button></div><div class="mbody">'+body+'</div></div>';
+}
+function openThread(other,listingId){
+  api('/api/pm/thread?with='+encodeURIComponent(other)+(listingId?('&listingId='+encodeURIComponent(listingId)):'')).then(function(j){
+    var msgs=(j&&j.messages)||[];
+    var rows=msgs.map(function(m){
+      return '<div style="display:flex;justify-content:'+(m.mine?'flex-end':'flex-start')+';margin:6px 0"><div style="max-width:78%;background:'+(m.mine?'var(--acc)':'var(--card2)')+';color:'+(m.mine?'var(--bg)':'var(--tx)')+';border:1px solid var(--line2);border-radius:12px;padding:8px 12px;font-size:14px;line-height:1.45">'+(m.mine?'':'<div style="font-size:11px;font-weight:700;color:var(--mut2);margin-bottom:2px">'+esc(m.fromName||m.from)+'</div>')+esc(m.body)+'</div></div>';
+    }).join('')||'<div class="empty" style="padding:24px">No messages yet — say hello.</div>';
+    $('mMsgs').innerHTML='<div class="modal wide"><div class="mhead"><div><h3 style="font-size:16px">'+esc(other)+'</h3></div><button class="x" onclick="openMsgs()" title="Back">←</button></div><div class="mbody"><div id="thBody" style="max-height:46vh;overflow:auto;padding:2px">'+rows+'</div><div style="display:flex;gap:8px;margin-top:12px"><input id="thInput" placeholder="Write a message…" style="flex:1;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:11px 12px;font:inherit;font-size:14px" onkeydown="if(event.key===\'Enter\')sendThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\')"><button class="btn acc" onclick="sendThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\')">Send</button></div></div></div>';
+    open_('mMsgs');var tb=$('thBody');if(tb)tb.scrollTop=tb.scrollHeight;
+  });
+}
+function sendThread(other,listingId){var el=$('thInput'),v=el?(el.value||'').trim():'';if(!v)return;el.value='';
+  api('/api/pm/message',{to:other,listingId:listingId,body:v}).then(function(){openThread(other,listingId);loadThreads(function(){});});
+}
+function openContact(id){
+  var d=LISTINGS.find(function(x){return x.id===id;});if(!d)return;close_('mDetail');
+  $('mContact').innerHTML='<div class="modal"><div class="mhead"><h3>Contact agent</h3><button class="x" onclick="close_(\'mContact\')">×</button></div><div class="mbody">'
+    +'<p style="color:var(--mut);font-size:13.5px;margin-bottom:12px">Message the agent about <b>'+esc(d.submarket||'this deal')+' · '+money(d.price)+'</b>. Trade contact info and take it from there — no gatekeeping.</p>'
+    +'<div class="f full"><label>Message</label><textarea id="ctBody" rows="4" placeholder="Hi — interested in this one. Can you send the setup / OM and rent roll?"></textarea></div>'
+    +'<div class="mact"><span class="msg" id="ctMsg"></span><button class="btn ghost" onclick="close_(\'mContact\')">Cancel</button><button class="btn acc" onclick="sendContact(\''+d.id+'\',\''+esc(d.byEmail)+'\')">Send message</button></div></div></div>';
+  open_('mContact');
+}
+function sendContact(listingId,toEmail){
+  var body=($('ctBody').value||'').trim();if(!body){$('ctMsg').textContent='Write a message.';return;}
+  $('ctMsg').textContent='Sending…';
+  api('/api/pm/message',{to:toEmail,listingId:listingId,body:body}).then(function(j){
+    if(j&&j.ok){$('ctMsg').textContent='Sent ✓';setTimeout(function(){close_('mContact');openThread(toEmail,listingId);},600);}
+    else{$('ctMsg').textContent=(j&&j.error==='cannot_message_self')?'That’s your own deal.':'Failed — retry';}
+  });
+}
+
+/* ── alerts / notifications (the bell) ── */
+var NOTIFS=[];
+function loadNotifs(cb){api('/api/pm/notifs').then(function(j){NOTIFS=(j&&j.notifs)||[];var un=(j&&j.unread)||0;var b=$('notifBadge');if(b){b.style.display=un?'':'none';b.textContent=un;}cb&&cb();});}
+function openNotifs(){loadNotifs(function(){
+  var body=NOTIFS.length?NOTIFS.map(function(n){return '<div class="reqrow"'+(n.listingId?(' style="cursor:pointer" onclick="close_(\'mNotifs\');openDetail(\''+esc(n.listingId)+'\')"'):'')+'><div class="grow"><b'+(n.read?'':' style="color:var(--gold)"')+'>'+esc(n.text)+'</b><div style="color:var(--mut2);font-size:12px;margin-top:2px">'+ago(n.at)+'</div></div></div>';}).join(''):'<div class="empty">No alerts yet. When a new deal matches a client need you posted, it shows up here.</div>';
+  $('mNotifs').innerHTML='<div class="modal wide"><div class="mhead"><h3>Alerts</h3><button class="x" onclick="close_(\'mNotifs\')">×</button></div><div class="mbody">'+body+'</div></div>';
+  open_('mNotifs');
+  api('/api/pm/notifs/read',{}).then(function(){var b=$('notifBadge');if(b)b.style.display='none';});
+});}
+
+/* ── market pulse ── */
+function openMarket(){api('/api/pm/market').then(function(j){var m=(j&&j.market)||{};
+  function stat(v,k){return '<div style="background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:15px 16px"><div style="font-family:\'Big Shoulders Display\',system-ui,sans-serif;font-size:25px;font-weight:800">'+v+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-top:3px">'+k+'</div></div>';}
+  var areas=m.byArea||{};var areaRows=Object.keys(areas).sort(function(a,b){return areas[b]-areas[a];}).slice(0,8).map(function(a){return '<div class="drow"><span>'+esc(a)+'</span><b>'+areas[a]+'</b></div>';}).join('')||'<div style="color:var(--mut);font-size:13px">No live deals yet.</div>';
+  var recent=(m.recent||[]).map(function(r){return '<div class="reqrow" style="cursor:pointer" onclick="close_(\'mMarket\');openDetail(\''+esc(r.id)+'\')"><div class="grow"><b>'+esc(r.area||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(r.propType||'')+' · '+money(r.price)+'</span></div><span style="color:var(--mut2);font-size:12px">'+ago(r.createdAt)+'</span></div>';}).join('')||'<div class="empty">No deals yet.</div>';
+  $('mMarket').innerHTML='<div class="modal wide"><div class="mhead"><h3>Market pulse</h3><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody">'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px">'
+    +stat(m.liveDeals||0,'Live deals')+stat(money(m.totalValue||0),'Total value')+stat(m.buyboxes||0,'Client needs')
+    +stat((m.avgCommission||0).toFixed(1)+'%','Avg commission')+stat((m.avgCap||0).toFixed(1)+'%','Avg cap rate')+stat(m.offMarket||0,'Off-market')
+    +'</div>'
+    +'<div class="shead" style="margin:6px 0 6px"><h2 style="font-size:15px">By submarket</h2></div>'+areaRows
+    +'<div class="shead" style="margin:18px 0 6px"><h2 style="font-size:15px">Newest deals</h2></div>'+recent
+    +'</div></div>';
+  open_('mMarket');
+});}
+
+/* ── broadcast board ── */
+function openBoard(){api('/api/pm/broadcasts').then(function(j){var bs=(j&&j.broadcasts)||[];
+  var posts=bs.length?bs.map(function(b){return '<div class="reqrow" style="align-items:flex-start"><div class="grow"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em">'+esc(b.category||'Misc')+'</div><b style="display:block;margin:2px 0">'+esc(b.title||'(no title)')+'</b><div style="color:var(--mut);font-size:13px;white-space:pre-wrap">'+esc((b.body||'').slice(0,600))+'</div><div style="color:var(--mut2);font-size:12px;margin-top:6px">'+esc(b.fromName||b.from)+' · '+ago(b.at)+'</div></div></div>';}).join(''):'<div class="empty">No posts yet. Start the board — post an ISO, an off-market list, or an announcement.</div>';
+  $('mBoard').innerHTML='<div class="modal wide"><div class="mhead"><h3>Board</h3><button class="x" onclick="close_(\'mBoard\')">×</button></div><div class="mbody">'
+    +'<div style="border:1px solid var(--line2);border-radius:12px;padding:12px;margin-bottom:16px">'
+    +'<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><select id="bcCat" style="background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:8px 10px;font:inherit;font-size:13px"><option>ISO — buyer looking</option><option>Off-market list</option><option>Announcement</option><option>Misc</option></select><input id="bcTitle" placeholder="Title" style="flex:1;min-width:160px;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:8px 10px;font:inherit;font-size:13px"></div>'
+    +'<textarea id="bcBody" rows="2" placeholder="Post to the whole network…" style="width:100%;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:9px 10px;font:inherit;font-size:14px"></textarea>'
+    +'<div style="display:flex;align-items:center;margin-top:8px"><span class="msg" id="bcMsg" style="margin-right:auto"></span><button class="btn acc sm" onclick="postBroadcast()">Post to board</button></div></div>'
+    +posts+'</div></div>';
+  open_('mBoard');
+});}
+function postBroadcast(){var cat=$('bcCat').value,title=($('bcTitle').value||'').trim(),body=($('bcBody').value||'').trim();
+  if(!title&&!body){$('bcMsg').textContent='Add a title or message.';return;}
+  $('bcMsg').textContent='Posting…';
+  api('/api/pm/broadcast',{category:cat,title:title,body:body}).then(function(j){if(j&&j.ok){openBoard();}else{$('bcMsg').textContent='Failed — retry';}});
+}
+
+/* ── modal open/close ── */
+function open_(id){$(id).classList.add('on');document.body.classList.add('mlock');}
+function close_(id){var m=$(id);if(m)m.classList.remove('on');if(!document.querySelector('.mbg.on'))document.body.classList.remove('mlock');}
+function openSubmit(){fillFilters();open_('mSubmit');}
+function openBuyBox(){
+  if(!$('bName').value)$('bName').value=ME.name||'';
+  if(BUYBOX){$('bFirm').value=BUYBOX.contact||'';$('bMin').value=BUYBOX.minPrice||'';$('bMax').value=BUYBOX.maxPrice||'';$('bTypes').value=BUYBOX.propType||'';$('bSubs').value=BUYBOX.markets||'';$('bNotes').value=BUYBOX.notes||'';}
+  open_('mBuy');
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){['mSubmit','mBuy','mDetail','mActivity','mIntro','mMsgs','mContact','mNotifs','mMarket','mBoard','mProfile','mAdmin','mDirectory'].forEach(close_);mcClose();close_acct();}});
+
+/* ── account menu ── */
+function toggleAcct(e){if(e)e.stopPropagation();$('acct').classList.toggle('on');}
+function close_acct(){var a=$('acct');if(a)a.classList.remove('on');}
+document.addEventListener('click',function(e){var a=$('acct');if(a&&!a.contains(e.target))a.classList.remove('on');
+  var p=$('mcPanel');if(p&&p.classList.contains('on')&&!p.contains(e.target)&&!(e.target.closest&&e.target.closest('.nlink.ico')))mcClose();});
+
+/* ── mortgage calculator (nav-anchored dropdown, top right) ── */
+function mcPlace(){var p=$('mcPanel'),nav=document.querySelector('.nav');if(p&&nav)p.style.top=(nav.getBoundingClientRect().bottom+10)+'px';}
+function mcToggle(e){if(e)e.stopPropagation();var p=$('mcPanel');if(!p)return;if(p.classList.contains('on')){mcClose();}else{mcPlace();p.classList.add('on');mcCalc();}}
+function mcClose(){var p=$('mcPanel');if(p)p.classList.remove('on');}
+function mcOpen(){var p=$('mcPanel');if(p&&!p.classList.contains('on')){mcPlace();p.classList.add('on');}mcCalc();}
+window.addEventListener('scroll',function(){if($('mcPanel').classList.contains('on'))mcPlace();});
+function mcCalc(){
+  var price=num($('mcPrice').value),downPct=num($('mcDown').value),rate=num($('mcRate').value),term=num($('mcTerm').value)||30;
+  var down=price*downPct/100,loan=price-down;
+  var r=rate/100/12,n=term*12;
+  var pay=r?(loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1)):(n?loan/n:0);
+  $('mcLoan').textContent=loan?money(loan):'—';
+  $('mcDownAmt').textContent=down?money(down):'—';
+  $('mcPay').textContent=(pay&&isFinite(pay))?('$'+Math.round(pay).toLocaleString('en-US')+'/mo'):'—';
+}
+// Prefill the calculator from a deal's asking price when opened from a detail view.
+function mcFromDeal(price){$('mcPrice').value=Math.round(num(price))||'';close_('mDetail');mcOpen();}
+
+/* ── guided tour ── */
+var TOUR=[
+ {title:'Welcome to ACCESS',body:'A private, invite-only network where Massachusetts agents move off-market deals — agent to agent. Here’s a quick tour; replay it anytime from the “?” up top.'},
+ {el:'#regionTabs',title:'Choose your market',body:'Browse deals by region across Massachusetts. New states are coming — you’ll see them queued on the right.',place:'bottom'},
+ {el:'#rail',title:'Filter the feed',body:'Narrow by property type, price, cap rate, units, and how the deal is being shared.',place:'right'},
+ {el:'.rail .save',title:'Save a search & get alerted',body:'Turn any filter into a saved alert — the moment a matching deal posts, you hear about it first.',place:'right'},
+ {el:'.sortbar',title:'Sort & search',body:'Sort by newest, price, or cap rate — or type a keyword to jump straight to it.',place:'bottom'},
+ {el:'#grid .deal',title:'Open any deal',body:'Tap a card for the full numbers, the map, documents, and to message the listing agent directly.',place:'top'},
+ {el:'.hero .btn.acc',title:'Post your own deal',body:'Add an off-market deal in about 60 seconds. Hide the exact address or show it on a map — your call.',place:'bottom'},
+ {el:'.hero .btn.ghost',title:'Post a client need',body:'Tell the network what your clients are hunting for and get matched to new deals automatically.',place:'bottom'},
+ {el:'.nlink.ico[title="Alerts"]',title:'Alerts & messages',body:'The bell shows your match alerts. “Messages” is where you talk agent-to-agent about a deal.',place:'bottom'},
+ {title:'You’re all set',body:'Post a deal, save a search, and start connecting. Need this again? Hit the “?” in the top bar anytime.'}
+];
+var TOURI=-1, _autoTourDone=false;
+function startTour(force){TOURI=0;$('tourWrap').classList.add('on');document.body.style.overflow='hidden';tourShow(0);try{localStorage.setItem('doors_tour_v1','1');}catch(e){}}
+function endTour(){$('tourWrap').classList.remove('on');document.body.style.overflow='';try{localStorage.setItem('doors_tour_v1','1');}catch(e){}}
+function tourGo(d){var n=TOURI+d;if(n<0)return;if(n>=TOUR.length){endTour();return;}tourShow(n);}
+function tourShow(i){
+  TOURI=i;var s=TOUR[i],wrap=$('tourWrap');
+  $('tourStepN').textContent='Step '+(i+1)+' of '+TOUR.length;
+  $('tourTitle').textContent=s.title;$('tourBody').textContent=s.body;
+  $('tourDots').innerHTML=TOUR.map(function(_,k){return '<span class="tdot'+(k===i?' on':'')+'"></span>';}).join('');
+  $('tourNext').textContent=(i===TOUR.length-1?'Finish':'Next');
+  $('tourBack').style.visibility=(i===0?'hidden':'visible');
+  var el=s.el?document.querySelector(s.el):null;
+  if(el){wrap.classList.remove('centered');try{el.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
+    setTimeout(function(){if(TOURI===i)tourPlace(el,s.place||'bottom');},320);
+  }else{wrap.classList.add('centered');var c=$('tourCard');c.style.left='50%';c.style.top='50%';c.style.transform='translate(-50%,-50%)';}
+}
+function tourPlace(el,place){
+  var wrap=$('tourWrap'),ring=$('tourRing'),card=$('tourCard');
+  wrap.classList.remove('centered');ring.style.display='block';card.style.transform='none';
+  var r=el.getBoundingClientRect(),pad=6;
+  ring.style.left=(r.left-pad)+'px';ring.style.top=(r.top-pad)+'px';ring.style.width=(r.width+pad*2)+'px';ring.style.height=(r.height+pad*2)+'px';
+  if(window.innerWidth<=560)return;
+  var cw=320,ch=card.offsetHeight||170,gap=14,left=Math.min(Math.max(12,r.left),window.innerWidth-cw-12),top;
+  if(place==='right'&&r.right+cw+gap<window.innerWidth){left=r.right+gap;top=Math.max(12,Math.min(r.top,window.innerHeight-ch-12));}
+  else if(place==='top'||r.bottom+ch+gap>window.innerHeight){top=r.top-ch-gap;if(top<12)top=r.bottom+gap;}
+  else{top=r.bottom+gap;}
+  card.style.left=left+'px';card.style.top=Math.max(12,top)+'px';
+}
+function maybeAutoTour(){if(_autoTourDone)return;_autoTourDone=true;var seen;try{seen=localStorage.getItem('doors_tour_v1');}catch(e){seen='1';}if(!seen)setTimeout(function(){startTour(false);},700);}
+window.addEventListener('resize',function(){if($('tourWrap')&&$('tourWrap').classList.contains('on')&&TOURI>=0){var s=TOUR[TOURI],el=s.el?document.querySelector(s.el):null;if(el)tourPlace(el,s.place||'bottom');}});
+document.addEventListener('keydown',function(e){if($('tourWrap')&&$('tourWrap').classList.contains('on')){if(e.key==='Escape')endTour();else if(e.key==='ArrowRight')tourGo(1);else if(e.key==='ArrowLeft')tourGo(-1);}});
+
+/* market-bar "coming soon" city rotation */
+(function(){var el=$('soonCity2');if(!el)return;var c=['Providence, RI','Manchester, NH','Hartford, CT','Portland, ME','Nashua, NH','New York, NY'],i=0;
+  setInterval(function(){i=(i+1)%c.length;el.style.opacity=0;setTimeout(function(){el.textContent=c[i];el.style.opacity=1;},220);},2600);el.style.transition='opacity .22s';})();
+/* ── init ── */
+loadAll();
+payReturn();
+</script>
+</body></html>

@@ -1,0 +1,95 @@
+// ── ACCESS data layer — Postgres ────────────────────────────────────────────
+// Everything ACCESS stores is a named list (listings, intros, buyboxes,
+// members, messages, notifs, profiles…). The old app kept each list as one
+// JSON blob in a Google Sheet cell via pmLoad(key)/pmSave(key,arr). We keep
+// that exact contract, so every route ports over unchanged — but the store is
+// now a real database: writes either commit or throw, no silent "unsaved".
+//
+//   pm_store(k TEXT PRIMARY KEY, v JSONB, updated_at TIMESTAMPTZ)
+//
+// One row per list. Reads are a point lookup; writes are a single upsert in a
+// transaction. Postgres gives us atomicity and durability the sheet never had.
+
+const { Pool } = require('pg');
+
+const URL = process.env.DATABASE_URL || '';
+// Render's managed Postgres needs SSL; local dev usually doesn't. Enable SSL
+// whenever a full URL is present (Render), skip it for bare localhost.
+const ssl = URL && !/localhost|127\.0\.0\.1/.test(URL) ? { rejectUnauthorized: false } : false;
+
+const pool = URL ? new Pool({ connectionString: URL, ssl, max: 8, idleTimeoutMillis: 30000 }) : null;
+
+let ready = false;
+async function ensureSchema() {
+  if (!pool) return false;
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS pm_store (
+      k TEXT PRIMARY KEY,
+      v JSONB NOT NULL DEFAULT '[]'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  ready = true;
+  return true;
+}
+
+// Load a named list. Always resolves to an array (never throws to the caller),
+// so a cold cache or a missing key behaves like the old empty-sheet case.
+async function pmLoad(key) {
+  if (!pool) return [];
+  try {
+    const r = await pool.query('SELECT v FROM pm_store WHERE k=$1', [String(key)]);
+    if (!r.rows.length) return [];
+    const v = r.rows[0].v;
+    return Array.isArray(v) ? v : [];
+  } catch (e) { return []; }
+}
+
+// Save a named list. Throws on failure ON PURPOSE — the route should report a
+// real error to the user instead of pretending it saved. Callers already
+// await this; unhandled rejection => the route's try/catch returns 5xx.
+async function pmSave(key, arr) {
+  if (!pool) throw new Error('no_database');
+  const v = JSON.stringify(Array.isArray(arr) ? arr : []);
+  await pool.query(
+    `INSERT INTO pm_store (k, v, updated_at) VALUES ($1, $2::jsonb, now())
+     ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v, updated_at = now()`,
+    [String(key), v]
+  );
+  return { ok: true };
+}
+
+// One-time importer: hand it a { key: array } map (pulled from the old sheet)
+// and it writes every list into Postgres in a single transaction.
+async function importAll(map) {
+  if (!pool) throw new Error('no_database');
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    let n = 0;
+    for (const k of Object.keys(map || {})) {
+      const v = JSON.stringify(Array.isArray(map[k]) ? map[k] : (map[k] || []));
+      await client.query(
+        `INSERT INTO pm_store (k, v, updated_at) VALUES ($1, $2::jsonb, now())
+         ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v, updated_at = now()`,
+        [String(k), v]
+      );
+      n++;
+    }
+    await client.query('COMMIT');
+    return { ok: true, imported: n };
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+async function health() {
+  if (!pool) return { ok: false, error: 'no DATABASE_URL' };
+  try { await pool.query('SELECT 1'); return { ok: true, ready }; }
+  catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+}
+
+module.exports = { pool, ensureSchema, pmLoad, pmSave, importAll, health, hasDb: !!pool };
