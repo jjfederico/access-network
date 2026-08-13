@@ -1,8 +1,9 @@
 # ACCESS — standalone
 
-Invite-only, agent-to-agent, off-market **investment** deal network. Runs on its
-own — separate repo, separate Render service, separate Postgres database — so
-customer data never mixes with the Grove hub or personal tools.
+Invite-only, agent-to-agent, off-market **real estate** deal network — every
+property type (residential and commercial) and every kind of licensed agent.
+Runs on its own — separate repo, separate Render service, separate Postgres
+database — so customer data never mixes with the Grove hub or personal tools.
 
 ## Architecture
 

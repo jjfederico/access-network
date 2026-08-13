@@ -369,6 +369,7 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
     <div class="acctMenu" id="acctMenu">
       <a onclick="close_acct();openActivity()">My activity <span id="reqDot" style="display:none;color:var(--acc2)">●</span></a>
       <a onclick="close_acct();openProfile()">Profile</a>
+      <a onclick="close_acct();openNotifSettings()">Notifications</a>
       <a onclick="close_acct();openReferral()">Refer &amp; earn <span style="color:var(--gold)">◆</span></a>
       <a id="adminLink" style="display:none;color:var(--gold)" onclick="close_acct();openAdmin()">Admin <span id="adminDot" style="display:none"></span></a>
       <div class="acctSep"></div>
@@ -570,6 +571,7 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
 <div class="mbg" id="mBoard" onclick="if(event.target===this)close_('mBoard')"></div>
 <!-- MEMBER PROFILE -->
 <div class="mbg" id="mProfile" onclick="if(event.target===this)close_('mProfile')"></div>
+<div class="mbg" id="mNotifSet" onclick="if(event.target===this)close_('mNotifSet')"></div>
 <!-- ADMIN PANEL -->
 <div class="mbg" id="mAdmin" onclick="if(event.target===this)close_('mAdmin')"></div>
 <div class="mbg" id="mDirectory" onclick="if(event.target===this)close_('mDirectory')"></div>
@@ -1166,7 +1168,7 @@ function openProfile(){
     +'<div class="f full"><label>What do you mostly work on? <span class="hint">— sets your default deal view</span></label><select id="pFocus">'
       +['','residential','commercial','both'].map(function(v){var lbl={'':'— choose —',residential:'Residential',commercial:'Commercial & investment',both:'Both'}[v];return '<option value="'+v+'"'+((p.focus||'')===v?' selected':'')+'>'+lbl+'</option>';}).join('')
     +'</select></div>'
-    +'<div class="f full"><label>Short bio</label><textarea id="pBio" rows="3" placeholder="Investment sales, 8 years, multifamily specialist…">'+esc(p.bio||'')+'</textarea></div>'
+    +'<div class="f full"><label>Short bio</label><textarea id="pBio" rows="3" placeholder="8 years in the business — residential listings and small multifamily across Boston…">'+esc(p.bio||'')+'</textarea></div>'
     +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:6px 0 2px">Social profiles <span style="text-transform:none;letter-spacing:0">— shown on your deals so members can see you\'re legit</span></div>'
     +'<div class="fgrid">'
     +'<div class="f"><label>LinkedIn</label><input id="pLinkedin" value="'+esc(p.linkedin||'')+'" placeholder="URL or username"></div>'
@@ -1191,6 +1193,47 @@ function saveProfile(){
   });
 }
 
+/* ── notification settings ── */
+function openNotifSettings(){
+  var p=(PROFILE&&PROFILE.notifPrefs)||null;
+  var mode,selTypes,markets,emailOn=true,introsOn=true;
+  if(p){mode=p.deals||'all';selTypes=p.dealTypes||[];markets=p.dealMarkets||[];emailOn=p.email!==false;introsOn=p.intros!==false;}
+  else{ // never set — reflect what they currently get (from their focus)
+    var f=(ME.focus)||(PROFILE&&PROFILE.focus)||'';
+    if(f==='commercial'){mode='types';selTypes=COMM_TYPES.slice();}
+    else if(f==='residential'){mode='types';selTypes=RESI_TYPES.slice();}
+    else{mode='all';selTypes=[];}
+    markets=[];
+  }
+  var typeChecks=TYPES.map(function(t){return '<label class="ck" style="font-size:12.5px"><input type="checkbox" class="ntType" value="'+esc(t)+'"'+(selTypes.indexOf(t)>=0?' checked':'')+'>'+esc(t)+'</label>';}).join('');
+  var marketChecks=SUBMARKETS.map(function(s){return '<label class="ck" style="font-size:12px"><input type="checkbox" class="ntMkt" value="'+esc(s)+'"'+(markets.indexOf(s)>=0?' checked':'')+'>'+esc(s)+'</label>';}).join('');
+  $('mNotifSet').innerHTML='<div class="modal"><div class="mhead"><h3>Notification settings</h3><button class="x" onclick="close_(\'mNotifSet\')">×</button></div><div class="mbody">'
+    +'<p style="color:var(--mut);font-size:13px;margin-bottom:12px">You decide exactly which deal alerts you get — by property type and market. No pings about deals you don\'t care about.</p>'
+    +'<div class="f full"><label>Deal-match alerts</label><div>'
+      +['all','types','off'].map(function(v){var lbl={all:'All new deals',types:'Only the property types I pick',off:'Off — no deal alerts'}[v];return '<label class="ck" style="display:block;margin:4px 0"><input type="radio" name="ntMode" value="'+v+'"'+(mode===v?' checked':'')+' onchange="ntSyncMode()"> '+lbl+'</label>';}).join('')
+    +'</div></div>'
+    +'<div id="ntTypes" class="f full" style="'+(mode==='types'?'':'display:none')+'"><label>Property types <span class="hint">— select any</span></label><div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px">'+typeChecks+'</div></div>'
+    +'<div id="ntMkts" class="f full" style="'+(mode==='off'?'display:none':'')+'"><label>Markets <span class="hint">— leave all unchecked = every market</span></label><div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;max-height:150px;overflow:auto">'+marketChecks+'</div></div>'
+    +'<div class="f full" style="border-top:1px solid var(--line);padding-top:12px;margin-top:6px"><label>Email me</label>'
+      +'<label class="ck" style="display:block;margin:4px 0"><input type="checkbox" id="ntEmail"'+(emailOn?' checked':'')+'> Deal-match emails <span class="hint">(in-app alerts always stay on)</span></label>'
+      +'<label class="ck" style="display:block;margin:4px 0"><input type="checkbox" id="ntIntros"'+(introsOn?' checked':'')+'> New intro requests on my deals</label>'
+    +'</div>'
+    +'<div class="mact"><span class="msg" id="ntMsg"></span><button class="btn ghost" onclick="close_(\'mNotifSet\')">Cancel</button><button class="btn acc" onclick="saveNotifPrefs()">Save settings</button></div>'
+    +'</div></div>';
+  open_('mNotifSet');
+}
+function ntSyncMode(){var m=(document.querySelector('input[name=ntMode]:checked')||{}).value;if($('ntTypes'))$('ntTypes').style.display=(m==='types')?'':'none';if($('ntMkts'))$('ntMkts').style.display=(m==='off')?'none':'';}
+function saveNotifPrefs(){
+  var mode=(document.querySelector('input[name=ntMode]:checked')||{}).value||'all';
+  var types=[];document.querySelectorAll('.ntType:checked').forEach(function(i){types.push(i.value);});
+  var mkts=[];document.querySelectorAll('.ntMkt:checked').forEach(function(i){mkts.push(i.value);});
+  var body={deals:mode,dealTypes:types,dealMarkets:mkts,email:$('ntEmail').checked,intros:$('ntIntros').checked};
+  $('ntMsg').textContent='Saving…';
+  api('/api/pm/notifprefs',body).then(function(j){
+    if(j&&j.ok){if(PROFILE)PROFILE.notifPrefs=j.notifPrefs;$('ntMsg').textContent='Saved ✓';setTimeout(function(){close_('mNotifSet');$('ntMsg').textContent='';},700);}
+    else{$('ntMsg').textContent=(j&&j.message)||'Could not save — set up your profile first.';}
+  });
+}
 /* ── admin panel (owner) ── */
 function openAdmin(){
   Promise.all([api('/api/pm/admin/members'),api('/api/pm/feed'),api('/api/pm/admin/requests')]).then(function(r){
@@ -1434,7 +1477,7 @@ function openBuyBox(){
   if(BUYBOX){$('bFirm').value=BUYBOX.contact||'';$('bMin').value=BUYBOX.minPrice?Number(String(BUYBOX.minPrice).replace(/[^0-9]/g,'')).toLocaleString('en-US'):'';$('bMax').value=BUYBOX.maxPrice?Number(String(BUYBOX.maxPrice).replace(/[^0-9]/g,'')).toLocaleString('en-US'):'';$('bNotes').value=BUYBOX.notes||'';}
   open_('mBuy');
 }
-document.addEventListener('keydown',function(e){if(e.key==='Escape'){['mSubmit','mBuy','mDetail','mActivity','mIntro','mMsgs','mContact','mNotifs','mMarket','mBoard','mProfile','mAdmin','mDirectory'].forEach(close_);mcClose();close_acct();}});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){['mSubmit','mBuy','mDetail','mActivity','mIntro','mMsgs','mContact','mNotifs','mMarket','mBoard','mProfile','mNotifSet','mAdmin','mDirectory'].forEach(close_);mcClose();close_acct();}});
 
 /* ── account menu ── */
 function toggleAcct(e){if(e)e.stopPropagation();$('acct').classList.toggle('on');}

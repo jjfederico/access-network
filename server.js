@@ -100,6 +100,41 @@ const pmSendEmail = (to, subject, body) =>
   authMod.sendEmail(to, subject, `<pre style="font:inherit;white-space:pre-wrap">${String(body || '')}</pre>`);
 function pmNum(v) { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.]/g, '')); return isFinite(n) ? n : 0; }
 const pmFocus = v => (['residential', 'commercial', 'both'].indexOf(String(v || '').toLowerCase().trim()) >= 0 ? String(v).toLowerCase().trim() : '');
+// Category grouping (mirrors the app). Crossover types (2–4 unit, land, multifamily)
+// count as BOTH so a commercial agent still hears about small multifamily & land,
+// but never single-family / condo / townhouse.
+const RESI_TYPES = ['Single-family', 'Condo / Conversion', 'Townhouse', '2–4 unit', 'Land'];
+const COMM_TYPES = ['2–4 unit', 'Multifamily', 'Mixed-use', 'Retail / Commercial', 'Industrial', 'Development site', 'Land'];
+function pmFocusAllows(focus, propType) {
+  focus = String(focus || '').toLowerCase();
+  if (focus !== 'residential' && focus !== 'commercial') return true; // both / unset → everything
+  const inR = RESI_TYPES.indexOf(propType) >= 0, inC = COMM_TYPES.indexOf(propType) >= 0;
+  if (!inR && !inC) return true; // unclassified type → don't suppress
+  return focus === 'commercial' ? inC : inR;
+}
+// Does this member want a deal-match alert for this listing? Member notification
+// settings win; if they've never set them, fall back to their focus (sensible default).
+function pmWantsDealAlert(prof, deal) {
+  const p = prof && prof.notifPrefs;
+  if (!p) return pmFocusAllows(prof && prof.focus, deal.propType); // legacy default
+  if (p.deals === 'off') return false;
+  if (p.deals === 'types') {
+    const list = Array.isArray(p.dealTypes) ? p.dealTypes : [];
+    if (list.length && list.indexOf(deal.propType) < 0) return false;
+  }
+  if (Array.isArray(p.dealMarkets) && p.dealMarkets.length) {
+    const loc = String(deal.area || deal.city || '').toLowerCase();
+    const hit = p.dealMarkets.some(m => { m = String(m).toLowerCase().trim(); return m && loc.indexOf(m) >= 0; });
+    if (!hit) return false;
+  }
+  return true;
+}
+function pmWantsEmail(prof, kind) { // kind: 'deals' | 'intros'
+  const p = prof && prof.notifPrefs;
+  if (!p) return true; // legacy → email on
+  if (kind === 'intros') return p.intros !== false;
+  return p.email !== false;
+}
 function pmMoneyShort(v) { const n = Math.round(pmNum(v)); if (!n) return ''; if (n >= 1e6) return '$' + (n / 1e6).toFixed(n % 1e6 ? 1 : 0) + 'M'; if (n >= 1e3) return '$' + Math.round(n / 1e3) + 'K'; return '$' + n; }
 function pmMatch(l, box) {
   if (!l || !box) return false;
@@ -219,14 +254,17 @@ app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
     await pmSave(PM_KEYS.listings, listings);
     if (isNew && rec.status !== 'off') {
       try {
-        const boxes = await pmLoad(PM_KEYS.buyboxes), ns = await pmLoad('pm_notifs');
+        const boxes = await pmLoad(PM_KEYS.buyboxes), ns = await pmLoad('pm_notifs'), profs = await pmLoad('pm_profiles');
+        const profOf = {}; profs.forEach(p => { if (p && p.email) profOf[_lc(p.email)] = p; });
         const hits = [];
         boxes.forEach(bx => {
-          if (bx && _lc(bx.owner) !== pmEmail(req.user) && pmMatch(rec, bx)) {
-            const txt = 'New match — ' + (rec.propType || 'deal') + ' in ' + (rec.area || rec.city || 'your market') + (rec.price ? (' · ' + pmMoneyShort(rec.price)) : '');
-            ns.push({ id: pmId('N'), to: _lc(bx.owner), type: 'match', text: txt, listingId: rec.id, at: now, read: false });
-            hits.push({ to: _lc(bx.owner), txt });
-          }
+          if (!bx || _lc(bx.owner) === pmEmail(req.user) || !pmMatch(rec, bx)) return;
+          const prof = profOf[_lc(bx.owner)] || {};
+          // Member's own notification settings decide this (default = their focus).
+          if (!pmWantsDealAlert(prof, rec)) return;
+          const txt = 'New match — ' + (rec.propType || 'deal') + ' in ' + (rec.area || rec.city || 'your market') + (rec.price ? (' · ' + pmMoneyShort(rec.price)) : '');
+          ns.push({ id: pmId('N'), to: _lc(bx.owner), type: 'match', text: txt, listingId: rec.id, at: now, read: false });
+          if (pmWantsEmail(prof, 'deals')) hits.push({ to: _lc(bx.owner), txt });
         });
         await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns);
         for (const h of hits) await pmSendEmail(h.to, 'ACCESS · new deal matches your buy box', h.txt + '\n\nOpen ACCESS to view the deal and message the listing agent.');
@@ -285,7 +323,11 @@ app.post('/api/pm/intro', ensureAuth, pmGate, async (req, res) => {
       status: 'pending', createdAt: new Date().toISOString(), decidedAt: '' };
     intros.push(rec);
     await pmSave(PM_KEYS.intros, intros);
-    try { await pmSendEmail(l.owner, 'ACCESS · new intro request', (rec.buyerName || rec.buyer) + ' requested an intro on your ' + (l.area || l.city || 'deal') + ' listing.\n\nOpen ACCESS to approve or decline.'); } catch (e) {}
+    try {
+      const sProfs = await pmLoad('pm_profiles');
+      const sProf = sProfs.find(p => p && _lc(p.email) === _lc(l.owner)) || {};
+      if (pmWantsEmail(sProf, 'intros')) await pmSendEmail(l.owner, 'ACCESS · new intro request', (rec.buyerName || rec.buyer) + ' requested an intro on your ' + (l.area || l.city || 'deal') + ' listing.\n\nOpen ACCESS to approve or decline.');
+    } catch (e) {}
     res.json({ ok: true, intro: rec });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -575,6 +617,21 @@ app.post('/api/pm/profile', ensureAuth, pmGate, async (req, res) => {
     await pmSave('pm_profiles', profs);
     if (isNew && rec.status === 'pending' && ADMIN) { try { await pmSendEmail(ADMIN, 'ACCESS · new member awaiting approval', (rec.name || rec.email) + ' signed up.\nLicense: ' + (rec.license || '—') + '\nBrokerage: ' + (rec.brokerage || '—') + '\n\nApprove them in the ACCESS admin panel.'); } catch (e) {} }
     res.json({ ok: true, profile: rec, approved: await pmApproved(req.user) });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
+app.post('/api/pm/notifprefs', ensureAuth, pmGate, async (req, res) => {
+  const b = req.body || {};
+  try {
+    const profs = await pmLoad('pm_profiles');
+    const email = pmEmail(req.user);
+    const idx = profs.findIndex(p => p && _lc(p.email) === email);
+    if (idx < 0) return res.status(404).json({ ok: false, error: 'no_profile', message: 'Save your profile first.' });
+    const deals = ['all', 'types', 'off'].indexOf(b.deals) >= 0 ? b.deals : 'all';
+    const dealTypes = Array.isArray(b.dealTypes) ? b.dealTypes.slice(0, 20).map(t => String(t).slice(0, 60)) : [];
+    const dealMarkets = Array.isArray(b.dealMarkets) ? b.dealMarkets.slice(0, 40).map(m => String(m).slice(0, 60)).filter(Boolean) : [];
+    profs[idx].notifPrefs = { deals, dealTypes, dealMarkets, email: b.email !== false, intros: b.intros !== false };
+    await pmSave('pm_profiles', profs);
+    res.json({ ok: true, notifPrefs: profs[idx].notifPrefs });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.get('/api/pm/profile/:email', ensureAuth, pmGate, async (req, res) => {
