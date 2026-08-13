@@ -332,6 +332,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif;letter-spacing
       </div>
       <div class="rf full"><label>Anything else?</label><textarea id="qNote" rows="2" placeholder="A line about your business (optional)"></textarea></div>
       <div class="rmsg" id="qMsg"></div>
+      <div id="cfBox" style="margin:4px 0 10px;display:none"></div>
       <p style="font-size:11.5px;line-height:1.5;color:var(--mut);margin:2px 0 10px">By requesting access you agree to our Terms and Privacy Policy, and consent to receive emails from ACCESS — including sign-in links, deal alerts, and periodic updates, announcements, and promotional email blasts. You can unsubscribe from marketing emails at any time.</p>
       <button class="btn p big" id="qBtn" style="width:100%;justify-content:center" onclick="sendReq()">Submit request</button>
     </div>
@@ -399,7 +400,10 @@ document.getElementById('grid').innerHTML=D.map(function(d){return '<div class="
   setInterval(function(){ i=(i+1)%cities.length; el.style.opacity=0;
     setTimeout(function(){ el.textContent=cities[i]; el.style.opacity=1; },220); }, 2600);
 })();
-function openReq(){document.getElementById('reqBg').classList.add('on');document.body.style.overflow='hidden';setTimeout(function(){var n=document.getElementById('qName');if(n)n.focus();},60);}
+var CF_TOKEN='',CF_WIDGET=null;
+function loadTurnstile(cb){if(window.turnstile){cb();return;}if(!window.__cfCbs)window.__cfCbs=[];window.__cfCbs.push(cb);if(window.__cfLoading)return;window.__cfLoading=1;window.__cfReady=function(){(window.__cfCbs||[]).forEach(function(f){f();});window.__cfCbs=[];};var s=document.createElement('script');s.src='https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__cfReady&render=explicit';s.async=true;s.defer=true;document.head.appendChild(s);}
+function renderCaptcha(){var site=window.__TURNSTILE_SITE__||'';var box=document.getElementById('cfBox');if(!box)return;if(!site){box.style.display='none';return;}box.style.display='block';loadTurnstile(function(){if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}CF_TOKEN='';return;}try{CF_WIDGET=turnstile.render('#cfBox',{sitekey:site,callback:function(t){CF_TOKEN=t;},'expired-callback':function(){CF_TOKEN='';},'error-callback':function(){CF_TOKEN='';}});}catch(e){}});}
+function openReq(){document.getElementById('reqBg').classList.add('on');document.body.style.overflow='hidden';renderCaptcha();setTimeout(function(){var n=document.getElementById('qName');if(n)n.focus();},60);}
 function closeReq(){document.getElementById('reqBg').classList.remove('on');document.body.style.overflow='';}
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeReq();});
 (function(){ if((new URLSearchParams(location.search).get('ref')||'').trim()){ var n=document.getElementById('refNote'); if(n) n.style.display='block'; } })();
@@ -410,15 +414,17 @@ function sendReq(){
   if(!body.name||!body.email){msg.style.color='var(--bad)';msg.textContent='Name and email are required.';return;}
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email)){msg.style.color='var(--bad)';msg.textContent='Enter a valid email.';return;}
   if(!body.license||!body.brokerage){msg.style.color='var(--bad)';msg.textContent='License # and brokerage are required for review.';return;}
+  if((window.__TURNSTILE_SITE__||'')&&!CF_TOKEN){msg.style.color='var(--bad)';msg.textContent='Please complete the verification below.';return;}
+  body.captcha=CF_TOKEN;
   var btn=document.getElementById('qBtn');btn.disabled=true;btn.textContent='Sending…';msg.style.color='var(--mut)';msg.textContent='';
   fetch('/api/pm/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
     .then(function(r){return r.json().catch(function(){return {ok:false};});})
     .then(function(j){
       if(j&&j.ok){
         document.getElementById('reqBody').innerHTML='<div class="rdone"><div class="big">Request received ✓</div><p style="color:var(--mut);font-size:14px;line-height:1.5">Thanks, '+ (body.name.split(' ')[0]||'') +'. We review every request by hand and will email you at <b>'+body.email.replace(/</g,'')+'</b> once you\'re approved — then you can activate your membership.</p><button class="btn p big" style="margin-top:16px;justify-content:center" onclick="closeReq()">Done</button></div>';
-      } else { btn.disabled=false;btn.textContent='Submit request';msg.style.color='var(--bad)';msg.textContent=(j&&j.message)||'Something went wrong — try again.'; }
+      } else { btn.disabled=false;btn.textContent='Submit request';msg.style.color='var(--bad)';msg.textContent=(j&&j.message)||'Something went wrong — try again.';CF_TOKEN='';if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}} }
     })
-    .catch(function(){btn.disabled=false;btn.textContent='Submit request';msg.style.color='var(--bad)';msg.textContent='Network error — try again.';});
+    .catch(function(){btn.disabled=false;btn.textContent='Submit request';msg.style.color='var(--bad)';msg.textContent='Network error — try again.';CF_TOKEN='';if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}}});
 }
 </script>
 <div class="rbg" id="siBg" onclick="if(event.target===this)closeSignin()">

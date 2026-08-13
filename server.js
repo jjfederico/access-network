@@ -31,6 +31,21 @@ app.use(authMod.attachUser());
 const ensureAuth = authMod.ensureAuth;
 const ADMIN = authMod.ADMIN;
 
+// ── Cloudflare Turnstile (captcha on the public join form) ──────────────────
+const TURNSTILE_SITE = process.env.TURNSTILE_SITE_KEY || '';
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || '';
+async function verifyTurnstile(token, ip) {
+  if (!TURNSTILE_SECRET) return true; // not configured yet → don't block
+  if (!token) return false;
+  try {
+    const body = new URLSearchParams({ secret: TURNSTILE_SECRET, response: String(token) });
+    if (ip) body.append('remoteip', String(ip));
+    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body });
+    const j = await r.json();
+    return !!(j && j.success);
+  } catch (e) { return false; }
+}
+
 // ── shared helpers (ported, now sheet-free) ─────────────────────────────────
 const _lc = s => String(s || '').toLowerCase().trim();
 const lc = _lc;
@@ -584,7 +599,7 @@ app.get('/api/pm/admin/members', ensureAuth, pmGate, async (req, res) => {
   try {
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
-    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', status: p.status || 'pending', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
+    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', status: p.status || 'pending', verified: !!p.verified, createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
     res.json({ ok: true, members, pending: members.filter(m => m.status === 'pending').length });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -601,6 +616,21 @@ app.post('/api/pm/admin/approve', ensureAuth, pmGate, async (req, res) => {
     await pmSave('pm_profiles', profs);
     try { await pmSendEmail(email, 'ACCESS · your membership was ' + decision, decision === 'approved' ? 'You\'re approved. Sign in to ACCESS to post deals and message members.' : 'Your ACCESS application was not approved at this time.'); } catch (e) {}
     res.json({ ok: true, email, status: decision });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
+app.post('/api/pm/admin/verify', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const b = req.body || {};
+  const email = _lc(b.email);
+  if (!email) return res.status(400).json({ ok: false, error: 'no_email' });
+  try {
+    const profs = await pmLoad('pm_profiles');
+    const idx = profs.findIndex(p => p && _lc(p.email) === email);
+    if (idx < 0) return res.status(404).json({ ok: false, error: 'not_found' });
+    profs[idx].verified = !!b.verified;
+    profs[idx].verifiedAt = b.verified ? new Date().toISOString() : '';
+    await pmSave('pm_profiles', profs);
+    res.json({ ok: true, email, verified: profs[idx].verified });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.post('/api/pm/admin/feature', ensureAuth, pmGate, async (req, res) => {
@@ -624,6 +654,8 @@ app.post('/api/pm/request', async (req, res) => {
   const S = (v, n) => String(v == null ? '' : v).slice(0, n || 120).trim();
   const email = S(b.email, 120).toLowerCase(), name = S(b.name, 100);
   if (!name || !email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Name and a valid email are required.' });
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip;
+  if (!(await verifyTurnstile(b.captcha, ip))) return res.status(400).json({ ok: false, error: 'captcha_failed', message: 'Please complete the verification and try again.' });
   try {
     const reqs = await pmLoad('pm_requests');
     if (reqs.some(r => r && _lc(r.email) === email && r.status !== 'denied')) return res.json({ ok: true, already: true });
@@ -877,8 +909,17 @@ app.get('/app.html', ensureAuth, (req, res) => {
   if (req.user.role !== 'owner' && req.user.status !== 'approved') return res.redirect('/?pending=1');
   serveWithIdentity(res, 'app.html', req.user);
 });
+// Landing: inject the Turnstile site key (captcha) before static serving.
+function serveLanding(req, res) {
+  try {
+    let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+    const inject = `<script>window.__TURNSTILE_SITE__=${JSON.stringify(TURNSTILE_SITE)};</script>`;
+    html = html.includes('</head>') ? html.replace('</head>', inject + '</head>') : inject + html;
+    res.type('html').send(html);
+  } catch (e) { res.sendFile(path.join(__dirname, 'public', 'index.html')); }
+}
+app.get(['/', '/index.html'], serveLanding);
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 const PORT = process.env.PORT || 3000;
 db.ensureSchema()
