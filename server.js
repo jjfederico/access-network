@@ -75,9 +75,10 @@ function pmPublicView(l, full) {
     grossIncome: l.grossIncome || '', expenses: l.expenses || '',
     commissionPct: l.commissionPct || '', commissionNotes: l.commissionNotes || '',
     notes: l.notes || '', docs: Array.isArray(l.docs) ? l.docs : [], views: l.views || 0,
+    photoCount: Array.isArray(l.photos) ? l.photos.length : 0,
     hideAddress: !!l.hideAddress, addressHidden: !showAddr
   };
-  if (showAddr) { out.address = l.address || ''; out.zip = zip; }
+  if (showAddr) { out.address = l.address || ''; out.zip = zip; out.photos = Array.isArray(l.photos) ? l.photos : []; }
   return out;
 }
 const pmSendEmail = (to, subject, body) =>
@@ -166,6 +167,7 @@ app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
     const id = S(b.id, 40);
     const now = new Date().toISOString();
     const docsIn = Array.isArray(b.docs) ? b.docs.slice(0, 20).map(d => ({ name: S(d && d.name, 160), url: S(d && d.url, 900) })).filter(d => d.url) : [];
+    const photosIn = Array.isArray(b.photos) ? b.photos.slice(0, 24).map(p => ({ name: String((p && p.name) || '').slice(0, 120), url: String((p && p.url) || '') })).filter(p => p.url && p.url.length < 6000000) : [];
     const fields = {
       ownerName: S(b.ownerName, 80),
       status: (b.status === 'off' ? 'off' : b.status === 'mls' ? 'mls' : 'active'),
@@ -178,7 +180,7 @@ app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
       price: S(b.price, 24), noi: S(b.noi, 24), capRate: S(b.capRate, 16),
       grossIncome: S(b.grossIncome, 24), expenses: S(b.expenses, 24),
       commissionPct: S(b.commissionPct, 16), commissionNotes: S(b.commissionNotes, 300),
-      notes: S(b.notes, 3000), docs: docsIn
+      notes: S(b.notes, 3000), docs: docsIn, photos: photosIn
     };
     const in30 = new Date(Date.now() + 30 * 864e5).toISOString();
     let rec, isNew = false;
@@ -189,6 +191,9 @@ app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
       if (req.user.role !== 'owner' && _lc(cur.owner) !== pmEmail(req.user))
         return res.status(403).json({ ok: false, error: 'not_your_listing' });
       rec = Object.assign({}, cur, fields, { updatedAt: now });
+      // Preserve existing media when the request doesn't include it (e.g. status toggles).
+      if (!Array.isArray(b.docs)) rec.docs = Array.isArray(cur.docs) ? cur.docs : [];
+      if (!Array.isArray(b.photos)) rec.photos = Array.isArray(cur.photos) ? cur.photos : [];
       listings[idx] = rec;
     } else {
       rec = Object.assign({ id: pmId('L'), owner: req.user.email, createdAt: now, updatedAt: now, expiresAt: in30, views: 0, featured: false }, fields);
