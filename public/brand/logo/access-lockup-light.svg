@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 64" width="300" height="64">
+  <g transform="translate(0,0)">
+    <rect x="5" y="15" width="54" height="34" rx="8" fill="#14140F"/>
+    <rect x="12" y="22" width="15" height="12" rx="2.6" fill="#B4882E"/>
+    <rect x="12" y="40" width="30" height="3.2" rx="1.6" fill="#EFECE4" opacity=".32"/>
+  </g>
+  <text x="74" y="41" font-family="'IBM Plex Mono', ui-monospace, monospace" font-weight="600" font-size="30" letter-spacing="0.5" fill="#14140F">access</text>
+</svg>

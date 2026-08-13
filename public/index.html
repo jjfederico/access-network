@@ -210,7 +210,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif;letter-spacing
   <div class="sp"></div>
   <div class="nlinks"><a href="#how">How it works</a><a href="#feed">Deals</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></div>
   <div class="soon" title="Expanding soon"><span class="dot"></span>Coming soon · <b id="soonCity">Providence, RI</b></div>
-  <button class="btn g" onclick="location.href='/premarket-hub.html'">Sign in</button>
+  <button class="btn g" onclick="openSignin()">Sign in</button>
   <button class="btn p" onclick="openReq()">Request access</button>
 </div></div>
 
@@ -419,5 +419,35 @@ function sendReq(){
     })
     .catch(function(){btn.disabled=false;btn.textContent='Submit request';msg.style.color='var(--bad)';msg.textContent='Network error — try again.';});
 }
+</script>
+<div class="rbg" id="siBg" onclick="if(event.target===this)closeSignin()">
+  <div class="rmodal" style="position:relative;max-width:430px">
+    <button class="rx" onclick="closeSignin()" aria-label="Close">×</button>
+    <div class="rhead"><h3>Sign in</h3><p>Members only. Enter your email and we&rsquo;ll send you a one-tap sign-in link.</p></div>
+    <div class="rbody" id="siBody">
+      <div class="rf full"><label>Email</label><input id="siEmail" type="email" autocomplete="email" placeholder="you@brokerage.com"></div>
+      <div class="rmsg" id="siMsg"></div>
+      <button class="btn p big" id="siBtn" style="width:100%;justify-content:center" onclick="sendSignin()">Send sign-in link</button>
+      <p style="margin-top:12px;font-size:13px;color:var(--mut);text-align:center">Not a member yet? <a href="#" onclick="closeSignin();openReq();return false" style="color:var(--gold);text-decoration:none">Request access</a></p>
+    </div>
+  </div>
+</div>
+<script>
+function openSignin(){document.getElementById('siBg').classList.add('on');document.body.style.overflow='hidden';setTimeout(function(){var n=document.getElementById('siEmail');if(n)n.focus();},60);}
+function closeSignin(){document.getElementById('siBg').classList.remove('on');document.body.style.overflow='';}
+function sendSignin(){
+  var el=document.getElementById('siEmail');var email=el?el.value.trim():'';
+  var msg=document.getElementById('siMsg');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg.style.color='var(--bad)';msg.textContent='Enter a valid email.';return;}
+  var btn=document.getElementById('siBtn');btn.disabled=true;btn.textContent='Sending…';msg.style.color='var(--mut)';msg.textContent='';
+  fetch('/auth/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})})
+    .then(function(r){return r.json().catch(function(){return{ok:false};});})
+    .then(function(j){
+      if(j&&j.ok){document.getElementById('siBody').innerHTML='<div class="rdone"><div class="big">Check your email ✓</div><p style="color:var(--mut);font-size:14px;line-height:1.5">We sent a sign-in link to <b>'+email.replace(/</g,'')+'</b>. Tap it to sign in — it expires in 30 minutes.</p><button class="btn p big" style="margin-top:16px;justify-content:center" onclick="closeSignin()">Done</button></div>';}
+      else{btn.disabled=false;btn.textContent='Send sign-in link';msg.style.color='var(--bad)';msg.textContent=(j&&j.message)||'Something went wrong — try again.';}
+    })
+    .catch(function(){btn.disabled=false;btn.textContent='Send sign-in link';msg.style.color='var(--bad)';msg.textContent='Network error — try again.';});
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSignin();});
 </script>
 </body></html>

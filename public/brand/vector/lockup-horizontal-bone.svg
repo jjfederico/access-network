@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 72" width="250" height="72">
+  <title>DOORS horizontal lockup</title>
+  <desc>Type set in Archivo Medium, 0.3em tracking; subline IBM Plex Mono, 0.22em. Convert text to outlines before print.</desc>
+  <rect x="0" y="0" width="72" height="72" fill="#EFECE4"></rect>
+  <rect x="19" y="12" width="26" height="40" fill="#14140F"></rect>
+  <rect x="37" y="30" width="4" height="4" fill="#EFECE4"></rect>
+  <g transform="translate(92,9)">
+    <text x="0" y="24" font-family="Archivo" font-weight="500" font-size="33" letter-spacing="9.9" fill="#EFECE4">DOORS</text>
+    <rect x="0" y="36" width="158" height="1.5" fill="#EFECE4"></rect>
+    <text x="0" y="52" font-family="IBM Plex Mono" font-weight="400" font-size="9" letter-spacing="2" fill="#EFECE4">LEASING</text>
+    <text x="158" y="52" font-family="IBM Plex Mono" font-weight="400" font-size="9" letter-spacing="2" text-anchor="end" fill="#EFECE4">OFF-MARKET</text>
+  </g>
+</svg>
