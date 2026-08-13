@@ -862,7 +862,8 @@ setInterval(() => { pmRunRenewals().catch(() => {}); }, 12 * 3600 * 1000);
 // The members app needs the signed-in identity the old hub used to inject.
 function serveWithIdentity(res, file, user) {
   let html = fs.readFileSync(path.join(__dirname, 'public', file), 'utf8');
-  const inject = `<script>window.__ROLE__=${JSON.stringify(user.role)};window.__USER__=${JSON.stringify(user.name || '')};window.__EMAIL__=${JSON.stringify(user.email)};window.__ACCT__="access";window.__STATUS__=${JSON.stringify(user.status)};</script>`;
+  const mapsKey = process.env.GOOGLE_MAPS_KEY || process.env.MAPS_API_KEY || '';
+  const inject = `<script>window.__ROLE__=${JSON.stringify(user.role)};window.__USER__=${JSON.stringify(user.name || '')};window.__EMAIL__=${JSON.stringify(user.email)};window.__ACCT__="access";window.__STATUS__=${JSON.stringify(user.status)};window.__MAPS_KEY__=${JSON.stringify(mapsKey)};</script>`;
   html = html.includes('</head>') ? html.replace('</head>', inject + '</head>') : inject + html;
   res.type('html').send(html);
 }

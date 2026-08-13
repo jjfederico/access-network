@@ -440,7 +440,7 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
     </div>
     <div class="fgrid">
       <div class="f"><label>Submarket / neighborhood</label><input id="sSub" placeholder="e.g. South Boston"></div>
-      <div class="f"><label>Asset type</label><select id="sType"></select></div>
+      <div class="f"><label>Asset type</label><select id="sType" onchange="syncDealFields()"></select></div>
       <div class="f"><label>Asking price ($)</label><input id="sPrice" inputmode="decimal" placeholder="0"></div>
       <div class="f"><label>Buyer-broker commission (%)</label><input id="sComm" inputmode="decimal" placeholder="2.5"></div>
       <div class="f"><label>Units</label><input id="sUnits" inputmode="numeric" placeholder="0"></div>
@@ -471,8 +471,8 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
       <div class="f"><label>Min price ($)</label><input id="bMin" inputmode="decimal" placeholder="0"></div>
       <div class="f"><label>Max price ($)</label><input id="bMax" inputmode="decimal" placeholder="0"></div>
     </div>
-    <div class="f full"><label>Asset types</label><input id="bTypes" placeholder="e.g. Multifamily, Mixed-use, Development"></div>
-    <div class="f full"><label>Target submarkets</label><input id="bSubs" placeholder="e.g. South Boston, Dorchester, Cambridge"></div>
+    <div class="f full"><label>Asset types <span class="hint">— select any</span></label><div id="bTypeChecks" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px"></div></div>
+    <div class="f full"><label>Target submarkets <span class="hint">— select any</span></label><div id="bSubChecks" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;max-height:150px;overflow:auto"></div></div>
     <div class="f full"><label>Criteria / notes</label><textarea id="bNotes" rows="2" placeholder="Cash, 1031 buyer, value-add 6–20 units, will close in 30 days…"></textarea></div>
     <div class="mact"><span class="msg" id="bMsg"></span><button class="btn ghost" onclick="close_('mBuy')">Cancel</button><button class="btn acc" onclick="submitBuyBox()">Post client need</button></div>
   </div>
@@ -554,6 +554,23 @@ function moneyFull(n){n=Math.round(num(n));return n?'$'+n.toLocaleString('en-US'
 function ago(iso){try{var s=(Date.now()-new Date(iso))/1000;if(s<3600)return Math.max(1,Math.round(s/60))+'m ago';if(s<86400)return Math.round(s/3600)+'h ago';return Math.round(s/86400)+'d ago';}catch(e){return '';}}
 function initials(n){n=String(n||'').trim();if(!n)return '?';var p=n.split(/\s+/);return ((p[0]||'')[0]+(p.length>1?(p[p.length-1]||'')[0]:'')).toUpperCase();}
 
+/* ── dollar inputs: live comma formatting (1,250,000) ── */
+function fmtMoneyInput(el){if(!el)return;var raw=(el.value||'').replace(/[^0-9]/g,'');el.value=raw?Number(raw).toLocaleString('en-US'):'';}
+function attachMoney(ids){ids.forEach(function(id){var el=$(id);if(el&&!el._money){el._money=1;el.addEventListener('input',function(){fmtMoneyInput(el);});}});}
+function noComma(id){return (($(id)&&$(id).value)||'').replace(/,/g,'').trim();}
+
+/* ── submarkets for client-need checkboxes ── */
+var SUBMARKETS=['South Boston','Dorchester','Roxbury','Jamaica Plain','East Boston','Charlestown','Roslindale','West Roxbury','Hyde Park','Mattapan','Allston / Brighton','Back Bay','South End','Cambridge','Somerville','Quincy','Malden','Medford','Everett','Chelsea','Revere','Lynn','Brockton','Worcester','Springfield','Lowell','Lawrence','New Bedford','Fall River','Framingham','Newton','Waltham'];
+
+/* ── Post a deal: fields that don't apply to certain asset types ── */
+var DEAL_HIDE={'Single-family':['sUnits','sNoi','sCap'],'Condo / Conversion':['sUnits','sNoi','sCap'],'Land':['sUnits','sNoi','sCap','sSf'],'Development site':['sUnits','sNoi','sCap']};
+function syncDealFields(){var t=($('sType')&&$('sType').value)||'';var hide=DEAL_HIDE[t]||[];['sUnits','sNoi','sCap','sSf'].forEach(function(id){var el=$(id);if(!el)return;var w=el.closest('.f');var h=hide.indexOf(id)>=0;if(w)w.style.display=h?'none':'';if(h)el.value='';});}
+
+/* ── Google Maps: address autocomplete on all .gaddr inputs ── */
+var MAPS_KEY=(window.__MAPS_KEY__||'');
+function loadMaps(cb){if(window.google&&window.google.maps&&window.google.maps.places){cb&&cb();return;}if(!MAPS_KEY)return;if(!window._mapsCbs)window._mapsCbs=[];window._mapsCbs.push(cb);if(window._mapsLoading)return;window._mapsLoading=1;window._mapsReady=function(){(window._mapsCbs||[]).forEach(function(f){f&&f();});window._mapsCbs=[];};var s=document.createElement('script');s.async=true;s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(MAPS_KEY)+'&libraries=places&callback=_mapsReady';document.head.appendChild(s);}
+function initAddrAuto(){if(!MAPS_KEY)return;if(!window._pacCss){window._pacCss=1;var st=document.createElement('style');st.textContent='.pac-container{z-index:100001!important}';document.head.appendChild(st);}loadMaps(function(){document.querySelectorAll('input.gaddr').forEach(function(el){if(el._ac)return;el._ac=1;var ac=new google.maps.places.Autocomplete(el,{types:['address'],componentRestrictions:{country:'us'},fields:['formatted_address','address_components']});ac.addListener('place_changed',function(){var p=ac.getPlace();if(!p)return;if(p.formatted_address)el.value=p.formatted_address;if(el.id==='sAddr'){var c=p.address_components||[];function g(t){var x=c.find(function(a){return a.types.indexOf(t)>=0;});return x?x.long_name:'';}var nb=g('neighborhood')||g('sublocality')||g('locality');if(nb&&$('sSub')&&!$('sSub').value)$('sSub').value=nb;}});});});}
+
 /* ── data (all reads/writes go through the secure /api/pm/* API — addresses are
    redacted server-side and only revealed to the seller or an approved buyer) ── */
 var SENT=[],INBOUND=[],BUYBOX=null;   // SENT = intros I sent; INBOUND = intros on my listings
@@ -590,7 +607,7 @@ function loadAll(){
     LISTINGS=(feed.listings||[]).map(nL).filter(Boolean);
     $('adminLink').style.display=(ME.role==='owner')?'':'none';
     if(ME.role==='owner')loadAdminDot();
-    fillFilters();render();renderStats();maybeAutoTour();
+    fillFilters();attachMoney(['fMin','fMax']);render();renderStats();maybeAutoTour();
     // ── background loads — each updates the view as it returns, none can block it ──
     apiT('/api/pm/pay/status').then(function(pay){if(pay&&pay.ok){PAYCFG={enabled:!!pay.enabled,membership:!!pay.membership,prices:pay.prices||PAYCFG.prices};render();}});
     apiT('/api/pm/intros').then(function(intr){intr=intr||{};SENT=intr.asBuyer||[];INBOUND=intr.asSeller||[];render();updateReqDot();});
@@ -800,9 +817,10 @@ function openDetail(id){
   var seeAddr=canSeeAddress(d),mine=isMine(d),intro=myIntro(id);
   if(!mine)api('/api/pm/view/'+d.id,{});   // count the view for seller analytics
   var rows=[['Asset type',esc(d.type||'—')],['Submarket',esc(d.submarket||'—')],['Asking price',moneyFull(d.price)],['Units',num(d.units)||'—'],['Cap rate',num(d.cap)?num(d.cap).toFixed(2)+'%':'—'],['NOI',moneyFull(d.noi)],['Square feet',num(d.sf)?Math.round(num(d.sf)).toLocaleString('en-US'):'—'],['Buyer-broker commission',num(d.commission)?num(d.commission).toFixed(1)+'%':'—'],['Distribution',{broad:'Broad',private:'Private (approval)',pocket:'Pocket'}[d.dist]||'Broad'],['Posted',ago(d.at)+(d.by?(' · by '+esc(d.by)):'')]];
+  rows=rows.filter(function(r){return !(['Units','Cap rate','NOI','Square feet'].indexOf(r[0])>=0 && (r[1]==='—'||r[1]===''));});
   var addrBlock = seeAddr
-    ? '<div class="reveal"><span style="color:var(--acc);vertical-align:-2px;margin-right:6px">'+addrIcon(true)+'</span><b>'+esc(d.addr||'(no address on file)')+'</b></div>'+(d.addr?mapEmbed(d.addr):'')
-    : '<div class="reveal" style="background:var(--card);border-color:var(--line2)"><span style="color:var(--gold);vertical-align:-2px;margin-right:6px">'+addrIcon(false)+'</span><b style="color:var(--gold)">Address hidden by the lister.</b> Message the agent to learn more about the deal.</div>';
+    ? '<div class="reveal"><span style="color:var(--acc);vertical-align:-2px;margin-right:6px">'+addrIcon(true)+'</span><b>'+esc(d.addr||'(no address on file)')+'</b></div>'+(d.addr?mapEmbed(d.addr):(d.submarket?mapEmbed(d.submarket+', MA'):''))
+    : '<div class="reveal" style="background:var(--card);border-color:var(--line2)"><span style="color:var(--gold);vertical-align:-2px;margin-right:6px">'+addrIcon(false)+'</span><b style="color:var(--gold)">Address hidden by the lister.</b> Message the agent to learn more about the deal.</div>'+(d.submarket?'<div style="font-size:11.5px;color:var(--mut);margin:8px 0 4px">Approximate area · '+esc(d.submarket)+'</div>'+mapEmbed(d.submarket+', MA'):'');
   var renewLbl='↻ Renew 30 days'+(PAYCFG.enabled?(' ($'+PAYCFG.prices.renew+')'):'');
   var featBtn=PAYCFG.enabled?(d.featured?'<button class="btn ghost" disabled style="opacity:.6">★ Featured</button>':'<button class="btn acc" onclick="featureDeal(\''+d.id+'\')">★ Feature ($'+PAYCFG.prices.feature+')</button>'):'';
   var cta = mine
@@ -897,9 +915,9 @@ function uploadDocs(){
 /* ── submit deal ── */
 function submitDeal(){
   var body={address:($('sAddr').value||'').trim(),area:($('sSub').value||'').trim(),propType:$('sType').value,
-    ownerName:ME.name||(PROFILE&&PROFILE.name)||'',price:($('sPrice').value||'').trim(),commissionPct:($('sComm').value||'').trim(),
-    units:($('sUnits').value||'').trim(),capRate:($('sCap').value||'').trim(),noi:($('sNoi').value||'').trim(),
-    sqft:($('sSf').value||'').trim(),notes:($('sDesc').value||'').trim(),dist:$('sDist').value,status:'active',
+    ownerName:ME.name||(PROFILE&&PROFILE.name)||'',price:noComma('sPrice'),commissionPct:($('sComm').value||'').trim(),
+    units:($('sUnits').value||'').trim(),capRate:($('sCap').value||'').trim(),noi:noComma('sNoi'),
+    sqft:noComma('sSf'),notes:($('sDesc').value||'').trim(),dist:$('sDist').value,status:'active',
     hideAddress:$('sHideAddr').checked,docs:SUBMIT_DOCS};
   if(!body.area){$('sMsg').textContent='Add a submarket.';return;}
   if(!num(body.price)){$('sMsg').textContent='Add an asking price.';return;}
@@ -1098,8 +1116,8 @@ function exportDirectory(){
 function submitBuyBox(){
   var name=($('bName').value||ME.name||'').trim();
   if(!name){$('bMsg').textContent='Add your name.';return;}
-  var body={markets:($('bSubs').value||'').trim(),propType:($('bTypes').value||'').trim(),
-    minPrice:($('bMin').value||'').trim(),maxPrice:($('bMax').value||'').trim(),
+  var body={markets:checkedVals('bSubChecks').join(', '),propType:checkedVals('bTypeChecks').join(', '),
+    minPrice:noComma('bMin'),maxPrice:noComma('bMax'),
     notes:($('bNotes').value||'').trim(),contact:($('bFirm').value||'').trim()||ME.email};
   $('bMsg').textContent='Posting…';
   api('/api/pm/buybox',body).then(function(j){
@@ -1223,10 +1241,15 @@ function postBroadcast(){var cat=$('bcCat').value,title=($('bcTitle').value||'')
 /* ── modal open/close ── */
 function open_(id){$(id).classList.add('on');document.body.classList.add('mlock');}
 function close_(id){var m=$(id);if(m)m.classList.remove('on');if(!document.querySelector('.mbg.on'))document.body.classList.remove('mlock');}
-function openSubmit(){fillFilters();open_('mSubmit');}
+function openSubmit(){fillFilters();attachMoney(['sPrice','sNoi','sSf']);syncDealFields();initAddrAuto();open_('mSubmit');}
+function checkedVals(wrapId){var w=$(wrapId);if(!w)return [];return Array.prototype.slice.call(w.querySelectorAll('input:checked')).map(function(i){return i.value;});}
+function buildChecks(wrapId,opts,preSel){var w=$(wrapId);if(!w)return;var pre=String(preSel||'').toLowerCase();w.innerHTML=opts.map(function(o){var on=pre&&pre.indexOf(o.toLowerCase())>=0?' checked':'';return '<label class="ck" style="font-size:12.5px"><input type="checkbox" value="'+esc(o)+'"'+on+'>'+esc(o)+'</label>';}).join('');}
 function openBuyBox(){
   if(!$('bName').value)$('bName').value=ME.name||'';
-  if(BUYBOX){$('bFirm').value=BUYBOX.contact||'';$('bMin').value=BUYBOX.minPrice||'';$('bMax').value=BUYBOX.maxPrice||'';$('bTypes').value=BUYBOX.propType||'';$('bSubs').value=BUYBOX.markets||'';$('bNotes').value=BUYBOX.notes||'';}
+  buildChecks('bTypeChecks',TYPES,BUYBOX?BUYBOX.propType:'');
+  buildChecks('bSubChecks',SUBMARKETS,BUYBOX?BUYBOX.markets:'');
+  attachMoney(['bMin','bMax']);
+  if(BUYBOX){$('bFirm').value=BUYBOX.contact||'';$('bMin').value=BUYBOX.minPrice?Number(String(BUYBOX.minPrice).replace(/[^0-9]/g,'')).toLocaleString('en-US'):'';$('bMax').value=BUYBOX.maxPrice?Number(String(BUYBOX.maxPrice).replace(/[^0-9]/g,'')).toLocaleString('en-US'):'';$('bNotes').value=BUYBOX.notes||'';}
   open_('mBuy');
 }
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){['mSubmit','mBuy','mDetail','mActivity','mIntro','mMsgs','mContact','mNotifs','mMarket','mBoard','mProfile','mAdmin','mDirectory'].forEach(close_);mcClose();close_acct();}});
