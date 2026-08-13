@@ -439,7 +439,7 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
       <label for="sHideAddr" style="margin:0;cursor:pointer;font-size:12.5px;color:var(--tx);text-transform:none;letter-spacing:0;font-weight:500;font-family:'Public Sans',system-ui,sans-serif">Hide the exact address <span style="color:var(--mut)">— shown on a map if left unchecked</span></label>
     </div>
     <div class="fgrid">
-      <div class="f"><label>Submarket / neighborhood</label><input id="sSub" placeholder="e.g. South Boston"></div>
+      <div class="f"><label>Submarket / neighborhood</label><input id="sSub" list="subList" placeholder="Select or type…"><datalist id="subList"></datalist></div>
       <div class="f"><label>Asset type</label><select id="sType" onchange="syncDealFields()"></select></div>
       <div class="f"><label>Asking price ($)</label><input id="sPrice" inputmode="decimal" placeholder="0"></div>
       <div class="f"><label>Buyer-broker commission (%)</label><input id="sComm" inputmode="decimal" placeholder="2.5"></div>
@@ -688,6 +688,7 @@ function fillFilters(){
   }
   renderRegionTabs();
   if($('sType')&&!$('sType').options.length){$('sType').innerHTML=TYPES.map(function(t){return '<option>'+esc(t)+'</option>';}).join('');}
+  if($('subList')&&!$('subList').options.length){$('subList').innerHTML=SUBMARKETS.map(function(s){return '<option value="'+esc(s)+'">';}).join('');}
 }
 // Save the current filters as a client need (buy box) so matching deals alert you.
 function saveSearch(){
