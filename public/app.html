@@ -398,6 +398,10 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
 </div></div>
 
 <section id="feed"><div class="wrap">
+  <div id="notifNudge" class="nudge" style="display:none">
+    <div class="ntxt"><span class="nb">🔔 Set your alert preferences</span> — choose which deals ping you, by property type and market, so you only hear about what you care about.</div>
+    <div class="nact"><button class="btn acc sm" onclick="dismissNotifNudge();openNotifSettings()">Set preferences</button><button class="btn ghost sm" onclick="dismissNotifNudge()">Not now</button></div>
+  </div>
   <!-- market bar -->
   <div class="mktbar">
     <div class="catseg" id="catSeg">
@@ -447,6 +451,12 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
 </div></div>
 
 <style>
+/* one-time notification-preferences nudge */
+.nudge{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--accdim);border:1px solid var(--acc);border-radius:12px;padding:12px 15px;margin-bottom:16px}
+.nudge .ntxt{font-size:13.5px;color:var(--tx);line-height:1.45}
+.nudge .nb{font-weight:700;color:var(--acc)}
+.nudge .nact{display:flex;gap:8px;flex:none}
+html.dark .nudge{background:#1B2740;border-color:#2E4C86}
 /* residential / commercial category toggle */
 .catseg{display:inline-flex;background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:3px;gap:2px}
 .catseg button{border:0;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:6px 12px;border-radius:7px;cursor:pointer;white-space:nowrap}
@@ -700,7 +710,7 @@ function loadAll(){
     apiT('/api/pm/pay/status').then(function(pay){if(pay&&pay.ok){PAYCFG={enabled:!!pay.enabled,membership:!!pay.membership,prices:pay.prices||PAYCFG.prices};render();}});
     apiT('/api/pm/intros').then(function(intr){intr=intr||{};SENT=intr.asBuyer||[];INBOUND=intr.asSeller||[];render();updateReqDot();});
     apiT('/api/pm/buybox').then(function(bb){bb=bb||{};BUYBOX=bb.buybox||null;BBMATCHES=(bb.matches||[]).map(nL).filter(Boolean);});
-    apiT('/api/pm/profile').then(function(pf){pf=pf||{};PROFILE=pf.profile||null;APPROVED=(pf.approved!==false);renderGate();});
+    apiT('/api/pm/profile').then(function(pf){pf=pf||{};PROFILE=pf.profile||null;APPROVED=(pf.approved!==false);renderGate();maybeNotifNudge();});
     loadThreads(function(){});loadNotifs(function(){});
   });
 }
@@ -1193,6 +1203,16 @@ function saveProfile(){
   });
 }
 
+/* ── one-time nudge: get new members to set alert prefs early ── */
+function maybeNotifNudge(){
+  if(ME.role==='owner')return;                         // owner doesn't need it
+  if(!PROFILE||PROFILE.status!=='approved')return;      // approved members only
+  if(PROFILE.notifPrefs)return;                         // already configured → never nag
+  var seen;try{seen=localStorage.getItem('access_notif_nudge');}catch(e){}
+  if(seen)return;
+  var el=$('notifNudge');if(el)el.style.display='';
+}
+function dismissNotifNudge(){try{localStorage.setItem('access_notif_nudge','1');}catch(e){}var el=$('notifNudge');if(el)el.style.display='none';}
 /* ── notification settings ── */
 function openNotifSettings(){
   var p=(PROFILE&&PROFILE.notifPrefs)||null;
@@ -1230,7 +1250,7 @@ function saveNotifPrefs(){
   var body={deals:mode,dealTypes:types,dealMarkets:mkts,email:$('ntEmail').checked,intros:$('ntIntros').checked};
   $('ntMsg').textContent='Saving…';
   api('/api/pm/notifprefs',body).then(function(j){
-    if(j&&j.ok){if(PROFILE)PROFILE.notifPrefs=j.notifPrefs;$('ntMsg').textContent='Saved ✓';setTimeout(function(){close_('mNotifSet');$('ntMsg').textContent='';},700);}
+    if(j&&j.ok){if(PROFILE)PROFILE.notifPrefs=j.notifPrefs;dismissNotifNudge();$('ntMsg').textContent='Saved ✓';setTimeout(function(){close_('mNotifSet');$('ntMsg').textContent='';},700);}
     else{$('ntMsg').textContent=(j&&j.message)||'Could not save — set up your profile first.';}
   });
 }
