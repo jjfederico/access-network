@@ -99,6 +99,7 @@ function pmPublicView(l, full) {
 const pmSendEmail = (to, subject, body) =>
   authMod.sendEmail(to, subject, `<pre style="font:inherit;white-space:pre-wrap">${String(body || '')}</pre>`);
 function pmNum(v) { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.]/g, '')); return isFinite(n) ? n : 0; }
+const pmFocus = v => (['residential', 'commercial', 'both'].indexOf(String(v || '').toLowerCase().trim()) >= 0 ? String(v).toLowerCase().trim() : '');
 function pmMoneyShort(v) { const n = Math.round(pmNum(v)); if (!n) return ''; if (n >= 1e6) return '$' + (n / 1e6).toFixed(n % 1e6 ? 1 : 0) + 'M'; if (n >= 1e3) return '$' + Math.round(n / 1e3) + 'K'; return '$' + n; }
 function pmMatch(l, box) {
   if (!l || !box) return false;
@@ -149,8 +150,9 @@ app.post('/api/pm/import', ensureAuth, async (req, res) => {
 // ── feed / listings ─────────────────────────────────────────────────────────
 app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
   try {
-    const [listings, intros] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros)]);
+    const [listings, intros, profs] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros), pmLoad('pm_profiles')]);
     const meEmail = pmEmail(req.user);
+    const meProf = profs.find(p => p && _lc(p.email) === meEmail) || {};
     const isOwner = req.user.role === 'owner';
     const mine = l => _lc(l.owner) === meEmail;
     const isExpired = l => l.expiresAt && (new Date(l.expiresAt) < new Date());
@@ -159,7 +161,7 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
       .filter(l => !isExpired(l) || mine(l) || isOwner)
       .map(l => pmPublicView(l, mine(l) || isOwner))
       .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
-    res.json({ ok: true, listings: rows, me: { email: req.user.email, role: req.user.role } });
+    res.json({ ok: true, listings: rows, me: { email: req.user.email, role: req.user.role, focus: meProf.focus || '' } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
@@ -565,6 +567,7 @@ app.post('/api/pm/profile', ensureAuth, pmGate, async (req, res) => {
     const email = pmEmail(req.user);
     const now = new Date().toISOString();
     const fields = { name: S(b.name || req.user.name, 100), license: S(b.license, 60), brokerage: S(b.brokerage, 120), phone: S(b.phone, 40), markets: S(b.markets, 200), bio: S(b.bio, 1200), linkedin: pmSocial('linkedin', b.linkedin), instagram: pmSocial('instagram', b.instagram), facebook: pmSocial('facebook', b.facebook), x: pmSocial('x', b.x), website: pmSocial('website', b.website) };
+    if (b.focus !== undefined) fields.focus = pmFocus(b.focus);
     const idx = profs.findIndex(p => p && _lc(p.email) === email);
     let rec, isNew = false;
     if (idx >= 0) { rec = Object.assign({}, profs[idx], fields, { updatedAt: now }); profs[idx] = rec; }
@@ -659,7 +662,7 @@ app.post('/api/pm/request', async (req, res) => {
   try {
     const reqs = await pmLoad('pm_requests');
     if (reqs.some(r => r && _lc(r.email) === email && r.status !== 'denied')) return res.json({ ok: true, already: true });
-    const rec = { id: pmId('R'), email, name, license: S(b.license, 60), brokerage: S(b.brokerage, 120), phone: S(b.phone, 40), markets: S(b.markets, 200), note: S(b.note, 1000), referredBy: S(b.ref, 12).toUpperCase().replace(/[^A-Z0-9]/g, '') || '', status: 'pending', at: new Date().toISOString() };
+    const rec = { id: pmId('R'), email, name, license: S(b.license, 60), brokerage: S(b.brokerage, 120), phone: S(b.phone, 40), markets: S(b.markets, 200), focus: pmFocus(b.focus), note: S(b.note, 1000), referredBy: S(b.ref, 12).toUpperCase().replace(/[^A-Z0-9]/g, '') || '', status: 'pending', at: new Date().toISOString() };
     reqs.push(rec);
     await pmSave('pm_requests', reqs.length > 2000 ? reqs.slice(-2000) : reqs);
     if (ADMIN) { try { await pmSendEmail(ADMIN, 'ACCESS · new access request', name + ' requested access to ACCESS.\n\nEmail: ' + email + '\nLicense: ' + (rec.license || '—') + '\nBrokerage: ' + (rec.brokerage || '—') + '\nMarkets: ' + (rec.markets || '—') + (rec.note ? ('\n\nNote: ' + rec.note) : '') + '\n\nApprove them in the ACCESS admin panel.'); } catch (e) {} }
@@ -689,8 +692,8 @@ app.post('/api/pm/admin/request/decide', ensureAuth, pmGate, async (req, res) =>
       try {
         const profs = await pmLoad('pm_profiles');
         const p = profs.find(x => x && _lc(x.email) === _lc(r.email));
-        if (p) { p.status = 'approved'; }
-        else profs.push({ email: r.email, name: r.name || '', license: r.license || '', brokerage: r.brokerage || '', phone: r.phone || '', markets: r.markets || '', status: 'approved', createdAt: new Date().toISOString() });
+        if (p) { p.status = 'approved'; if (!p.focus && r.focus) p.focus = r.focus; }
+        else profs.push({ email: r.email, name: r.name || '', license: r.license || '', brokerage: r.brokerage || '', phone: r.phone || '', markets: r.markets || '', focus: r.focus || '', status: 'approved', createdAt: new Date().toISOString() });
         if (r.referredBy) {
           const ref = profs.find(x => x && x.email && pmRefCode(x.email) === r.referredBy);
           if (ref) {

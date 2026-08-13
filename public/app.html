@@ -313,6 +313,14 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 }
 </style>
 <style id="ax-dark-fix">
+/* ACCESS dark palette — redefine the design tokens so the whole app flips, not just patches */
+html.dark{
+  --bg:#12151B;--bg2:#171B22;--card:#1B2029;--card2:#20252F;--line:#272D38;--line2:#333B48;
+  --tx:#E6E9EF;--mut:#9AA1AD;--mut2:#6E7682;--acc:#6E9BFF;--acc2:#6E9BFF;--accdim:#1B2740;
+  --gold:#D9B25A;--bad:#E0664A;--badbg:#3A1E16;--warn:#D9B25A;--blue:#6E9BFF;
+  color-scheme:dark;
+}
+html.dark body{background:var(--bg);color:var(--tx)}
 /* ACCESS dark-mode fix — flip hardcoded LIGHT surfaces/text that don't respond to html.dark */
 /* photo placeholder: light gradient -> flat dark tile */
 html.dark .deal .ph{background:#20252F!important;color:#8A92A0!important}
@@ -337,7 +345,9 @@ html.dark .hero .stats .s:nth-child(3) .v{color:#3EE0B0!important}
 html.dark .hero .stats .s:nth-child(4) .v{color:#9B93E0!important}
 /* gate banner (JS-injected light surface) */
 html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
-</style></head>
+</style>
+<script>/* set theme before paint to avoid a flash */(function(){try{var t=localStorage.getItem('access_theme');if(!t)t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+</head>
 <body>
 
 <div class="nav"><div class="wrap in">
@@ -352,6 +362,7 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
   <span class="nlink ico" onclick="startTour(true)" title="Replay the tour" aria-label="Replay the tour"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="12" cy="12" r="9.2"/><path d="M9.4 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.4 2-2.4 3.6"/><line x1="12" y1="17.2" x2="12" y2="17.25"/></svg></span>
   <span class="nlink ico" onclick="mcToggle(event)" title="Mortgage calculator" aria-label="Mortgage calculator"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><rect x="4" y="2.5" width="16" height="19" rx="2.2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8.5" y1="12" x2="8.5" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="15.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="8.5" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/><line x1="15.5" y1="15.5" x2="15.5" y2="18.5"/></svg></span>
   <span class="nlink ico" onclick="openNotifs()" title="Alerts" style="position:relative"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5"/><path d="M13.7 20.5a2 2 0 0 1-3.4 0"/></svg><span id="notifBadge" style="display:none;position:absolute;top:-3px;right:-4px;background:var(--gold);color:var(--bg);font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:9px;padding:0 4px;line-height:16px;text-align:center">0</span></span>
+  <span class="nlink ico" id="themeBtn" onclick="toggleTheme()" title="Toggle light / dark" aria-label="Toggle light / dark"></span>
   <button class="btn acc sm" onclick="openSubmit()">＋<span class="cta-txt"> Post a deal</span></button>
   <div class="acct" id="acct">
     <button class="acctBtn" onclick="toggleAcct(event)" aria-label="Account menu"><span class="who" id="who"></span><span class="car">▾</span></button>
@@ -388,6 +399,11 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
 <section id="feed"><div class="wrap">
   <!-- market bar -->
   <div class="mktbar">
+    <div class="catseg" id="catSeg">
+      <button data-cat="residential" onclick="setCat('residential')">Residential</button>
+      <button data-cat="commercial" onclick="setCat('commercial')">Commercial</button>
+      <button data-cat="all" class="on" onclick="setCat('all')">All</button>
+    </div>
     <div class="mksel">Market <select id="fMarket" onchange="render()"><option value="MA">Massachusetts</option></select></div>
     <div class="mktabs" id="regionTabs"></div>
     <span class="soonpill"><span class="dot"></span>Coming soon · <b id="soonCity2">Providence, RI</b></span>
@@ -430,6 +446,11 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
 </div></div>
 
 <style>
+/* residential / commercial category toggle */
+.catseg{display:inline-flex;background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:3px;gap:2px}
+.catseg button{border:0;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:6px 12px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.catseg button.on{background:var(--acc);color:#fff}
+@media(max-width:560px){.catseg button{padding:6px 9px;font-size:10px}}
 /* photo uploader */
 .phdrop{border:2px dashed var(--line2);border-radius:11px;background:var(--card2);padding:16px;text-align:center;color:var(--mut);font-size:13px;cursor:pointer;transition:all .15s}
 .phdrop.hot{border-color:var(--acc);background:var(--accdim);color:var(--acc)}
@@ -593,7 +614,14 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
 <script>
 var ME={role:'guest',email:'',name:''};
 var LISTINGS=[];
-var TYPES=['Multifamily','Mixed-use','Development site','Retail / Commercial','Condo / Conversion','Industrial','Land','Single-family'];
+var TYPES=['Single-family','Condo / Conversion','Townhouse','2–4 unit','Land','Multifamily','Mixed-use','Retail / Commercial','Industrial','Development site'];
+// Category grouping for the Residential / Commercial toggle. Crossover types (2–4 unit,
+// small MF, land) intentionally live in BOTH so an investor-minded residential agent still sees them.
+var RESI_TYPES=['Single-family','Condo / Conversion','Townhouse','2–4 unit','Land'];
+var COMM_TYPES=['2–4 unit','Multifamily','Mixed-use','Retail / Commercial','Industrial','Development site','Land'];
+var CAT='all';
+function catTypes(c){return c==='residential'?RESI_TYPES:c==='commercial'?COMM_TYPES:TYPES;}
+function inCat(type,c){if(c==='all'||!c)return true;if(TYPES.indexOf(type)<0)return true;return catTypes(c).indexOf(type)>=0;}
 var TYPEF='', ACTTAB='mydeals';
 function $(id){return document.getElementById(id);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -665,7 +693,7 @@ function loadAll(){
     LISTINGS=(feed.listings||[]).map(nL).filter(Boolean);
     $('adminLink').style.display=(ME.role==='owner')?'':'none';
     if(ME.role==='owner')loadAdminDot();
-    fillFilters();attachMoney(['fMin','fMax']);render();renderStats();maybeAutoTour();
+    fillFilters();attachMoney(['fMin','fMax']);initCat();renderStats();maybeAutoTour();
     // ── background loads — each updates the view as it returns, none can block it ──
     apiT('/api/pm/pay/status').then(function(pay){if(pay&&pay.ok){PAYCFG={enabled:!!pay.enabled,membership:!!pay.membership,prices:pay.prices||PAYCFG.prices};render();}});
     apiT('/api/pm/intros').then(function(intr){intr=intr||{};SENT=intr.asBuyer||[];INBOUND=intr.asSeller||[];render();updateReqDot();});
@@ -738,12 +766,18 @@ function clearFilters(){
   ['fMin','fMax','fCap','fUmin','fUmax','fSearch'].forEach(function(id){if($(id))$(id).value='';});
   $('fShown').checked=false;$('fSort').value='new';render();
 }
+// The property-type checkboxes only list the types in the current category.
+function fillTypeChecks(){var tc=$('typeChecks');if(!tc)return;tc.innerHTML=catTypes(CAT).map(function(t){return '<label class="ck"><input type="checkbox" value="'+esc(t)+'" onchange="render()">'+esc(t)+'<span class="sw" style="background:'+typeColor(t)+'"></span></label>';}).join('');}
+function setCat(c){CAT=c;try{localStorage.setItem('access_cat',c);}catch(e){}
+  var seg=$('catSeg');if(seg)seg.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-cat')===c);});
+  fillTypeChecks();render();}
+function initCat(){var saved;try{saved=localStorage.getItem('access_cat');}catch(e){}
+  var def=saved||(ME.focus==='commercial'?'commercial':ME.focus==='residential'?'residential':'all');
+  setCat(def);}
 function fillFilters(){
-  // property-type checkboxes with the type's color swatch
+  // property-type checkboxes with the type's color swatch (scoped to the current category)
   var tc=$('typeChecks');
-  if(tc&&tc.children.length===0){
-    tc.innerHTML=TYPES.map(function(t){return '<label class="ck"><input type="checkbox" value="'+esc(t)+'" onchange="render()">'+esc(t)+'<span class="sw" style="background:'+typeColor(t)+'"></span></label>';}).join('');
-  }
+  if(tc&&tc.children.length===0){fillTypeChecks();}
   renderRegionTabs();
   if($('sType')&&!$('sType').options.length){$('sType').innerHTML=TYPES.map(function(t){return '<option>'+esc(t)+'</option>';}).join('');}
   if($('subList')&&!$('subList').options.length){$('subList').innerHTML=SUBMARKETS.map(function(s){return '<option value="'+esc(s)+'">';}).join('');}
@@ -815,6 +849,7 @@ function render(){
   var list=LISTINGS.filter(function(d){
     if(!feedVisible(d))return false;
     if(!regionMatch(d))return false;
+    if(!inCat(d.type,CAT))return false;
     if(types.length&&types.indexOf(d.type)<0)return false;
     if(dists.length&&dists.indexOf(d.dist||'broad')<0)return false;
     if(pmin&&num(d.price)&&num(d.price)<pmin)return false;
@@ -1128,6 +1163,9 @@ function openProfile(){
     +'<div class="f"><label>Brokerage <span style="color:var(--gold)">*</span></label><input id="pBrokerage" value="'+esc(p.brokerage||'')+'"></div>'
     +'</div>'
     +'<div class="f full"><label>Markets you cover</label><input id="pMarkets" value="'+esc(p.markets||'')+'" placeholder="e.g. South Boston, Dorchester, Quincy"></div>'
+    +'<div class="f full"><label>What do you mostly work on? <span class="hint">— sets your default deal view</span></label><select id="pFocus">'
+      +['','residential','commercial','both'].map(function(v){var lbl={'':'— choose —',residential:'Residential',commercial:'Commercial & investment',both:'Both'}[v];return '<option value="'+v+'"'+((p.focus||'')===v?' selected':'')+'>'+lbl+'</option>';}).join('')
+    +'</select></div>'
     +'<div class="f full"><label>Short bio</label><textarea id="pBio" rows="3" placeholder="Investment sales, 8 years, multifamily specialist…">'+esc(p.bio||'')+'</textarea></div>'
     +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:6px 0 2px">Social profiles <span style="text-transform:none;letter-spacing:0">— shown on your deals so members can see you\'re legit</span></div>'
     +'<div class="fgrid">'
@@ -1143,12 +1181,12 @@ function openProfile(){
 function saveProfile(){
   var gv=function(id){var el=$(id);return el?(el.value||'').trim():'';};
   var body={name:gv('pName'),phone:gv('pPhone'),license:gv('pLicense'),
-    brokerage:gv('pBrokerage'),markets:gv('pMarkets'),bio:gv('pBio'),
+    brokerage:gv('pBrokerage'),markets:gv('pMarkets'),focus:gv('pFocus'),bio:gv('pBio'),
     linkedin:gv('pLinkedin'),instagram:gv('pInstagram'),facebook:gv('pFacebook'),x:gv('pX'),website:gv('pWebsite')};
   if(!body.license||!body.brokerage){$('pMsg').textContent='License # and brokerage are required.';return;}
   $('pMsg').textContent='Saving…';
   api('/api/pm/profile',body).then(function(j){
-    if(j&&j.ok){PROFILE=j.profile;APPROVED=(j.approved!==false);$('pMsg').textContent='Saved ✓';renderGate();setTimeout(function(){close_('mProfile');},700);}
+    if(j&&j.ok){PROFILE=j.profile;APPROVED=(j.approved!==false);ME.focus=body.focus||ME.focus;if(body.focus){try{localStorage.removeItem('access_cat');}catch(e){}setCat(body.focus==='commercial'?'commercial':body.focus==='residential'?'residential':'all');}$('pMsg').textContent='Saved ✓';renderGate();setTimeout(function(){close_('mProfile');},700);}
     else{$('pMsg').textContent='Failed — retry';}
   });
 }
@@ -1471,6 +1509,12 @@ document.addEventListener('keydown',function(e){if($('tourWrap')&&$('tourWrap').
 (function(){var el=$('soonCity2');if(!el)return;var c=['Providence, RI','Manchester, NH','Hartford, CT','Portland, ME','Nashua, NH','New York, NY'],i=0;
   setInterval(function(){i=(i+1)%c.length;el.style.opacity=0;setTimeout(function(){el.textContent=c[i];el.style.opacity=1;},220);},2600);el.style.transition='opacity .22s';})();
 /* ── init ── */
+/* ── light / dark theme toggle ── */
+var THEME_MOON='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+var THEME_SUN='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>';
+function applyTheme(t){var dark=(t==='dark');document.documentElement.classList.toggle('dark',dark);var b=$('themeBtn');if(b){b.innerHTML=dark?THEME_SUN:THEME_MOON;b.title=dark?'Switch to light':'Switch to dark';}try{localStorage.setItem('access_theme',t);}catch(e){}}
+function toggleTheme(){applyTheme(document.documentElement.classList.contains('dark')?'light':'dark');}
+applyTheme(document.documentElement.classList.contains('dark')?'dark':'light');
 loadAll();
 payReturn();
 </script>

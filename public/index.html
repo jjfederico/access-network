@@ -329,6 +329,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif;letter-spacing
         <div class="rf"><label>Brokerage <span class="req">*</span></label><input id="qBrokerage"></div>
         <div class="rf"><label>Phone</label><input id="qPhone" type="tel" autocomplete="tel"></div>
         <div class="rf"><label>Markets you cover</label><input id="qMarkets" placeholder="e.g. South Boston, Quincy"></div>
+        <div class="rf"><label>What do you mostly do?</label><select id="qFocus"><option value="">— choose —</option><option value="residential">Residential</option><option value="commercial">Commercial &amp; investment</option><option value="both">Both</option></select></div>
       </div>
       <div class="rf full"><label>Anything else?</label><textarea id="qNote" rows="2" placeholder="A line about your business (optional)"></textarea></div>
       <div class="rmsg" id="qMsg"></div>
@@ -409,7 +410,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeReq();}
 (function(){ if((new URLSearchParams(location.search).get('ref')||'').trim()){ var n=document.getElementById('refNote'); if(n) n.style.display='block'; } })();
 function sendReq(){
   var g=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
-  var body={name:g('qName'),email:g('qEmail'),license:g('qLicense'),brokerage:g('qBrokerage'),phone:g('qPhone'),markets:g('qMarkets'),note:g('qNote'),ref:(new URLSearchParams(location.search).get('ref')||'').toUpperCase()};
+  var body={name:g('qName'),email:g('qEmail'),license:g('qLicense'),brokerage:g('qBrokerage'),phone:g('qPhone'),markets:g('qMarkets'),focus:g('qFocus'),note:g('qNote'),ref:(new URLSearchParams(location.search).get('ref')||'').toUpperCase()};
   var msg=document.getElementById('qMsg');
   if(!body.name||!body.email){msg.style.color='var(--bad)';msg.textContent='Name and email are required.';return;}
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email)){msg.style.color='var(--bad)';msg.textContent='Enter a valid email.';return;}
