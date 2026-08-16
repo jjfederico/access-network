@@ -862,8 +862,15 @@ function dealCard(d){
   badges+=distBadge(d);
   if(isMine(d))badges+='<span class="bdg mine">Yours</span>';
   var kp='';
-  kp+='<div><div class="k">Units</div><div class="v">'+(num(d.units)||'—')+'</div></div>';
-  kp+='<div><div class="k">Cap</div><div class="v">'+(num(d.cap)?num(d.cap).toFixed(1)+'%':'—')+'</div></div>';
+  // Adaptive KPIs: income deals show Units/Cap; a house/condo shows Beds/Baths instead of empty dashes.
+  var income=(num(d.units)>1||num(d.cap)>0||num(d.noi)>0);
+  if(income){
+    kp+='<div><div class="k">Units</div><div class="v">'+(num(d.units)||'—')+'</div></div>';
+    kp+='<div><div class="k">Cap</div><div class="v">'+(num(d.cap)?num(d.cap).toFixed(1)+'%':'—')+'</div></div>';
+  }else{
+    kp+='<div><div class="k">Beds</div><div class="v">'+(num(d.beds)||'—')+'</div></div>';
+    kp+='<div><div class="k">Baths</div><div class="v">'+(num(d.baths)||'—')+'</div></div>';
+  }
   kp+='<div><div class="k">SF</div><div class="v">'+(num(d.sf)?Math.round(num(d.sf)/1000)+'k':'—')+'</div></div>';
   var addrTxt=open?((d.addr&&esc(d.addr))||'Address shown'):'Address hidden';
   if(d.photoCount)badges+='<span class="bdg">📷 '+d.photoCount+'</span>';
