@@ -10,7 +10,7 @@
 // the flow still works in dev/staging.
 
 const crypto = require('crypto');
-const { pmLoad } = require('./db');
+const { pmLoad, pmSave } = require('./db');
 
 const ADMIN = String(process.env.ACCESS_ADMIN || '').toLowerCase().trim();
 const FROM = process.env.ACCESS_FROM || 'ACCESS <login@access.example>';
@@ -18,8 +18,38 @@ const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 min
 
 const lc = s => String(s || '').toLowerCase().trim();
 
-// Short-lived login tokens (a restart just means request a fresh link).
-const TOKENS = new Map(); // token -> { email, exp }
+// Short-lived login tokens. Persisted in Postgres (pm_store key pm_authtokens)
+// so a pending link SURVIVES a server restart / free-tier spin-down — otherwise
+// an in-memory map would silently invalidate every outstanding link on restart.
+// Falls back to an in-memory map only when there's no database (local dev).
+const TOKKEY = 'pm_authtokens';
+const memTokens = new Map(); // token -> { email, exp } (no-DB fallback)
+
+async function putToken(token, email) {
+  const exp = Date.now() + TOKEN_TTL_MS;
+  try {
+    const now = Date.now();
+    const list = (await pmLoad(TOKKEY)) || [];
+    const pruned = list.filter(t => t && t.exp > now); // drop expired
+    pruned.push({ token, email, exp });
+    await pmSave(TOKKEY, pruned.length > 1000 ? pruned.slice(-1000) : pruned);
+  } catch (e) { memTokens.set(token, { email, exp }); }
+}
+// Consume a token: return { email, exp } if valid, else null. Single-use.
+async function takeToken(token) {
+  if (memTokens.has(token)) {
+    const r = memTokens.get(token); memTokens.delete(token);
+    return (r && r.exp > Date.now()) ? r : null;
+  }
+  try {
+    const now = Date.now();
+    const list = (await pmLoad(TOKKEY)) || [];
+    const rec = list.find(t => t && t.token === token) || null;
+    const remaining = list.filter(t => t && t.token !== token && t.exp > now);
+    if (list.length !== remaining.length) await pmSave(TOKKEY, remaining);
+    return (rec && rec.exp > now) ? rec : null;
+  } catch (e) { return null; }
+}
 
 async function sendEmail(to, subject, html) {
   const key = process.env.RESEND_API_KEY;
@@ -56,19 +86,21 @@ function mount(app, baseUrl) {
     const email = lc((req.body || {}).email);
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_email' });
     const token = crypto.randomBytes(24).toString('hex');
-    TOKENS.set(token, { email, exp: Date.now() + TOKEN_TTL_MS });
+    await putToken(token, email);
     const link = (baseUrl || ('https://' + (req.headers.host || ''))) + '/auth/verify?token=' + token;
-    await sendEmail(email, 'Your ACCESS sign-in link',
+    const sent = await sendEmail(email, 'Your ACCESS sign-in link',
       `<p>Tap to sign in to ACCESS:</p><p><a href="${link}">Sign in</a></p><p>This link expires in 30 minutes.</p>`);
-    res.json({ ok: true });
+    // Don't leak whether an address exists, but DO record a real send failure so
+    // a silent delivery problem is diagnosable instead of looking like success.
+    if (!sent) console.error('[ACCESS] sign-in email send FAILED for', email, '(check RESEND_API_KEY / verified domain / rate limits)');
+    res.json({ ok: true, sent: sent !== false });
   });
 
   // Consume a login link → set the session.
-  app.get('/auth/verify', (req, res) => {
+  app.get('/auth/verify', async (req, res) => {
     const token = String((req.query || {}).token || '');
-    const rec = TOKENS.get(token);
-    if (!rec || rec.exp < Date.now()) { TOKENS.delete(token); return res.status(401).send('Link expired — request a new one.'); }
-    TOKENS.delete(token);
+    const rec = await takeToken(token);
+    if (!rec) return res.status(401).send('Link expired — request a new one.');
     req.session.email = rec.email;
     res.redirect('/app.html');
   });
