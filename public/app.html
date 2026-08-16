@@ -5,7 +5,7 @@
 <link rel="icon" href="/brand/favicon/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/brand/favicon/apple-touch-icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
   /* ACCESS · cool neutral canvas (not beige) so white cards pop, with tinted tiles */
@@ -15,7 +15,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;line-height:1.5}
+body{font-family:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;line-height:1.5}
 a{color:inherit;text-decoration:none}
 .wrap{max-width:1200px;margin:0 auto;padding:0 clamp(18px,3.5vw,40px)}
 .mono{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
@@ -93,7 +93,7 @@ section{padding:40px 0}
 .bdg.pocket{color:var(--acc);border-color:rgba(23,65,138,.28)}
 .bdg.feat{color:var(--bg);background:var(--gold);border-color:var(--gold)}
 .bdg.mine{color:var(--acc);border-color:rgba(23,65,138,.28)}
-.deal .sub{font-family:Inter,system-ui,sans-serif;font-size:16px;font-weight:700;line-height:1.2;letter-spacing:0}
+.deal .sub{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;font-weight:700;line-height:1.2;letter-spacing:0}
 .deal .addr{display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--mut2)}
 .deal .addr.open{color:var(--acc)}
 .deal .desc{font-size:12.5px;color:var(--mut);line-height:1.45;margin-top:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -101,7 +101,7 @@ section{padding:40px 0}
 .deal .kpis .k{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut2);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 .deal .kpis .v{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;margin-top:2px}
 .deal .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-.deal .price{font-family:Inter,system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:0;line-height:1;color:var(--tx)}
+.deal .price{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:0;line-height:1;color:var(--tx)}
 .deal .fr{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
 .deal .comm{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--acc);font-weight:600;background:rgba(23,65,138,.07);border:1px solid rgba(23,65,138,.18);padding:4px 8px;border-radius:6px;white-space:nowrap}
 .deal .ago{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--mut2)}
@@ -157,7 +157,7 @@ body.mlock{overflow:hidden}
    bone/gold accents on ink. Matches the ACCESS landing. Logo wordmark stays Archivo. ── */
 body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .brand{font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600}
-.hero h1,.shead h2,.stats .s .v,.deal .sub,.deal .price,.deal .kpis .v,.modal h3,.mhead h3{font-family:Inter,system-ui,sans-serif;letter-spacing:.012em}
+.hero h1,.shead h2,.stats .s .v,.deal .sub,.deal .price,.deal .kpis .v,.modal h3,.mhead h3{font-family:'IBM Plex Sans',system-ui,sans-serif;letter-spacing:.012em}
 .hero h1{font-weight:800;line-height:1.06}
 .ey,.mono,.brand small,.deal .type,.stats .s .k,.deal .kpis .k,.deal .comm,.deal .ago,.trust,.chip,.bdg,.deal .lock,.f label,.kick{font-family:'IBM Plex Mono',monospace}
 /* ── 11R light-mode overrides — neutralize every hardcoded dark value ── */
@@ -210,7 +210,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 /* mortgage dropdown — anchored under the nav, top right */
 #mcPanel{display:none;position:fixed;top:112px;right:18px;width:300px;background:var(--card,#fff);border:1px solid var(--line2,#D9D4C9);border-radius:14px;padding:16px;box-shadow:0 22px 60px rgba(30,26,18,.22);z-index:130;font-family:inherit}
 #mcPanel.on{display:block}
-.mcHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;font-family:Inter,system-ui,sans-serif;font-size:18px;font-weight:700}
+.mcHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:18px;font-weight:700}
 .mcHead .x{background:none;border:none;color:var(--mut,#9a988c);cursor:pointer;font-size:20px;line-height:1}
 .mcHead .x:hover{color:var(--tx)}
 .mcGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
@@ -222,7 +222,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .mcOut>div{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;font-size:13px;color:var(--mut,#9a988c)}
 .mcOut>div b{color:var(--tx,#EFECE4);font-family:'IBM Plex Mono',monospace}
 .mcOut .big{margin-top:6px;font-size:14px}
-.mcOut .big b{font-family:Inter,system-ui,sans-serif;font-size:24px;color:var(--acc2,#E7C079)}
+.mcOut .big b{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:24px;color:var(--acc2,#E7C079)}
 .mcNote{margin-top:10px;font-size:10.5px;color:var(--mut2,#6b6a5f);line-height:1.4}
 .dmap{width:100%;height:220px;border:1px solid var(--line2,#3a3a30);border-radius:12px;margin:10px 0}
 @media(max-width:640px){#mcPanel{top:auto;bottom:14px;right:12px;left:12px;width:auto}}
@@ -231,7 +231,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .hero{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#FFFFFF,var(--bg))}
 .hero .in{padding:22px clamp(18px,3.5vw,40px) 20px}
 .apphead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.apphead .ah-l h1{font-family:Inter,system-ui,sans-serif;font-size:clamp(21px,2.6vw,28px);font-weight:700;line-height:1.05;margin:0}
+.apphead .ah-l h1{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:clamp(21px,2.6vw,28px);font-weight:700;line-height:1.05;margin:0}
 .apphead .ah-l .sub{margin-top:5px;font-size:13.5px;line-height:1.45;max-width:54ch;color:var(--mut)}
 .apphead .ah-r{display:flex;gap:9px;flex-wrap:wrap}
 .hero .stats{margin-top:18px}
@@ -279,7 +279,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .rail .save{width:100%;margin-top:14px;background:transparent;color:var(--acc);border:1px dashed var(--line2);border-radius:9px;padding:10px;font:inherit;font-weight:600;font-size:12.5px;cursor:pointer}
 .rail .save:hover{border-color:var(--acc);background:rgba(23,65,138,.04)}
 .sortbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.sortbar .count{font-size:14px;font-weight:600}.sortbar .count b{font-family:Inter,system-ui,sans-serif;font-size:20px;color:var(--acc)}
+.sortbar .count{font-size:14px;font-weight:600}.sortbar .count b{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:20px;color:var(--acc)}
 .sortbar .r{margin-left:auto;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .sortbar input{background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:8px 12px;font:inherit;font-size:13px;color:var(--tx);width:190px}
 .sortbar input:focus{outline:none;border-color:var(--acc)}
@@ -293,7 +293,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 #tourWrap.centered #tourRing{display:none}
 #tourCard{position:fixed;width:320px;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line2);border-radius:14px;box-shadow:0 24px 60px -20px rgba(15,20,32,.5);padding:18px;z-index:402;transition:left .28s cubic-bezier(.4,0,.2,1),top .28s cubic-bezier(.4,0,.2,1)}
 #tourCard .tstep{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--acc);margin-bottom:6px}
-#tourCard h4{font-family:Inter,system-ui,sans-serif;font-size:20px;font-weight:700;margin:0 0 6px}
+#tourCard h4{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:20px;font-weight:700;margin:0 0 6px}
 #tourCard p{font-size:13.5px;color:var(--mut);line-height:1.5;margin:0}
 .tdots{display:flex;gap:6px;margin:14px 0 12px}
 .tdot{width:7px;height:7px;border-radius:50%;background:var(--line2)}
@@ -435,6 +435,11 @@ html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
         <div class="count"><b id="rCount">—</b> <span id="rLabel">deals</span></div>
         <div class="r">
           <input id="fSearch" placeholder="Search keyword…" oninput="render()">
+          <div class="viewseg" id="viewSeg" title="Layout">
+            <button data-v="comfortable" onclick="setDealView('comfortable')" title="Cards" aria-label="Cards view">▦</button>
+            <button data-v="compact" onclick="setDealView('compact')" title="Compact cards" aria-label="Compact view">▤</button>
+            <button data-v="list" onclick="setDealView('list')" title="List" aria-label="List view">≣</button>
+          </div>
           <select id="fSort" onchange="render()"><option value="new">Sort: Newest</option><option value="priceHigh">Price: high → low</option><option value="priceLow">Price: low → high</option><option value="cap">Cap rate</option></select>
           <button class="btn ghost sm railtog" onclick="document.getElementById('rail').classList.toggle('open')">Filters</button>
           <button class="btn ghost sm" onclick="loadAll()" title="Refresh">↻</button>
@@ -462,6 +467,26 @@ html.dark .nudge{background:#1B2740;border-color:#2E4C86}
 .catseg button{border:0;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:6px 12px;border-radius:7px;cursor:pointer;white-space:nowrap}
 .catseg button.on{background:var(--acc);color:#fff}
 @media(max-width:560px){.catseg button{padding:6px 9px;font-size:10px}}
+/* deal-feed layout switcher */
+.viewseg{display:inline-flex;background:var(--card2);border:1px solid var(--line2);border-radius:9px;padding:2px;gap:1px}
+.viewseg button{border:0;background:transparent;color:var(--mut);font-size:14px;line-height:1;padding:5px 9px;border-radius:6px;cursor:pointer}
+.viewseg button.on{background:var(--acc);color:#fff}
+.grid.view-compact{grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:10px}
+.grid.view-compact .deal{padding:11px}
+.grid.view-compact .deal .dcover,.grid.view-compact .deal .desc{display:none}
+.grid.view-compact .deal .sub{font-size:14.5px}
+.grid.view-compact .deal .kpis{margin-top:8px;padding-top:8px}
+.grid.view-compact .deal .foot{margin-top:8px;padding-top:8px}
+.grid.view-list{grid-template-columns:1fr;gap:5px}
+.drow-item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;transition:border-color .12s,background .12s;border-left:3px solid var(--tc,var(--acc))}
+.drow-item:hover{border-color:var(--line2);background:var(--card2)}
+.drow-item .li-type{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--acc);width:104px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drow-item .li-sub{font-weight:600;font-size:14px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drow-item .li-addr{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mut2);width:150px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;gap:5px}
+.drow-item .li-kpi{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--mut);width:74px;flex:none;text-align:right}
+.drow-item .li-price{font-weight:800;font-size:15px;width:90px;flex:none;text-align:right}
+.drow-item .li-badges{display:flex;gap:5px;flex:none}
+@media(max-width:640px){.drow-item .li-addr,.drow-item .li-kpi{display:none}.drow-item .li-type{width:auto}}
 /* photo uploader */
 .phdrop{border:2px dashed var(--line2);border-radius:11px;background:var(--card2);padding:16px;text-align:center;color:var(--mut);font-size:13px;cursor:pointer;transition:all .15s}
 .phdrop.hot{border-color:var(--acc);background:var(--accdim);color:var(--acc)}
@@ -705,7 +730,7 @@ function loadAll(){
     LISTINGS=(feed.listings||[]).map(nL).filter(Boolean);
     $('adminLink').style.display=(ME.role==='owner')?'':'none';
     if(ME.role==='owner')loadAdminDot();
-    fillFilters();attachMoney(['fMin','fMax']);initCat();renderStats();maybeAutoTour();
+    fillFilters();attachMoney(['fMin','fMax']);initDealView();initCat();renderStats();maybeAutoTour();
     // ── background loads — each updates the view as it returns, none can block it ──
     apiT('/api/pm/pay/status').then(function(pay){if(pay&&pay.ok){PAYCFG={enabled:!!pay.enabled,membership:!!pay.membership,prices:pay.prices||PAYCFG.prices};render();}});
     apiT('/api/pm/intros').then(function(intr){intr=intr||{};SENT=intr.asBuyer||[];INBOUND=intr.asSeller||[];render();updateReqDot();});
@@ -848,6 +873,30 @@ function dealCard(d){
     +'<div class="foot"><div class="price">'+money(d.price)+'</div><div class="fr"><span class="comm">'+(num(d.commission)?num(d.commission).toFixed(1)+'% BBC':'—')+'</span><span class="ago">'+ago(d.at)+'</span></div></div>'
     +'</div>';
 }
+// Dense list row (used by the "List" layout) — same click target, far less height.
+function dealRow(d){
+  var open=canSeeAddress(d);
+  var badges='';
+  if(d.featured)badges+='<span class="bdg feat">★</span>';
+  if(d.photoCount)badges+='<span class="bdg">📷 '+d.photoCount+'</span>';
+  if(isMine(d))badges+='<span class="bdg mine">Yours</span>';
+  var kpi=num(d.cap)?num(d.cap).toFixed(1)+'% cap':(num(d.units)?num(d.units)+' units':'—');
+  return '<div class="drow-item" style="--tc:'+typeColor(d.type)+'" onclick="openDetail(\''+d.id+'\')">'
+    +'<span class="li-type">'+esc(d.type||'Deal')+'</span>'
+    +'<span class="li-sub">'+esc(d.submarket||'Greater Boston')+'</span>'
+    +'<span class="li-addr">'+addrIcon(open)+(open?((d.addr&&esc(d.addr))||'Shown'):'Hidden')+'</span>'
+    +'<span class="li-kpi">'+kpi+'</span>'
+    +'<span class="li-kpi">'+(num(d.commission)?num(d.commission).toFixed(1)+'% BBC':'—')+'</span>'
+    +'<span class="li-price">'+money(d.price)+'</span>'
+    +'<span class="li-badges">'+badges+'</span>'
+  +'</div>';
+}
+/* ── deal-feed layout (cards / compact / list) ── */
+var DEALVIEW='comfortable';
+function setDealView(v){DEALVIEW=(['comfortable','compact','list'].indexOf(v)>=0?v:'comfortable');try{localStorage.setItem('access_view',DEALVIEW);}catch(e){}
+  var s=$('viewSeg');if(s)s.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-v')===DEALVIEW);});
+  render();}
+function initDealView(){var v;try{v=localStorage.getItem('access_view');}catch(e){}setDealView(v||'comfortable');}
 function feedVisible(d){
   if(d.status==='off'||d.status==='mls')return false;
   if(d.dist==='pocket'&&!isMine(d)&&ME.role!=='owner')return false;   // pocket hidden from the general feed
@@ -880,7 +929,8 @@ function render(){
   else list.sort(function(a,b){return fs(a,b)||new Date(b.at)-new Date(a.at);});
   if($('rCount'))$('rCount').textContent=list.length;
   if($('rLabel'))$('rLabel').textContent=(list.length===1?'deal':'deals')+' in '+(REGION==='all'?'Massachusetts':((REGIONS.filter(function(r){return r.k===REGION;})[0]||{}).name||'MA'));
-  g.innerHTML=list.length?list.map(dealCard).join(''):'<div class="empty">No deals match your filters.<br><br><button class="btn acc" onclick="clearFilters()">Clear filters</button></div>';
+  g.className='grid view-'+DEALVIEW;
+  g.innerHTML=list.length?list.map(DEALVIEW==='list'?dealRow:dealCard).join(''):'<div class="empty">No deals match your filters.<br><br><button class="btn acc" onclick="clearFilters()">Clear filters</button></div>';
 }
 
 /* ── detail ── */
