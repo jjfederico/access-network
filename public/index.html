@@ -444,6 +444,15 @@ function sendReq(){
 <script>
 function openSignin(){document.getElementById('siBg').classList.add('on');document.body.style.overflow='hidden';setTimeout(function(){var n=document.getElementById('siEmail');if(n)n.focus();},60);}
 function closeSignin(){document.getElementById('siBg').classList.remove('on');document.body.style.overflow='';}
+var LAST_SIGNIN_EMAIL='';
+function resendSignin(){
+  if(!LAST_SIGNIN_EMAIL)return;
+  var m=document.getElementById('siResendMsg');if(m){m.style.color='var(--mut)';m.textContent='Resending…';}
+  fetch('/auth/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:LAST_SIGNIN_EMAIL})})
+    .then(function(r){return r.json().catch(function(){return{ok:false};});})
+    .then(function(j){if(!m)return;if(j&&j.ok){m.style.color='var(--acc)';m.textContent='Link resent ✓ — check spam/promotions too.';}else{m.style.color='var(--bad)';m.textContent='Couldn’t resend — try again in a moment.';}})
+    .catch(function(){if(m){m.style.color='var(--bad)';m.textContent='Network error — try again.';}});
+}
 function sendSignin(){
   var el=document.getElementById('siEmail');var email=el?el.value.trim():'';
   var msg=document.getElementById('siMsg');
@@ -452,7 +461,7 @@ function sendSignin(){
   fetch('/auth/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})})
     .then(function(r){return r.json().catch(function(){return{ok:false};});})
     .then(function(j){
-      if(j&&j.ok){document.getElementById('siBody').innerHTML='<div class="rdone"><div class="big">Check your email ✓</div><p style="color:var(--mut);font-size:14px;line-height:1.5">We sent a sign-in link to <b>'+email.replace(/</g,'')+'</b>. Tap it to sign in — it expires in 30 minutes.</p><button class="btn p big" style="margin-top:16px;justify-content:center" onclick="closeSignin()">Done</button></div>';}
+      if(j&&j.ok){LAST_SIGNIN_EMAIL=email;document.getElementById('siBody').innerHTML='<div class="rdone"><div class="big">Check your email ✓</div><p style="color:var(--mut);font-size:14px;line-height:1.5">We sent a sign-in link to <b>'+email.replace(/</g,'')+'</b>. Tap it to sign in — it expires in 30 minutes.</p><p style="margin-top:9px;font-size:12.5px;color:var(--mut2);line-height:1.5">Didn’t get it? Check your <b>spam</b> and <b>promotions</b> folders. Still nothing? <a href="#" onclick="resendSignin();return false" style="color:var(--acc);text-decoration:underline">Resend the link</a>.</p><div class="rmsg" id="siResendMsg" style="text-align:center"></div><button class="btn p big" style="margin-top:14px;justify-content:center" onclick="closeSignin()">Done</button></div>';}
       else{btn.disabled=false;btn.textContent='Send sign-in link';msg.style.color='var(--bad)';msg.textContent=(j&&j.message)||'Something went wrong — try again.';}
     })
     .catch(function(){btn.disabled=false;btn.textContent='Send sign-in link';msg.style.color='var(--bad)';msg.textContent='Network error — try again.';});
