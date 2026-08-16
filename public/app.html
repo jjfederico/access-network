@@ -885,6 +885,26 @@ function render(){
 
 /* ── detail ── */
 function mapEmbed(addr){var q=encodeURIComponent(addr);return '<iframe class="dmap" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q='+q+'&output=embed"></iframe>';}
+// Investment analysis — derived ONLY from the figures the poster entered (never invented).
+// Shown for income/scale deals; hidden for a plain single-family or raw land.
+function analysisBlock(d){
+  var price=num(d.price),noi=num(d.noi),units=num(d.units),sf=num(d.sf),gross=num(d.gross);
+  var isIncome=(noi>0||units>1||gross>0);
+  if(!price||!isIncome)return '';
+  var rows=[];
+  var capC=(noi&&price)?(noi/price*100):num(d.cap);
+  if(capC)rows.push(['Cap rate',capC.toFixed(2)+'%'+((noi&&price&&!num(d.cap))?' *':'')]);
+  if(units>0)rows.push(['Price / unit','$'+Math.round(price/units).toLocaleString('en-US')]);
+  if(sf>0)rows.push(['Price / sq ft','$'+Math.round(price/sf).toLocaleString('en-US')]);
+  if(gross>0)rows.push(['GRM (price / gross income)',(price/gross).toFixed(1)+'×']);
+  if(gross>0)rows.push(['Gross income','$'+Math.round(gross).toLocaleString('en-US')]);
+  if(!rows.length)return '';
+  return '<div class="reveal" style="margin-top:2px"><b style="color:var(--acc2)">📊 Investment analysis</b>'
+    +'<div style="color:var(--mut2);font-size:11px;margin:2px 0 6px">Estimated from the figures posted — verify independently.</div>'
+    +rows.map(function(r){return '<div class="drow"><span>'+r[0]+'</span><b class="mono">'+r[1]+'</b></div>';}).join('')
+    +((noi&&price&&!num(d.cap))?'<div style="color:var(--mut2);font-size:10.5px;margin-top:4px">* cap rate computed from NOI ÷ price</div>':'')
+    +'</div>';
+}
 function docsBlock(d){
   if(!d.docs||!d.docs.length)return '';
   return '<div style="margin:12px 0"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:6px">Documents</div>'
@@ -947,6 +967,7 @@ function openDetail(id){
       +albumBlock(d)
       +docsBlock(d)
       +rows.map(function(r){return '<div class="drow"><span>'+r[0]+'</span><b class="mono">'+r[1]+'</b></div>';}).join('')
+      +analysisBlock(d)
       +expBadge
       +(mine?'<div id="detAnalytics" style="margin-top:14px"></div><div id="detMatch" style="margin-top:12px"></div>':'<div id="detAgent" style="margin-top:14px"></div>')
       +'<div class="mact" style="margin-top:16px">'+cta+'</div>'
