@@ -315,36 +315,41 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 <style id="ax-dark-fix">
 /* ACCESS dark palette — redefine the design tokens so the whole app flips, not just patches */
 html.dark{
-  --bg:#12151B;--bg2:#171B22;--card:#1B2029;--card2:#20252F;--line:#272D38;--line2:#333B48;
-  --tx:#E6E9EF;--mut:#9AA1AD;--mut2:#6E7682;--acc:#6E9BFF;--acc2:#6E9BFF;--accdim:#1B2740;
-  --gold:#D9B25A;--bad:#E0664A;--badbg:#3A1E16;--warn:#D9B25A;--blue:#6E9BFF;
+  /* lighter, higher-contrast slate — cards pop off the background, muted text stays readable */
+  --bg:#1C212B;--bg2:#242A35;--card:#2A313D;--card2:#333B48;--line:#3B4451;--line2:#4D5869;
+  --tx:#EEF1F5;--mut:#BCC4D0;--mut2:#98A2B0;--acc:#84AAFF;--acc2:#84AAFF;--accdim:#26364F;
+  --gold:#E7C374;--bad:#EF7E64;--badbg:#3A1E16;--warn:#E7C374;--blue:#84AAFF;
   color-scheme:dark;
 }
 html.dark body{background:var(--bg);color:var(--tx)}
 /* ACCESS dark-mode fix — flip hardcoded LIGHT surfaces/text that don't respond to html.dark */
 /* photo placeholder: light gradient -> flat dark tile */
-html.dark .deal .ph{background:#20252F!important;color:#8A92A0!important}
+html.dark .deal .ph{background:#333B48!important;color:#A2ABB8!important}
 /* lock chip + badges: translucent white -> translucent dark */
-html.dark .deal .lock,html.dark .bdg{background:rgba(32,37,47,.85)!important}
+html.dark .deal .lock,html.dark .bdg{background:rgba(56,64,78,.9)!important}
 /* status pill (requested): pale yellow -> dark panel */
-html.dark .pill.req{background:#171B22!important;color:#D9B25A!important}
+html.dark .pill.req{background:#2A313D!important;color:#E7C374!important}
 /* account menu + mortgage panel: var(--card,#fff)/light border fallbacks -> dark */
-html.dark .acctMenu{background:#20252F!important;border-color:#2A303C!important}
-html.dark #mcPanel{background:#20252F!important;border-color:#2A303C!important}
+html.dark .acctMenu{background:#2A313D!important;border-color:#4D5869!important}
+html.dark #mcPanel{background:#2A313D!important;border-color:#4D5869!important}
 /* hero header: white gradient -> flat dark panel */
-html.dark .hero{background:#171B22!important}
+html.dark .hero{background:#242A35!important}
 /* stat tiles: light tints -> dark cards */
 html.dark .hero .stats .s:nth-child(1),
 html.dark .hero .stats .s:nth-child(2),
 html.dark .hero .stats .s:nth-child(3),
-html.dark .hero .stats .s:nth-child(4){background:#20252F!important}
+html.dark .hero .stats .s:nth-child(4){background:#2F3743!important}
 /* stat values: dark colored text -> brightened readable tints */
-html.dark .hero .stats .s:nth-child(1) .v{color:#6E9BFF!important}
-html.dark .hero .stats .s:nth-child(2) .v{color:#D9B25A!important}
-html.dark .hero .stats .s:nth-child(3) .v{color:#3EE0B0!important}
-html.dark .hero .stats .s:nth-child(4) .v{color:#9B93E0!important}
+html.dark .hero .stats .s:nth-child(1) .v{color:#84AAFF!important}
+html.dark .hero .stats .s:nth-child(2) .v{color:#E7C374!important}
+html.dark .hero .stats .s:nth-child(3) .v{color:#57ECC2!important}
+html.dark .hero .stats .s:nth-child(4) .v{color:#B2ABF0!important}
 /* gate banner (JS-injected light surface) */
-html.dark #gateBar{background:#171B22!important;color:#DDE1E8!important}
+html.dark #gateBar{background:#242A35!important;color:#E8ECF2!important}
+/* top nav bar: light frosted -> dark frosted (was hardcoded near-white) */
+html.dark .nav{background:rgba(22,27,34,.9)!important}
+/* any leftover near-white frosted chips flip dark */
+html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
 </style>
 <script>/* set theme before paint to avoid a flash */(function(){try{var t=localStorage.getItem('access_theme');if(!t)t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
 </head>
@@ -469,7 +474,7 @@ html.dark .nudge{background:#1B2740;border-color:#2E4C86}
 @media(max-width:560px){.catseg button{padding:6px 9px;font-size:10px}}
 /* deal-feed layout switcher */
 .viewseg{display:inline-flex;background:var(--card2);border:1px solid var(--line2);border-radius:9px;padding:2px;gap:1px}
-.viewseg button{border:0;background:transparent;color:var(--mut);font-size:14px;line-height:1;padding:5px 9px;border-radius:6px;cursor:pointer}
+.viewseg button{border:0;background:transparent;color:var(--mut);font-size:16px;line-height:1;padding:6px 11px;border-radius:6px;cursor:pointer}
 .viewseg button.on{background:var(--acc);color:#fff}
 .grid.view-compact{grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:10px}
 .grid.view-compact .deal{padding:11px}
