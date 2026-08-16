@@ -1645,7 +1645,7 @@ function mcCalc(){
   $('mcPay').textContent=(pay&&isFinite(pay))?('$'+Math.round(pay).toLocaleString('en-US')+'/mo'):'—';
 }
 // Prefill the calculator from a deal's asking price when opened from a detail view.
-function mcFromDeal(price){$('mcPrice').value=Math.round(num(price))||'';close_('mDetail');mcOpen();}
+function mcFromDeal(price){$('mcPrice').value=Math.round(num(price))||'';close_('mDetail');setTimeout(mcOpen,0);}
 
 /* ── guided tour ── */
 var TOUR=[
