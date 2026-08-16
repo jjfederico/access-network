@@ -444,6 +444,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
             <button data-v="comfortable" onclick="setDealView('comfortable')" title="Cards" aria-label="Cards view">▦</button>
             <button data-v="compact" onclick="setDealView('compact')" title="Compact cards" aria-label="Compact view">▤</button>
             <button data-v="list" onclick="setDealView('list')" title="List" aria-label="List view">≣</button>
+            <button data-v="map" onclick="setDealView('map')" title="Map" aria-label="Map view"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M12 21s-6.5-5-6.5-10a6.5 6.5 0 0 1 13 0C18.5 16 12 21 12 21z"/><circle cx="12" cy="11" r="2.2"/></svg></button>
           </div>
           <select id="fSort" onchange="render()"><option value="new">Sort: Newest</option><option value="priceHigh">Price: high → low</option><option value="priceLow">Price: low → high</option><option value="cap">Cap rate</option></select>
           <button class="btn ghost sm railtog" onclick="document.getElementById('rail').classList.toggle('open')">Filters</button>
@@ -482,6 +483,8 @@ html.dark .nudge{background:#1B2740;border-color:#2E4C86}
 .grid.view-compact .deal .sub{font-size:14.5px}
 .grid.view-compact .deal .kpis{margin-top:8px;padding-top:8px}
 .grid.view-compact .deal .foot{margin-top:8px;padding-top:8px}
+.grid.view-map{display:block}
+.dealmap{width:100%;height:min(640px,72vh);border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--card2)}
 .grid.view-list{grid-template-columns:1fr;gap:5px}
 .drow-item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;transition:border-color .12s,background .12s;border-left:3px solid var(--tc,var(--acc))}
 .drow-item:hover{border-color:var(--line2);background:var(--card2)}
@@ -697,7 +700,8 @@ function syncDealFields(){var t=($('sType')&&$('sType').value)||'';var hide=DEAL
 /* ── Google Maps: address autocomplete on all .gaddr inputs ── */
 var MAPS_KEY=(window.__MAPS_KEY__||'');
 function loadMaps(cb){if(window.google&&window.google.maps&&window.google.maps.places){cb&&cb();return;}if(!MAPS_KEY)return;if(!window._mapsCbs)window._mapsCbs=[];window._mapsCbs.push(cb);if(window._mapsLoading)return;window._mapsLoading=1;window._mapsReady=function(){(window._mapsCbs||[]).forEach(function(f){f&&f();});window._mapsCbs=[];};var s=document.createElement('script');s.async=true;s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(MAPS_KEY)+'&libraries=places&callback=_mapsReady';document.head.appendChild(s);}
-function initAddrAuto(){if(!MAPS_KEY)return;if(!window._pacCss){window._pacCss=1;var st=document.createElement('style');st.textContent='.pac-container{z-index:100001!important}';document.head.appendChild(st);}loadMaps(function(){document.querySelectorAll('input.gaddr').forEach(function(el){if(el._ac)return;el._ac=1;var ac=new google.maps.places.Autocomplete(el,{types:['address'],componentRestrictions:{country:'us'},fields:['formatted_address','address_components']});ac.addListener('place_changed',function(){var p=ac.getPlace();if(!p)return;if(p.formatted_address)el.value=p.formatted_address;if(el.id==='sAddr'){var c=p.address_components||[];function g(t){var x=c.find(function(a){return a.types.indexOf(t)>=0;});return x?x.long_name:'';}var nb=g('neighborhood')||g('sublocality')||g('locality');if(nb&&$('sSub')&&!$('sSub').value)$('sSub').value=nb;}});});});}
+var SUBMIT_COORDS=null; // {lat,lng} captured from the address autocomplete, saved with the deal
+function initAddrAuto(){if(!MAPS_KEY)return;if(!window._pacCss){window._pacCss=1;var st=document.createElement('style');st.textContent='.pac-container{z-index:100001!important}';document.head.appendChild(st);}loadMaps(function(){document.querySelectorAll('input.gaddr').forEach(function(el){if(el._ac)return;el._ac=1;var ac=new google.maps.places.Autocomplete(el,{types:['address'],componentRestrictions:{country:'us'},fields:['formatted_address','address_components','geometry']});ac.addListener('place_changed',function(){var p=ac.getPlace();if(!p)return;if(p.formatted_address)el.value=p.formatted_address;if(el.id==='sAddr'){if(p.geometry&&p.geometry.location){SUBMIT_COORDS={lat:p.geometry.location.lat(),lng:p.geometry.location.lng()};}var c=p.address_components||[];function g(t){var x=c.find(function(a){return a.types.indexOf(t)>=0;});return x?x.long_name:'';}var nb=g('neighborhood')||g('sublocality')||g('locality');if(nb&&$('sSub')&&!$('sSub').value)$('sSub').value=nb;}});});});}
 
 /* ── data (all reads/writes go through the secure /api/pm/* API — addresses are
    redacted server-side and only revealed to the seller or an approved buyer) ── */
@@ -717,7 +721,7 @@ function nL(l){
     type:l.propType||'',price:l.price,commission:l.commissionPct,commNotes:l.commissionNotes||'',
     units:l.units,cap:l.capRate,noi:l.noi,sf:l.sqft,gross:l.grossIncome,exp:l.expenses,
     beds:l.beds,baths:l.baths,yb:l.yearBuilt,desc:l.notes||'',dist:l.dist||'broad',
-    docs:Array.isArray(l.docs)?l.docs:[],photos:Array.isArray(l.photos)?l.photos:[],photoCount:(l.photoCount||(Array.isArray(l.photos)?l.photos.length:0)),views:l.views||0,featured:!!l.featured,
+    docs:Array.isArray(l.docs)?l.docs:[],photos:Array.isArray(l.photos)?l.photos:[],photoCount:(l.photoCount||(Array.isArray(l.photos)?l.photos.length:0)),lat:l.lat||'',lng:l.lng||'',views:l.views||0,featured:!!l.featured,
     expiresAt:l.expiresAt||'',expired:!!l.expired};
 }
 var PROFILE=null, APPROVED=true, BBMATCHES=[], PAYCFG={enabled:false,membership:false,prices:{renew:10,feature:25}};
@@ -905,10 +909,45 @@ function dealRow(d){
 }
 /* ── deal-feed layout (cards / compact / list) ── */
 var DEALVIEW='comfortable';
-function setDealView(v){DEALVIEW=(['comfortable','compact','list'].indexOf(v)>=0?v:'comfortable');try{localStorage.setItem('access_view',DEALVIEW);}catch(e){}
+function setDealView(v){DEALVIEW=(['comfortable','compact','list','map'].indexOf(v)>=0?v:'comfortable');try{localStorage.setItem('access_view',DEALVIEW);}catch(e){}
   var s=$('viewSeg');if(s)s.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-v')===DEALVIEW);});
   render();}
 function initDealView(){var v;try{v=localStorage.getItem('access_view');}catch(e){}setDealView(v||'comfortable');}
+
+/* ── map view: plot the feed on a Google Map ── */
+var SUBMARKET_COORDS={
+ 'south boston':[42.3331,-71.0465],'dorchester':[42.3016,-71.0676],'roxbury':[42.3247,-71.0954],'jamaica plain':[42.3098,-71.1147],'east boston':[42.3702,-71.0389],'charlestown':[42.3782,-71.0602],'roslindale':[42.2870,-71.1290],'west roxbury':[42.2798,-71.1595],'hyde park':[42.2565,-71.1245],'mattapan':[42.2676,-71.0920],'allston / brighton':[42.3510,-71.1310],'allston':[42.3536,-71.1329],'brighton':[42.3464,-71.1627],'back bay':[42.3503,-71.0810],'south end':[42.3388,-71.0765],'cambridge':[42.3736,-71.1097],'somerville':[42.3876,-71.0995],'quincy':[42.2529,-71.0023],'malden':[42.4251,-71.0662],'medford':[42.4184,-71.1062],'everett':[42.4084,-71.0537],'chelsea':[42.3918,-71.0328],'revere':[42.4084,-71.0120],'lynn':[42.4668,-70.9495],'brockton':[42.0834,-71.0184],'worcester':[42.2626,-71.8023],'springfield':[42.1015,-72.5898],'lowell':[42.6334,-71.3162],'lawrence':[42.7070,-71.1631],'new bedford':[41.6362,-70.9342],'fall river':[41.7015,-71.1550],'framingham':[42.2793,-71.4162],'newton':[42.3370,-71.2092],'waltham':[42.3765,-71.2356]
+};
+function dealLatLng(d){
+  var la=parseFloat(d.lat),ln=parseFloat(d.lng);
+  if(isFinite(la)&&isFinite(ln)&&la!==0)return {lat:la,lng:ln,exact:true};      // exact (entitled + captured)
+  var key=String(d.submarket||'').toLowerCase().trim();var c=SUBMARKET_COORDS[key];
+  if(c)return {lat:c[0]+(Math.random()-0.5)*0.008,lng:c[1]+(Math.random()-0.5)*0.008,exact:false}; // approx submarket, jittered
+  return null;
+}
+var DEALMAP=null,MAP_MARKERS=[],MAP_INFO=null;
+function renderMap(list){
+  var g=$('grid');if(!g)return;
+  if(!MAPS_KEY){g.innerHTML='<div class="empty">The map needs a Google Maps key.<br><br>Add <b>GOOGLE_MAPS_KEY</b> in Render to enable it.</div>';return;}
+  g.innerHTML='<div id="dealMap" class="dealmap"></div>';
+  loadMaps(function(){
+    var el=$('dealMap');if(!el||!(window.google&&google.maps))return;
+    DEALMAP=new google.maps.Map(el,{center:{lat:42.33,lng:-71.09},zoom:10,mapTypeControl:false,streetViewControl:false,fullscreenControl:true,clickableIcons:false});
+    if(!MAP_INFO)MAP_INFO=new google.maps.InfoWindow();
+    MAP_MARKERS.forEach(function(m){m.setMap(null);});MAP_MARKERS=[];
+    var bounds=new google.maps.LatLngBounds(),any=false;
+    list.forEach(function(d){
+      var pos=dealLatLng(d);if(!pos)return;
+      var mk=new google.maps.Marker({position:{lat:pos.lat,lng:pos.lng},map:DEALMAP,title:(d.submarket||'Deal')+' · '+money(d.price)});
+      mk.addListener('click',function(){
+        MAP_INFO.setContent('<div style="font-family:Inter,system-ui,sans-serif;min-width:150px"><div style="font-weight:700;font-size:14px">'+esc(d.submarket||'Off-market deal')+'</div><div style="font-size:12px;color:#5F636D;margin:2px 0 6px">'+esc(d.type||'')+' · '+money(d.price)+(pos.exact?'':' · approx. area')+'</div><a href="#" onclick="MAP_INFO.close();openDetail(\''+d.id+'\');return false" style="color:#17418A;font-weight:600;font-size:12.5px;text-decoration:none">View deal →</a></div>');
+        MAP_INFO.open(DEALMAP,mk);
+      });
+      MAP_MARKERS.push(mk);bounds.extend(mk.getPosition());any=true;
+    });
+    if(any){DEALMAP.fitBounds(bounds);google.maps.event.addListenerOnce(DEALMAP,'idle',function(){if(DEALMAP.getZoom()>14)DEALMAP.setZoom(14);});}
+  });
+}
 function feedVisible(d){
   if(d.status==='off'||d.status==='mls')return false;
   if(d.dist==='pocket'&&!isMine(d)&&ME.role!=='owner')return false;   // pocket hidden from the general feed
@@ -942,6 +981,7 @@ function render(){
   if($('rCount'))$('rCount').textContent=list.length;
   if($('rLabel'))$('rLabel').textContent=(list.length===1?'deal':'deals')+' in '+(REGION==='all'?'Massachusetts':((REGIONS.filter(function(r){return r.k===REGION;})[0]||{}).name||'MA'));
   g.className='grid view-'+DEALVIEW;
+  if(DEALVIEW==='map'){renderMap(list);return;}
   g.innerHTML=list.length?list.map(DEALVIEW==='list'?dealRow:dealCard).join(''):'<div class="empty">No deals match your filters.<br><br><button class="btn acc" onclick="clearFilters()">Clear filters</button></div>';
 }
 
@@ -1189,7 +1229,8 @@ function submitDeal(){
     units:($('sUnits').value||'').trim(),capRate:($('sCap').value||'').trim(),noi:noComma('sNoi'),
     sqft:noComma('sSf'),beds:($('sBeds').value||'').trim(),baths:($('sBaths').value||'').trim(),yearBuilt:($('sYb').value||'').trim(),
     notes:($('sDesc').value||'').trim(),dist:$('sDist').value,status:'active',
-    hideAddress:$('sHideAddr').checked,docs:SUBMIT_DOCS,photos:SUBMIT_PHOTOS};
+    hideAddress:$('sHideAddr').checked,docs:SUBMIT_DOCS,photos:SUBMIT_PHOTOS,
+    lat:(SUBMIT_COORDS?SUBMIT_COORDS.lat:''),lng:(SUBMIT_COORDS?SUBMIT_COORDS.lng:'')};
   if(!body.area){$('sMsg').textContent='Add a submarket.';return;}
   if(!num(body.price)){$('sMsg').textContent='Add an asking price.';return;}
   $('sMsg').textContent='Posting…';
@@ -1197,7 +1238,7 @@ function submitDeal(){
     if(j&&j.error==='not_approved'){$('sMsg').textContent='Your membership isn’t approved yet.';return;}
     $('sMsg').textContent=(j&&j.ok)?'Posted ✓':'Failed — retry';
     if(j&&j.ok){['sAddr','sSub','sPrice','sComm','sUnits','sCap','sNoi','sSf','sBeds','sBaths','sYb','sDesc'].forEach(function(id){$(id).value='';});
-      $('sHideAddr').checked=false;SUBMIT_DOCS=[];renderDocList();SUBMIT_PHOTOS=[];renderPhotoList();syncDealFields();
+      $('sHideAddr').checked=false;SUBMIT_DOCS=[];renderDocList();SUBMIT_PHOTOS=[];renderPhotoList();SUBMIT_COORDS=null;syncDealFields();
       loadAll();setTimeout(function(){close_('mSubmit');$('sMsg').textContent='';},800);}
   });
 }

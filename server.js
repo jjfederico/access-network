@@ -93,7 +93,11 @@ function pmPublicView(l, full) {
     photoCount: Array.isArray(l.photos) ? l.photos.length : 0,
     hideAddress: !!l.hideAddress, addressHidden: !showAddr
   };
-  if (showAddr) { out.address = l.address || ''; out.zip = zip; out.photos = Array.isArray(l.photos) ? l.photos : []; }
+  if (showAddr) {
+    out.address = l.address || ''; out.zip = zip;
+    out.photos = Array.isArray(l.photos) ? l.photos : [];
+    if (l.lat && l.lng) { out.lat = l.lat; out.lng = l.lng; } // exact pin only for entitled viewers
+  }
   return out;
 }
 const pmSendEmail = (to, subject, body) =>
@@ -230,6 +234,7 @@ app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
       units: S(b.units, 20), sqft: S(b.sqft, 20),
       beds: S(b.beds, 20), baths: S(b.baths, 20), yearBuilt: S(b.yearBuilt, 12),
       price: S(b.price, 24), noi: S(b.noi, 24), capRate: S(b.capRate, 16),
+      lat: S(b.lat, 24), lng: S(b.lng, 24),
       grossIncome: S(b.grossIncome, 24), expenses: S(b.expenses, 24),
       commissionPct: S(b.commissionPct, 16), commissionNotes: S(b.commissionNotes, 300),
       notes: S(b.notes, 3000), docs: docsIn, photos: photosIn
