@@ -243,7 +243,7 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
     const gated = !isOwner && !recip.active;   // throttle non-contributors
     const isExpired = l => l.expiresAt && (new Date(l.expiresAt) < new Date());
     const profBy = {}; profs.forEach(p => { if (p && p.email) profBy[_lc(p.email)] = p; });
-    const attachOwner = r => { const p = profBy[_lc(r.owner)]; r.ownerVerified = !!(p && p.verified); const pof = pmPofPublic(p || {}); r.ownerPof = pof.status === 'verified' ? { amount: pof.amount } : null; return r; };
+    const attachOwner = r => { const p = profBy[_lc(r.owner)]; r.ownerVerified = !!(p && p.verified); r.ownerProducer = !!(p && p.producer); const pof = pmPofPublic(p || {}); r.ownerPof = pof.status === 'verified' ? { amount: pof.amount } : null; return r; };
     const rows = listings
       .filter(l => l && (((l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls') || mine(l) || isOwner))
       .filter(l => !isExpired(l) || mine(l) || isOwner)
@@ -264,6 +264,7 @@ app.get('/api/pm/listing/:id', ensureAuth, pmGate, async (req, res) => {
     const oProf = profs.find(p => p && _lc(p.email) === _lc(l.owner)) || {};
     const view = pmPublicView(l, full, gated);
     view.ownerVerified = !!oProf.verified;
+    view.ownerProducer = !!oProf.producer;
     const oPof = pmPofPublic(oProf); view.ownerPof = oPof.status === 'verified' ? { amount: oPof.amount } : null;
     res.json({ ok: true, listing: view, reciprocity: recip });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -391,7 +392,7 @@ app.post('/api/pm/intro', ensureAuth, pmGate, async (req, res) => {
     const buyerPof = pmPofPublic(buyerProf); // snapshot buyer's credibility onto the intro
     const rec = { id: pmId('I'), listingId, seller: l.owner, buyer: req.user.email,
       buyerName: String(b.buyerName || req.user.name || '').slice(0, 80), message: String(b.message || '').slice(0, 1000),
-      buyerVerified: !!buyerProf.verified, buyerPof,
+      buyerVerified: !!buyerProf.verified, buyerProducer: !!buyerProf.producer, buyerPof,
       status: 'pending', createdAt: new Date().toISOString(), decidedAt: '' };
     intros.push(rec);
     await pmSave(PM_KEYS.intros, intros);
@@ -415,7 +416,7 @@ app.get('/api/pm/intros', ensureAuth, pmGate, async (req, res) => {
       const l = byId[i.listingId];
       const summary = l ? pmPublicView(l, i.status === 'approved' || req.user.role === 'owner') : null;
       if (_lc(i.buyer) === email) asBuyer.push({ id: i.id, listingId: i.listingId, status: i.status, message: i.message, createdAt: i.createdAt, decidedAt: i.decidedAt, listing: summary });
-      if (_lc(i.seller) === email || req.user.role === 'owner') asSeller.push({ id: i.id, listingId: i.listingId, status: i.status, message: i.message, createdAt: i.createdAt, decidedAt: i.decidedAt, buyer: i.buyer, buyerName: i.buyerName, buyerVerified: !!i.buyerVerified, buyerPof: i.buyerPof || { status: 'none', amount: '' }, listing: summary });
+      if (_lc(i.seller) === email || req.user.role === 'owner') asSeller.push({ id: i.id, listingId: i.listingId, status: i.status, message: i.message, createdAt: i.createdAt, decidedAt: i.decidedAt, buyer: i.buyer, buyerName: i.buyerName, buyerVerified: !!i.buyerVerified, buyerProducer: !!i.buyerProducer, buyerPof: i.buyerPof || { status: 'none', amount: '' }, listing: summary });
     });
     res.json({ ok: true, asBuyer, asSeller });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -811,12 +812,30 @@ app.post('/api/pm/admin/pof', ensureAuth, pmGate, async (req, res) => {
     res.json({ ok: true, email, pof: pmPofPublic(profs[idx]) });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
+// Admin grants/removes the curated "Producer" credibility badge. This is an
+// editorial curation signal (admin's judgment) — NOT an automated claim about a
+// member's sales volume, which keeps it free of misrepresentation risk.
+app.post('/api/pm/admin/producer', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const b = req.body || {};
+  const email = _lc(b.email);
+  if (!email) return res.status(400).json({ ok: false, error: 'no_email' });
+  try {
+    const profs = await pmLoad('pm_profiles');
+    const idx = profs.findIndex(p => p && _lc(p.email) === email);
+    if (idx < 0) return res.status(404).json({ ok: false, error: 'not_found' });
+    profs[idx].producer = !!b.producer;
+    profs[idx].producerAt = b.producer ? new Date().toISOString() : '';
+    await pmSave('pm_profiles', profs);
+    res.json({ ok: true, email, producer: !!profs[idx].producer });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
 app.get('/api/pm/profile/:email', ensureAuth, pmGate, async (req, res) => {
   try {
     const profs = await pmLoad('pm_profiles');
     const p = profs.find(x => x && _lc(x.email) === _lc(req.params.email));
     if (!p) return res.json({ ok: true, profile: null });
-    res.json({ ok: true, profile: { email: p.email, name: p.name || '', brokerage: p.brokerage || '', license: p.license || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, pof: pmPofPublic(p), status: p.status || 'pending' } });
+    res.json({ ok: true, profile: { email: p.email, name: p.name || '', brokerage: p.brokerage || '', license: p.license || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, producer: !!p.producer, pof: pmPofPublic(p), status: p.status || 'pending' } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.get('/api/pm/directory', ensureAuth, pmGate, async (req, res) => {
@@ -825,7 +844,7 @@ app.get('/api/pm/directory', ensureAuth, pmGate, async (req, res) => {
     const isOwner = req.user.role === 'owner';
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
-    const members = profs.filter(p => p && p.status === 'approved').map(p => ({ email: p.email, name: p.name || '', brokerage: p.brokerage || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', license: isOwner ? (p.license || '') : '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, pof: pmPofPublic(p), deals: counts[_lc(p.email)] || 0, joined: p.createdAt || '' })).sort((a, b) => (b.deals - a.deals) || String(a.name || a.email).localeCompare(String(b.name || b.email)));
+    const members = profs.filter(p => p && p.status === 'approved').map(p => ({ email: p.email, name: p.name || '', brokerage: p.brokerage || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', license: isOwner ? (p.license || '') : '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, producer: !!p.producer, pof: pmPofPublic(p), deals: counts[_lc(p.email)] || 0, joined: p.createdAt || '' })).sort((a, b) => (b.deals - a.deals) || String(a.name || a.email).localeCompare(String(b.name || b.email)));
     res.json({ ok: true, members, count: members.length, me: { email: req.user.email, role: req.user.role } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -836,7 +855,7 @@ app.get('/api/pm/admin/members', ensureAuth, pmGate, async (req, res) => {
   try {
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
-    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', status: p.status || 'pending', verified: !!p.verified, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
+    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', status: p.status || 'pending', verified: !!p.verified, producer: !!p.producer, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
     res.json({ ok: true, members, pending: members.filter(m => m.status === 'pending').length, pofPending: members.filter(m => m.pof === 'pending').length });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });

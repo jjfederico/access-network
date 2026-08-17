@@ -103,6 +103,8 @@ html.dark .bdg.feat{color:#E7C374!important;background:rgba(231,195,116,.14)!imp
 .bdg.mine{color:var(--acc);border-color:rgba(23,65,138,.28)}
 .bdg.ver{color:#1E7A52;border-color:rgba(30,122,82,.32);background:rgba(30,122,82,.08)}
 .bdg.pof{color:#8A6A12;border-color:rgba(138,106,18,.32);background:rgba(180,136,46,.12)}
+.bdg.prod{color:#7A4FCC;border-color:rgba(122,79,204,.34);background:rgba(122,79,204,.1)}
+html.dark .bdg.prod{color:#B2ABF0!important;border-color:rgba(178,171,240,.34)!important;background:rgba(178,171,240,.12)!important}
 html.dark .bdg.ver{color:#57ECC2!important;border-color:rgba(87,236,194,.3)!important;background:rgba(87,236,194,.1)!important}
 html.dark .bdg.pof{color:#E7C374!important;border-color:rgba(231,195,116,.32)!important;background:rgba(231,195,116,.12)!important}
 .deal .sub{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;font-weight:700;line-height:1.2;letter-spacing:0}
@@ -646,7 +648,7 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
     </div>
     <div class="f full" id="socialWrap" style="display:none;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:12px 14px">
       <label class="ck" style="align-items:flex-start;gap:9px"><input type="checkbox" id="sSocial" checked style="margin-top:2px">
-        <span style="text-transform:none;letter-spacing:0;font-weight:500;font-size:13px;line-height:1.45;color:var(--tx)">📣 <b>Promote this deal on ACCESS social media.</b> <span style="color:var(--mut)">We may create an Instagram / LinkedIn post featuring this listing — crediting you and your brokerage — to drive exposure to the network. Broad listings with a visible address only; we never post private, pocket, or address-hidden deals.</span></span>
+        <span style="text-transform:none;letter-spacing:0;font-weight:500;font-size:13px;line-height:1.45;color:var(--tx)">📣 <b>Promote this deal on ACCESS social media.</b> <span style="color:var(--mut)">We may create an Instagram / LinkedIn post featuring this listing — crediting you and your brokerage — to drive exposure to the network. Broad listings with a visible address only; we never post private, pocket, or address-hidden deals.<br><span style="color:var(--gold)">⚠︎ Public promotion may trigger MLS “Clear Cooperation” timing rules — confirm your listing obligations before opting in.</span></span></span>
       </label>
     </div>
     <div class="mact"><span class="msg" id="sMsg"></span><button class="btn ghost" onclick="close_('mSubmit')">Cancel</button><button class="btn acc" id="sBtn" onclick="submitDeal()">Post deal</button></div>
@@ -804,7 +806,7 @@ function nL(l){
     units:l.units,cap:l.capRate,noi:l.noi,sf:l.sqft,gross:l.grossIncome,exp:l.expenses,
     beds:l.beds,baths:l.baths,yb:l.yearBuilt,desc:l.notes||'',dist:l.dist||'broad',
     docs:Array.isArray(l.docs)?l.docs:[],photos:Array.isArray(l.photos)?l.photos:[],photoCount:(l.photoCount||(Array.isArray(l.photos)?l.photos.length:0)),lat:l.lat||'',lng:l.lng||'',views:l.views||0,featured:!!l.featured,
-    social:!!l.social,expiresAt:l.expiresAt||'',expired:!!l.expired};
+    social:!!l.social,ownerVerified:!!l.ownerVerified,ownerProducer:!!l.ownerProducer,ownerPof:l.ownerPof||null,expiresAt:l.expiresAt||'',expired:!!l.expired};
 }
 var PROFILE=null, APPROVED=true, BBMATCHES=[], PAYCFG={enabled:false,membership:false,prices:{renew:10,feature:25}};
 // api() with a timeout so one slow/hanging Apps Script call can never resolve late
@@ -900,8 +902,9 @@ function canSeeAddress(d){return !d.addressHidden;}
 // Trust chips. verified=license; pof can be {amount} (card shorthand, already verified)
 // or {status,amount} (directory/intro/profile). Only renders POF when verified.
 function badgeVer(v){return v?'<span class="bdg ver" title="License verified">✓ Verified</span>':'';}
+function badgeProd(v){return v?'<span class="bdg prod" title="Curated producer — vetted by ACCESS">⭐ Producer</span>':'';}
 function badgePof(p){if(!p)return '';var ok=(p.status==='verified')||(p.status===undefined&&(p.amount!==undefined));if(!ok)return '';var amt=p.amount?(' '+esc(String(p.amount))):'';return '<span class="bdg pof" title="Proof of funds verified">💰 POF'+amt+'</span>';}
-function trustBadges(v,p){return badgeVer(v)+badgePof(p);}
+function trustBadges(v,p,prod){return badgeProd(prod)+badgeVer(v)+badgePof(p);}
 
 /* ── stats ── */
 function renderStats(){
@@ -1032,7 +1035,7 @@ function dealCard(d){
   if(d.featured)badges+='<span class="bdg feat">★ Featured</span>';
   badges+=distBadge(d);
   if(isMine(d))badges+='<span class="bdg mine">Yours</span>';
-  badges+=trustBadges(d.ownerVerified,d.ownerPof);
+  badges+=trustBadges(d.ownerVerified,d.ownerPof,d.ownerProducer);
   var kp='';
   // Adaptive KPIs: income deals show Units/Cap; a house/condo shows Beds/Baths instead of empty dashes.
   // Only show KPIs the poster actually filled in — a blank field is intentional,
@@ -1234,7 +1237,7 @@ function loadDealAgent(email,fallbackName){
     var sub=[p.brokerage,p.markets].filter(Boolean).map(esc).join(' · ');
     box.innerHTML='<div style="border:1px solid var(--line);background:var(--card2);border-radius:12px;padding:14px">'
       +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:6px">Listing agent</div>'
-      +'<div style="font-weight:700;font-size:15px">'+esc(p.name||fallbackName||email)+' '+trustBadges(p.verified,p.pof)+'</div>'
+      +'<div style="font-weight:700;font-size:15px">'+esc(p.name||fallbackName||email)+' '+trustBadges(p.verified,p.pof,p.producer)+'</div>'
       +(sub?'<div style="color:var(--mut);font-size:13px;margin-top:2px">'+sub+'</div>':'')
       +socialLinks(p)
       +'</div>';
@@ -1346,6 +1349,7 @@ function openSocial(id){
   m.innerHTML='<div class="modal wide"><div class="mhead"><div><h3>📣 Social post</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">A ready-to-share graphic + caption. Post it to Instagram or LinkedIn to pull agents into the network.</div></div><button class="x" onclick="close_(\'mSocial\')">×</button></div><div class="mbody">'
     +'<div style="text-align:center;margin-bottom:14px"><img id="socImg" alt="Social preview" style="width:100%;max-width:340px;border-radius:14px;border:1px solid var(--line);background:var(--card2)"></div>'
     +'<div class="f full"><label>Caption <span class="hint">— edit freely, then copy</span></label><textarea id="socCap" rows="8" style="font-size:13px;line-height:1.5">'+esc(socialCaption(d))+'</textarea></div>'
+    +'<div style="background:rgba(180,136,46,.1);border:1px solid rgba(180,136,46,.35);border-radius:9px;padding:9px 12px;font-size:11.5px;color:var(--mut);line-height:1.45;margin-bottom:12px"><b style="color:var(--gold)">⚠︎ Before you post publicly:</b> promoting a listing on social media may count as public marketing under MLS “Clear Cooperation” rules, which can start a clock to submit it to the MLS. Confirm your obligations for this listing first. Not legal advice.</div>'
     +'<div class="mact"><span class="msg" id="socMsg"></span><button class="btn ghost" onclick="copySocial()">Copy caption</button><button class="btn acc" onclick="dlSocial(\''+esc(d.id)+'\')">⬇ Download image</button></div>'
     +'</div></div>';
   open_('mSocial');
@@ -1675,15 +1679,17 @@ function openAdmin(){
       var badge=m.status==='approved'?'<span class="pill appr">Approved</span>':m.status==='rejected'?'<span class="pill dec">Rejected</span>':'<span class="pill req">Pending</span>';
       var verBadge=m.verified?' <span title="License verified" style="color:var(--acc);font-weight:700;font-size:11px">✓ Verified</span>':'';
       var pofBadge=m.pof==='verified'?(' <span style="color:#8A6A12;font-weight:700;font-size:11px">💰 POF'+(m.pofAmount?(' '+esc(m.pofAmount)):'')+'</span>'):(m.pof==='pending'?' <span class="pill req">POF pending</span>':'');
+      var prodBadge=m.producer?' <span style="color:#7A4FCC;font-weight:700;font-size:11px">⭐ Producer</span>':'';
       var verBtn=m.status==='approved'?('<button class="btn '+(m.verified?'ghost':'acc')+' sm" onclick="adminVerify(\''+esc(m.email)+'\','+(!m.verified)+')">'+(m.verified?'Unverify':'Verify license')+'</button>'):'';
+      var prodBtn=m.status==='approved'?('<button class="btn ghost sm" onclick="adminProducer(\''+esc(m.email)+'\','+(!m.producer)+')">'+(m.producer?'Remove Producer':'⭐ Mark Producer')+'</button>'):'';
       var pofBtn='';
       if(m.status==='approved'){
         if(m.pof==='pending'||m.pof==='none'||!m.pof)pofBtn=(m.pofDoc?('<a class="btn ghost sm" href="'+esc(m.pofDoc)+'" target="_blank" rel="noopener">View POF doc</a>'):'')+'<button class="btn acc sm" onclick="adminPof(\''+esc(m.email)+'\',\'verified\','+JSON.stringify(m.pofAmount||'')+')">Verify POF'+(m.pofAmount?(' ('+esc(m.pofAmount)+')'):'')+'</button>';
         else if(m.pof==='verified')pofBtn='<button class="btn ghost sm" onclick="adminPof(\''+esc(m.email)+'\',\'none\','+JSON.stringify('')+')">Remove POF</button>';
       }
       var act=m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+esc(m.email)+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\'rejected\')">Reject</button>')
-        :(verBtn+pofBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke':'Approve')+'</button>');
-      return '<div class="reqrow"><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+verBadge+pofBadge+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">Lic '+esc(m.license||'—')+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
+        :(verBtn+prodBtn+pofBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke':'Approve')+'</button>');
+      return '<div class="reqrow"><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+verBadge+prodBadge+pofBadge+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">Lic '+esc(m.license||'—')+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
     }).join(''):'<div class="empty">No members yet.</div>';
     var dealRows=deals.length?deals.slice(0,40).map(function(d){
       return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+money(d.price)+' · '+esc(d.by||d.byEmail)+'</span>'+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★</span>':'')+(d.expired?' <span class="pill dec">Expired</span>':'')+(d.status==='mls'?' <span class="pill dec">On MLS</span>':'')+'</div><button class="btn '+(d.featured?'ghost':'acc')+' sm" onclick="adminFeature(\''+d.id+'\','+(!d.featured)+')">'+(d.featured?'Unfeature':'Feature')+'</button></div>';
@@ -1722,6 +1728,7 @@ function adminDigest(dry){var m=$('digMsg');if(m)m.textContent=dry?'Previewing�
     if(j&&j.ok){m.textContent=(dry?('Would reach '+j.recipients+' member'+(j.recipients===1?'':'s')):('Sent — '+j.emailsSent+' email'+(j.emailsSent===1?'':'s')+' to '+j.recipients+' member'+(j.recipients===1?'':'s')))+'.';}
     else{m.textContent='Failed — retry.';}});}
 function adminVerify(email,on){api('/api/pm/admin/verify',{email:email,verified:on}).then(function(){openAdmin();});}
+function adminProducer(email,on){api('/api/pm/admin/producer',{email:email,producer:on}).then(function(){openAdmin();});}
 function adminPof(email,decision,amount){
   if(decision==='verified'){var a=prompt('Verified proof-of-funds amount (e.g. $2M, or leave blank):',amount||'');if(a===null)return;amount=a.trim();}
   api('/api/pm/admin/pof',{email:email,decision:decision,amount:amount||''}).then(function(){openAdmin();});}
@@ -1773,7 +1780,7 @@ function dirCard(m){
   var contact=[]; if(m.email)contact.push(esc(m.email)); if(m.phone)contact.push(esc(m.phone));
   var lic=(ME.role==='owner'&&m.license)?(' · Lic '+esc(m.license)):'';
   return '<div class="reqrow"><div style="width:36px;height:36px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12.5px;flex:none">'+esc(initials(m.name||m.email))+'</div>'
-    +'<div class="grow"><b>'+esc(m.name||m.email)+'</b> '+trustBadges(m.verified,m.pof)+' <span style="color:var(--mut);font-size:12.5px">'+esc(m.brokerage||'')+lic+'</span>'
+    +'<div class="grow"><b>'+esc(m.name||m.email)+'</b> '+trustBadges(m.verified,m.pof,m.producer)+' <span style="color:var(--mut);font-size:12.5px">'+esc(m.brokerage||'')+lic+'</span>'
     +(m.markets?('<div style="color:var(--mut);font-size:12px;margin-top:2px">'+esc(m.markets)+'</div>'):'')
     +'<div style="color:var(--mut2);font-size:11.5px;margin-top:2px">'+contact.join(' · ')+(contact.length?' · ':'')+m.deals+' deal'+(m.deals===1?'':'s')+'</div></div>'
     +(isMe?'<span class="pill appr">You</span>':'<button class="btn ghost sm" onclick="close_(\'mDirectory\');openThread(\''+esc(m.email)+'\',\'\')">Message</button>')
@@ -1817,7 +1824,7 @@ function renderActivity(){
     var mine=LISTINGS.filter(isMine);
     h=mine.length?mine.map(function(d){var reqs=INBOUND.filter(function(x){return x.listingId===d.id&&x.status==='pending';}).length;return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+'</span>'+(d.status==='off'?' <span class="pill dec">Off-market</span>':'')+(d.status==='mls'?' <span class="pill dec" style="background:var(--gold);color:var(--bg)">Moved to MLS</span>':'')+(reqs?(' <span class="pill req">'+reqs+' pending intro'+(reqs>1?'s':'')+'</span>'):'')+'</div><button class="btn ghost sm" onclick="openDetail(\''+d.id+'\')">Open</button></div>';}).join(''):'<div class="empty">You haven\'t posted a deal yet.</div>';
   } else if(ACTTAB==='requests'){
-    h=INBOUND.length?INBOUND.map(function(x){var sub=x.listing?(x.listing.area||x.listing.city||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(x.buyerName||x.buyer||'Buyer')+'</b> '+trustBadges(x.buyerVerified,x.buyerPof)+' '+pill(x.status)+'<div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(sub)+' · '+esc(x.message||'(no note)')+'</div></div>'+(x.status==='pending'?'<button class="btn acc sm" onclick="setIntro(\''+x.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="setIntro(\''+x.id+'\',\'declined\')">Decline</button>':'<span style="color:var(--mut);font-size:12px">'+esc(x.buyer||'')+'</span>')+'</div>';}).join(''):'<div class="empty">No introduction requests yet.</div>';
+    h=INBOUND.length?INBOUND.map(function(x){var sub=x.listing?(x.listing.area||x.listing.city||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(x.buyerName||x.buyer||'Buyer')+'</b> '+trustBadges(x.buyerVerified,x.buyerPof,x.buyerProducer)+' '+pill(x.status)+'<div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(sub)+' · '+esc(x.message||'(no note)')+'</div></div>'+(x.status==='pending'?'<button class="btn acc sm" onclick="setIntro(\''+x.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="setIntro(\''+x.id+'\',\'declined\')">Decline</button>':'<span style="color:var(--mut);font-size:12px">'+esc(x.buyer||'')+'</span>')+'</div>';}).join(''):'<div class="empty">No introduction requests yet.</div>';
   } else if(ACTTAB==='sent'){
     h=SENT.length?SENT.map(function(x){var l=x.listing?nL(x.listing):null;var sub=l?(l.submarket||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(sub||'Deal')+'</b> <span style="color:var(--mut)">· '+(l?money(l.price):'')+'</span> '+pill(x.status)+(x.status==='approved'&&l&&l.addr?('<div style="color:var(--acc2);font-size:13px;margin-top:4px">📍 '+esc(l.addr)+'</div>'):'')+'</div>'+(l?'<button class="btn ghost sm" onclick="openDetail(\''+l.id+'\')">Open</button>':'')+'</div>';}).join(''):'<div class="empty">You haven\'t requested any introductions yet.</div>';
   } else {
