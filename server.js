@@ -170,6 +170,20 @@ function pmWantsEmail(prof, kind) { // kind: 'deals' | 'intros'
   return p.email !== false;
 }
 function pmMoneyShort(v) { const n = Math.round(pmNum(v)); if (!n) return ''; if (n >= 1e6) return '$' + (n / 1e6).toFixed(n % 1e6 ? 1 : 0) + 'M'; if (n >= 1e3) return '$' + Math.round(n / 1e3) + 'K'; return '$' + n; }
+// Public-safe proof-of-funds view: status + amount only (never the uploaded doc).
+function pmPofPublic(prof) {
+  const p = prof && prof.pof;
+  if (!p || !p.status || p.status === 'none') return { status: 'none', amount: '' };
+  return { status: p.status, amount: p.status === 'verified' ? (p.amount || '') : '' };
+}
+// One-line credibility summary for emails.
+function pmCredLine(prof) {
+  const bits = [];
+  if (prof && prof.verified) bits.push('license-verified');
+  const pof = pmPofPublic(prof);
+  if (pof.status === 'verified') bits.push('proof-of-funds verified' + (pof.amount ? (' up to ' + pof.amount) : ''));
+  return bits.length ? ('Buyer: ' + bits.join(' · ')) : '';
+}
 function pmMatch(l, box) {
   if (!l || !box) return false;
   const price = pmNum(l.price), minP = pmNum(box.minPrice), maxP = pmNum(box.maxPrice);
@@ -227,10 +241,12 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
     const recip = pmReciprocity(meEmail, listings, boxes, profs);
     const gated = !isOwner && !recip.active;   // throttle non-contributors
     const isExpired = l => l.expiresAt && (new Date(l.expiresAt) < new Date());
+    const profBy = {}; profs.forEach(p => { if (p && p.email) profBy[_lc(p.email)] = p; });
+    const attachOwner = r => { const p = profBy[_lc(r.owner)]; r.ownerVerified = !!(p && p.verified); const pof = pmPofPublic(p || {}); r.ownerPof = pof.status === 'verified' ? { amount: pof.amount } : null; return r; };
     const rows = listings
       .filter(l => l && (((l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls') || mine(l) || isOwner))
       .filter(l => !isExpired(l) || mine(l) || isOwner)
-      .map(l => pmPublicView(l, mine(l) || isOwner, gated && !mine(l)))
+      .map(l => attachOwner(pmPublicView(l, mine(l) || isOwner, gated && !mine(l))))
       .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
     res.json({ ok: true, listings: rows, me: { email: req.user.email, role: req.user.role, focus: meProf.focus || '', reciprocity: recip } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -244,7 +260,11 @@ app.get('/api/pm/listing/:id', ensureAuth, pmGate, async (req, res) => {
     const full = _lc(l.owner) === pmEmail(req.user) || req.user.role === 'owner';
     const recip = pmReciprocity(pmEmail(req.user), listings, boxes, profs);
     const gated = !full && !recip.active;
-    res.json({ ok: true, listing: pmPublicView(l, full, gated), reciprocity: recip });
+    const oProf = profs.find(p => p && _lc(p.email) === _lc(l.owner)) || {};
+    const view = pmPublicView(l, full, gated);
+    view.ownerVerified = !!oProf.verified;
+    const oPof = pmPofPublic(oProf); view.ownerPof = oPof.status === 'verified' ? { amount: oPof.amount } : null;
+    res.json({ ok: true, listing: view, reciprocity: recip });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
@@ -362,15 +382,19 @@ app.post('/api/pm/intro', ensureAuth, pmGate, async (req, res) => {
     const email = pmEmail(req.user);
     const live = intros.find(i => i && i.listingId === listingId && _lc(i.buyer) === email && i.status !== 'declined');
     if (live) return res.json({ ok: true, intro: live, already: true });
+    const allProfs = await pmLoad('pm_profiles');
+    const buyerProf = allProfs.find(p => p && _lc(p.email) === email) || {};
+    const buyerPof = pmPofPublic(buyerProf); // snapshot buyer's credibility onto the intro
     const rec = { id: pmId('I'), listingId, seller: l.owner, buyer: req.user.email,
       buyerName: String(b.buyerName || req.user.name || '').slice(0, 80), message: String(b.message || '').slice(0, 1000),
+      buyerVerified: !!buyerProf.verified, buyerPof,
       status: 'pending', createdAt: new Date().toISOString(), decidedAt: '' };
     intros.push(rec);
     await pmSave(PM_KEYS.intros, intros);
     try {
-      const sProfs = await pmLoad('pm_profiles');
-      const sProf = sProfs.find(p => p && _lc(p.email) === _lc(l.owner)) || {};
-      if (pmWantsEmail(sProf, 'intros')) await pmSendEmail(l.owner, 'ACCESS · new intro request', (rec.buyerName || rec.buyer) + ' requested an intro on your ' + (l.area || l.city || 'deal') + ' listing.\n\nOpen ACCESS to approve or decline.');
+      const sProf = allProfs.find(p => p && _lc(p.email) === _lc(l.owner)) || {};
+      const cred = pmCredLine(buyerProf);
+      if (pmWantsEmail(sProf, 'intros')) await pmSendEmail(l.owner, 'ACCESS · new intro request', (rec.buyerName || rec.buyer) + ' requested an intro on your ' + (l.area || l.city || 'deal') + ' listing.' + (cred ? ('\n\n' + cred) : '') + '\n\nOpen ACCESS to approve or decline.');
     } catch (e) {}
     res.json({ ok: true, intro: rec });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -387,7 +411,7 @@ app.get('/api/pm/intros', ensureAuth, pmGate, async (req, res) => {
       const l = byId[i.listingId];
       const summary = l ? pmPublicView(l, i.status === 'approved' || req.user.role === 'owner') : null;
       if (_lc(i.buyer) === email) asBuyer.push({ id: i.id, listingId: i.listingId, status: i.status, message: i.message, createdAt: i.createdAt, decidedAt: i.decidedAt, listing: summary });
-      if (_lc(i.seller) === email || req.user.role === 'owner') asSeller.push({ id: i.id, listingId: i.listingId, status: i.status, message: i.message, createdAt: i.createdAt, decidedAt: i.decidedAt, buyer: i.buyer, buyerName: i.buyerName, listing: summary });
+      if (_lc(i.seller) === email || req.user.role === 'owner') asSeller.push({ id: i.id, listingId: i.listingId, status: i.status, message: i.message, createdAt: i.createdAt, decidedAt: i.decidedAt, buyer: i.buyer, buyerName: i.buyerName, buyerVerified: !!i.buyerVerified, buyerPof: i.buyerPof || { status: 'none', amount: '' }, listing: summary });
     });
     res.json({ ok: true, asBuyer, asSeller });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -746,12 +770,49 @@ app.post('/api/pm/digest/run', async (req, res) => {
     res.json({ ok: true, dry, days, recipients: results.length, emailsSent: sent, notifsCreated: notifs, breakdown: results.slice(0, 100) });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
+// Member requests a Proof-of-Funds badge (buy-side credibility). Stores amount +
+// optional doc; goes to 'pending' for admin review. Doc is never exposed publicly.
+app.post('/api/pm/pof/request', ensureAuth, pmGate, async (req, res) => {
+  const b = req.body || {};
+  try {
+    if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
+    const profs = await pmLoad('pm_profiles');
+    const email = pmEmail(req.user);
+    const idx = profs.findIndex(p => p && _lc(p.email) === email);
+    if (idx < 0) return res.status(404).json({ ok: false, error: 'no_profile', message: 'Save your profile first.' });
+    const amount = String(b.amount || '').slice(0, 40);
+    const doc = String(b.doc || '').slice(0, 900);
+    profs[idx].pof = { status: 'pending', amount, doc, requestedAt: new Date().toISOString() };
+    await pmSave('pm_profiles', profs);
+    if (ADMIN) { try { await pmSendEmail(ADMIN, 'ACCESS · proof-of-funds review', (profs[idx].name || email) + ' requested a Proof-of-Funds badge' + (amount ? (' (' + amount + ')') : '') + '.\n\nReview it in the ACCESS admin panel.'); } catch (e) {} }
+    res.json({ ok: true, pof: pmPofPublic(profs[idx]) });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
+// Admin decides a POF request.
+app.post('/api/pm/admin/pof', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const b = req.body || {};
+  const email = _lc(b.email);
+  const decision = b.decision === 'verified' ? 'verified' : b.decision === 'rejected' ? 'rejected' : b.decision === 'none' ? 'none' : '';
+  if (!email || !decision) return res.status(400).json({ ok: false, error: 'bad_request' });
+  try {
+    const profs = await pmLoad('pm_profiles');
+    const idx = profs.findIndex(p => p && _lc(p.email) === email);
+    if (idx < 0) return res.status(404).json({ ok: false, error: 'not_found' });
+    const cur = profs[idx].pof || {};
+    if (decision === 'none') profs[idx].pof = { status: 'none', amount: '', doc: '' };
+    else profs[idx].pof = { status: decision, amount: (b.amount != null ? String(b.amount).slice(0, 40) : (cur.amount || '')), doc: cur.doc || '', requestedAt: cur.requestedAt || '', verifiedAt: decision === 'verified' ? new Date().toISOString() : '' };
+    await pmSave('pm_profiles', profs);
+    try { await pmSendEmail(email, 'ACCESS · proof-of-funds ' + decision, decision === 'verified' ? ('Your Proof-of-Funds badge is verified' + (profs[idx].pof.amount ? (' (up to ' + profs[idx].pof.amount + ')') : '') + '. Sellers will now see you as a credible buyer.') : 'Your Proof-of-Funds request was not approved this time.'); } catch (e) {}
+    res.json({ ok: true, email, pof: pmPofPublic(profs[idx]) });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
 app.get('/api/pm/profile/:email', ensureAuth, pmGate, async (req, res) => {
   try {
     const profs = await pmLoad('pm_profiles');
     const p = profs.find(x => x && _lc(x.email) === _lc(req.params.email));
     if (!p) return res.json({ ok: true, profile: null });
-    res.json({ ok: true, profile: { email: p.email, name: p.name || '', brokerage: p.brokerage || '', license: p.license || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, status: p.status || 'pending' } });
+    res.json({ ok: true, profile: { email: p.email, name: p.name || '', brokerage: p.brokerage || '', license: p.license || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, pof: pmPofPublic(p), status: p.status || 'pending' } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.get('/api/pm/directory', ensureAuth, pmGate, async (req, res) => {
@@ -760,7 +821,7 @@ app.get('/api/pm/directory', ensureAuth, pmGate, async (req, res) => {
     const isOwner = req.user.role === 'owner';
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
-    const members = profs.filter(p => p && p.status === 'approved').map(p => ({ email: p.email, name: p.name || '', brokerage: p.brokerage || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', license: isOwner ? (p.license || '') : '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, deals: counts[_lc(p.email)] || 0, joined: p.createdAt || '' })).sort((a, b) => (b.deals - a.deals) || String(a.name || a.email).localeCompare(String(b.name || b.email)));
+    const members = profs.filter(p => p && p.status === 'approved').map(p => ({ email: p.email, name: p.name || '', brokerage: p.brokerage || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', license: isOwner ? (p.license || '') : '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, pof: pmPofPublic(p), deals: counts[_lc(p.email)] || 0, joined: p.createdAt || '' })).sort((a, b) => (b.deals - a.deals) || String(a.name || a.email).localeCompare(String(b.name || b.email)));
     res.json({ ok: true, members, count: members.length, me: { email: req.user.email, role: req.user.role } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -771,8 +832,8 @@ app.get('/api/pm/admin/members', ensureAuth, pmGate, async (req, res) => {
   try {
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
-    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', status: p.status || 'pending', verified: !!p.verified, createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
-    res.json({ ok: true, members, pending: members.filter(m => m.status === 'pending').length });
+    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', status: p.status || 'pending', verified: !!p.verified, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
+    res.json({ ok: true, members, pending: members.filter(m => m.status === 'pending').length, pofPending: members.filter(m => m.pof === 'pending').length });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.post('/api/pm/admin/approve', ensureAuth, pmGate, async (req, res) => {

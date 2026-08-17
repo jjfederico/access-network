@@ -100,6 +100,10 @@ section{padding:40px 0}
 .bdg.pocket{color:var(--acc);border-color:rgba(23,65,138,.28)}
 .bdg.feat{color:var(--bg);background:var(--gold);border-color:var(--gold)}
 .bdg.mine{color:var(--acc);border-color:rgba(23,65,138,.28)}
+.bdg.ver{color:#1E7A52;border-color:rgba(30,122,82,.32);background:rgba(30,122,82,.08)}
+.bdg.pof{color:#8A6A12;border-color:rgba(138,106,18,.32);background:rgba(180,136,46,.12)}
+html.dark .bdg.ver{color:#57ECC2!important;border-color:rgba(87,236,194,.3)!important;background:rgba(87,236,194,.1)!important}
+html.dark .bdg.pof{color:#E7C374!important;border-color:rgba(231,195,116,.32)!important;background:rgba(231,195,116,.12)!important}
 .deal .sub{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;font-weight:700;line-height:1.2;letter-spacing:0}
 .deal .addr{display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--mut2)}
 .deal .addr.open{color:var(--acc)}
@@ -830,6 +834,11 @@ function introLabel(s){return s==='approved'?'Approved':s==='declined'?'Declined
 // Address visibility is decided server-side: an entitled viewer receives the address
 // in the feed (addressHidden:false). Never trust the client to unlock it.
 function canSeeAddress(d){return !d.addressHidden;}
+// Trust chips. verified=license; pof can be {amount} (card shorthand, already verified)
+// or {status,amount} (directory/intro/profile). Only renders POF when verified.
+function badgeVer(v){return v?'<span class="bdg ver" title="License verified">✓ Verified</span>':'';}
+function badgePof(p){if(!p)return '';var ok=(p.status==='verified')||(p.status===undefined&&(p.amount!==undefined));if(!ok)return '';var amt=p.amount?(' '+esc(String(p.amount))):'';return '<span class="bdg pof" title="Proof of funds verified">💰 POF'+amt+'</span>';}
+function trustBadges(v,p){return badgeVer(v)+badgePof(p);}
 
 /* ── stats ── */
 function renderStats(){
@@ -928,6 +937,7 @@ function dealCard(d){
   if(d.featured)badges+='<span class="bdg feat">★ Featured</span>';
   badges+=distBadge(d);
   if(isMine(d))badges+='<span class="bdg mine">Yours</span>';
+  badges+=trustBadges(d.ownerVerified,d.ownerPof);
   var kp='';
   // Adaptive KPIs: income deals show Units/Cap; a house/condo shows Beds/Baths instead of empty dashes.
   var income=(num(d.units)>1||num(d.cap)>0||num(d.noi)>0);
@@ -1108,11 +1118,10 @@ function loadDealAgent(email,fallbackName){
   box.innerHTML='<div style="color:var(--mut);font-size:12.5px">Loading agent…</div>';
   api('/api/pm/profile/'+encodeURIComponent(email)).then(function(j){
     var p=(j&&j.profile)||{};
-    var vb=p.verified?' <span title="License verified" style="color:var(--acc);font-weight:700;font-size:12px">✓ Verified</span>':'';
     var sub=[p.brokerage,p.markets].filter(Boolean).map(esc).join(' · ');
     box.innerHTML='<div style="border:1px solid var(--line);background:var(--card2);border-radius:12px;padding:14px">'
       +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:6px">Listing agent</div>'
-      +'<div style="font-weight:700;font-size:15px">'+esc(p.name||fallbackName||email)+vb+'</div>'
+      +'<div style="font-weight:700;font-size:15px">'+esc(p.name||fallbackName||email)+' '+trustBadges(p.verified,p.pof)+'</div>'
       +(sub?'<div style="color:var(--mut);font-size:13px;margin-top:2px">'+sub+'</div>':'')
       +socialLinks(p)
       +'</div>';
@@ -1388,8 +1397,24 @@ function openProfile(){
     +'<div class="f"><label>X (Twitter)</label><input id="pX" value="'+esc(p.x||'')+'" placeholder="@handle or URL"></div>'
     +'</div>'
     +'<div class="f full"><label>Website</label><input id="pWebsite" value="'+esc(p.website||'')+'" placeholder="yourbrokerage.com"></div>'
+    +pofSection(p)
     +'<div class="mact"><span class="msg" id="pMsg"></span><button class="btn ghost" onclick="close_(\'mProfile\')">Cancel</button><button class="btn acc" onclick="saveProfile()">Save profile</button></div></div></div>';
   open_('mProfile');
+}
+function pofSection(p){
+  var pof=(p&&p.pof)||{status:'none'};
+  var head='<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:14px 0 6px">Proof of funds <span style="text-transform:none;letter-spacing:0">— buy-side credibility; sellers see it when you request an intro</span></div>';
+  if(pof.status==='verified')return head+'<div class="ggbar ok" style="margin:0"><div class="ggtx"><b>💰 Proof of funds verified'+(pof.amount?(' — up to '+esc(pof.amount)):'')+'.</b> Sellers see you as a credible buyer.</div></div>';
+  if(pof.status==='pending')return head+'<div class="ggbar ok" style="margin:0"><div class="ggtx"><b>⏳ Under review.</b> We\'ll email you once your proof of funds is verified.</div></div>';
+  return head+'<div class="fgrid"><div class="f"><label>Amount available</label><input id="pofAmount" placeholder="e.g. $2M"></div><div class="f"><label>Proof link <span class="hint">— optional</span></label><input id="pofDoc" placeholder="link to bank / POF letter"></div></div><button class="btn ghost sm" onclick="requestPof()" style="margin-top:2px">Request Proof-of-Funds badge</button>';
+}
+function requestPof(){
+  var amount=($('pofAmount')&&$('pofAmount').value||'').trim();
+  var doc=($('pofDoc')&&$('pofDoc').value||'').trim();
+  if(!amount){alert('Enter the amount you can show proof of funds for.');return;}
+  api('/api/pm/pof/request',{amount:amount,doc:doc}).then(function(j){
+    if(j&&j.ok){if(PROFILE)PROFILE.pof=j.pof;close_('mProfile');setTimeout(openProfile,60);}
+    else{alert((j&&j.message)||'Could not submit — try again.');}});
 }
 function saveProfile(){
   var gv=function(id){var el=$(id);return el?(el.value||'').trim():'';};
@@ -1467,10 +1492,16 @@ function openAdmin(){
     var memRows=members.length?members.map(function(m){
       var badge=m.status==='approved'?'<span class="pill appr">Approved</span>':m.status==='rejected'?'<span class="pill dec">Rejected</span>':'<span class="pill req">Pending</span>';
       var verBadge=m.verified?' <span title="License verified" style="color:var(--acc);font-weight:700;font-size:11px">✓ Verified</span>':'';
+      var pofBadge=m.pof==='verified'?(' <span style="color:#8A6A12;font-weight:700;font-size:11px">💰 POF'+(m.pofAmount?(' '+esc(m.pofAmount)):'')+'</span>'):(m.pof==='pending'?' <span class="pill req">POF pending</span>':'');
       var verBtn=m.status==='approved'?('<button class="btn '+(m.verified?'ghost':'acc')+' sm" onclick="adminVerify(\''+esc(m.email)+'\','+(!m.verified)+')">'+(m.verified?'Unverify':'Verify license')+'</button>'):'';
+      var pofBtn='';
+      if(m.status==='approved'){
+        if(m.pof==='pending'||m.pof==='none'||!m.pof)pofBtn=(m.pofDoc?('<a class="btn ghost sm" href="'+esc(m.pofDoc)+'" target="_blank" rel="noopener">View POF doc</a>'):'')+'<button class="btn acc sm" onclick="adminPof(\''+esc(m.email)+'\',\'verified\','+JSON.stringify(m.pofAmount||'')+')">Verify POF'+(m.pofAmount?(' ('+esc(m.pofAmount)+')'):'')+'</button>';
+        else if(m.pof==='verified')pofBtn='<button class="btn ghost sm" onclick="adminPof(\''+esc(m.email)+'\',\'none\','+JSON.stringify('')+')">Remove POF</button>';
+      }
       var act=m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+esc(m.email)+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\'rejected\')">Reject</button>')
-        :(verBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke':'Approve')+'</button>');
-      return '<div class="reqrow"><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+verBadge+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">Lic '+esc(m.license||'—')+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
+        :(verBtn+pofBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke':'Approve')+'</button>');
+      return '<div class="reqrow"><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+verBadge+pofBadge+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">Lic '+esc(m.license||'—')+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
     }).join(''):'<div class="empty">No members yet.</div>';
     var dealRows=deals.length?deals.slice(0,40).map(function(d){
       return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+money(d.price)+' · '+esc(d.by||d.byEmail)+'</span>'+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★</span>':'')+(d.expired?' <span class="pill dec">Expired</span>':'')+(d.status==='mls'?' <span class="pill dec">On MLS</span>':'')+'</div><button class="btn '+(d.featured?'ghost':'acc')+' sm" onclick="adminFeature(\''+d.id+'\','+(!d.featured)+')">'+(d.featured?'Unfeature':'Feature')+'</button></div>';
@@ -1501,6 +1532,9 @@ function adminDigest(dry){var m=$('digMsg');if(m)m.textContent=dry?'Previewing�
     if(j&&j.ok){m.textContent=(dry?('Would reach '+j.recipients+' member'+(j.recipients===1?'':'s')):('Sent — '+j.emailsSent+' email'+(j.emailsSent===1?'':'s')+' to '+j.recipients+' member'+(j.recipients===1?'':'s')))+'.';}
     else{m.textContent='Failed — retry.';}});}
 function adminVerify(email,on){api('/api/pm/admin/verify',{email:email,verified:on}).then(function(){openAdmin();});}
+function adminPof(email,decision,amount){
+  if(decision==='verified'){var a=prompt('Verified proof-of-funds amount (e.g. $2M, or leave blank):',amount||'');if(a===null)return;amount=a.trim();}
+  api('/api/pm/admin/pof',{email:email,decision:decision,amount:amount||''}).then(function(){openAdmin();});}
 function adminSeed(mode){
   var m=$('seedMsg'); if(m){m.style.color='var(--mut)';m.textContent=(mode==='clear'?'Clearing…':'Loading…');}
   api('/api/pm/seed',{mode:mode}).then(function(j){
@@ -1549,7 +1583,7 @@ function dirCard(m){
   var contact=[]; if(m.email)contact.push(esc(m.email)); if(m.phone)contact.push(esc(m.phone));
   var lic=(ME.role==='owner'&&m.license)?(' · Lic '+esc(m.license)):'';
   return '<div class="reqrow"><div style="width:36px;height:36px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12.5px;flex:none">'+esc(initials(m.name||m.email))+'</div>'
-    +'<div class="grow"><b>'+esc(m.name||m.email)+'</b> <span style="color:var(--mut);font-size:12.5px">'+esc(m.brokerage||'')+lic+'</span>'
+    +'<div class="grow"><b>'+esc(m.name||m.email)+'</b> '+trustBadges(m.verified,m.pof)+' <span style="color:var(--mut);font-size:12.5px">'+esc(m.brokerage||'')+lic+'</span>'
     +(m.markets?('<div style="color:var(--mut);font-size:12px;margin-top:2px">'+esc(m.markets)+'</div>'):'')
     +'<div style="color:var(--mut2);font-size:11.5px;margin-top:2px">'+contact.join(' · ')+(contact.length?' · ':'')+m.deals+' deal'+(m.deals===1?'':'s')+'</div></div>'
     +(isMe?'<span class="pill appr">You</span>':'<button class="btn ghost sm" onclick="close_(\'mDirectory\');openThread(\''+esc(m.email)+'\',\'\')">Message</button>')
@@ -1593,7 +1627,7 @@ function renderActivity(){
     var mine=LISTINGS.filter(isMine);
     h=mine.length?mine.map(function(d){var reqs=INBOUND.filter(function(x){return x.listingId===d.id&&x.status==='pending';}).length;return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+'</span>'+(d.status==='off'?' <span class="pill dec">Off-market</span>':'')+(d.status==='mls'?' <span class="pill dec" style="background:var(--gold);color:var(--bg)">Moved to MLS</span>':'')+(reqs?(' <span class="pill req">'+reqs+' pending intro'+(reqs>1?'s':'')+'</span>'):'')+'</div><button class="btn ghost sm" onclick="openDetail(\''+d.id+'\')">Open</button></div>';}).join(''):'<div class="empty">You haven\'t posted a deal yet.</div>';
   } else if(ACTTAB==='requests'){
-    h=INBOUND.length?INBOUND.map(function(x){var sub=x.listing?(x.listing.area||x.listing.city||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(x.buyerName||x.buyer||'Buyer')+'</b> '+pill(x.status)+'<div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(sub)+' · '+esc(x.message||'(no note)')+'</div></div>'+(x.status==='pending'?'<button class="btn acc sm" onclick="setIntro(\''+x.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="setIntro(\''+x.id+'\',\'declined\')">Decline</button>':'<span style="color:var(--mut);font-size:12px">'+esc(x.buyer||'')+'</span>')+'</div>';}).join(''):'<div class="empty">No introduction requests yet.</div>';
+    h=INBOUND.length?INBOUND.map(function(x){var sub=x.listing?(x.listing.area||x.listing.city||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(x.buyerName||x.buyer||'Buyer')+'</b> '+trustBadges(x.buyerVerified,x.buyerPof)+' '+pill(x.status)+'<div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(sub)+' · '+esc(x.message||'(no note)')+'</div></div>'+(x.status==='pending'?'<button class="btn acc sm" onclick="setIntro(\''+x.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="setIntro(\''+x.id+'\',\'declined\')">Decline</button>':'<span style="color:var(--mut);font-size:12px">'+esc(x.buyer||'')+'</span>')+'</div>';}).join(''):'<div class="empty">No introduction requests yet.</div>';
   } else if(ACTTAB==='sent'){
     h=SENT.length?SENT.map(function(x){var l=x.listing?nL(x.listing):null;var sub=l?(l.submarket||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(sub||'Deal')+'</b> <span style="color:var(--mut)">· '+(l?money(l.price):'')+'</span> '+pill(x.status)+(x.status==='approved'&&l&&l.addr?('<div style="color:var(--acc2);font-size:13px;margin-top:4px">📍 '+esc(l.addr)+'</div>'):'')+'</div>'+(l?'<button class="btn ghost sm" onclick="openDetail(\''+l.id+'\')">Open</button>':'')+'</div>';}).join(''):'<div class="empty">You haven\'t requested any introductions yet.</div>';
   } else {
