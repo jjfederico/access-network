@@ -112,6 +112,22 @@ iframe.tool{width:100%;height:100%;border:0;display:block;background:#fff}
 .conav.open .car{transform:rotate(90deg)}
 .gsec.cosec{padding-left:6px;border-left:2px solid var(--line);margin-left:7px}
 .gsec.cosec.open{max-height:2400px}
+/* ── Flat workspace switcher ─────────────────────────────────────────────── */
+.sidesearch{display:flex;align-items:center;gap:8px;margin:2px 2px 4px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;background:var(--card2);color:var(--mut);cursor:text;font-size:12.5px}
+.sidesearch:hover{border-color:var(--accent);color:var(--ink)}
+.sidesearch .ss-ic{font-size:13px}
+.sidesearch .ss-tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidesearch kbd{font:600 10px Inter,sans-serif;color:var(--mut2);background:var(--card);border:1px solid var(--line2);border-radius:5px;padding:1px 5px}
+.wsw{display:flex;flex-direction:column;gap:3px;margin:2px 0 4px}
+.wsb{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--ink);cursor:pointer;text-align:left;font:inherit}
+.wsb:hover{background:var(--card2)}
+.wsb .wsdot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:var(--wc)}
+.wsb .wsl{font-size:13.5px;font-weight:700;letter-spacing:.01em}
+.wsb .wssub{margin-left:auto;font-size:10.5px;font-weight:600;color:var(--mut2)}
+.wsb.on{background:var(--wc);border-color:transparent}
+.wsb.on .wsl,.wsb.on .wssub{color:#fff}
+.wsb.on .wsdot{background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.28)}
+.gsec.flat{max-height:none;overflow:visible}
 .mpbtn{display:block;width:calc(100% - 20px);margin:14px 10px 6px;padding:8px 10px;background:transparent;border:1px dashed var(--line2);color:var(--mut);border-radius:9px;font:600 12px Inter,sans-serif;cursor:pointer;text-align:center}
 .mpbtn:hover{color:var(--ink);border-color:var(--accent)}
 .mpbtn.on{background:#17418A;border:0;color:#fff}
@@ -224,6 +240,7 @@ html.dark .qlrow:hover{background:#262C37!important}
       <div class="co-btn" style="cursor:default"><span class="co-id"><img class="co-logo" id="coLogo" alt=""><span class="co-role" id="coRole"></span></span><span class="cv" id="coCv" style="display:none"></span></div>
       <div class="co-menu" id="coMenu" style="display:none"></div>
     </div>
+    <div class="sidesearch" onclick="openPal()"><span class="ss-ic">⌕</span><span class="ss-tx">Search deals, tools…</span><kbd>⌘K</kbd></div>
     <nav class="nav" id="sidenav"></nav>
     <div class="ft">Grove HQ · <a onclick="location.reload()">refresh</a></div>
   </aside>
@@ -231,7 +248,7 @@ html.dark .qlrow:hover{background:#262C37!important}
     <header class="tbar">
       <button class="ham" onclick="toggleNav()" aria-label="Menu">☰</button>
       <span class="crumb" id="crumb">Overview</span>
-      <div class="search" onclick="openPal()"><span>⌕</span><span>Search deals, addresses, tools…</span><kbd>⌘K</kbd></div>
+      <span style="flex:1"></span>
       <span class="bkp"><span class="d"></span> Backed up</span>
       <button id="themeTop" onclick="toggleTheme()" title="Light / dark" style="margin-left:12px;font:inherit;font-size:12px;font-weight:600;color:var(--ink);background:var(--card);border:1px solid var(--line2);padding:6px 12px;border-radius:8px;white-space:nowrap;cursor:pointer">◐ Light</button>
       <a href="/logout" title="Sign out" style="margin-left:10px;font:inherit;font-size:12.5px;font-weight:600;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:6px 12px;border-radius:8px;text-decoration:none;white-space:nowrap;cursor:pointer">Sign out</a>
@@ -273,7 +290,7 @@ var COINFO={grove:{logo:'GROVE_WHITE',role:'Brokerage'},citicore:{logo:'CITI_WHI
 var OV=['Overview',[['◧','Dashboard','#dash'],['★','Notes / To-Do','#personal'],['✦','Spending','spending.html','spending intelligence monarch budget money map subscriptions recurring advice cut expenses personal finance'],['◫','Ledgerwise','ledgerwise.html','ledgerwise personal finance statements pdf csv budget categories subscriptions reports upload bank credit card']]];
 var NAV={
   grove:[OV,
-    ['Deals',[['＋','Submit a Deal','agent-add-deal.html'],['◉','Call List','grove-leads.html','cold call prospecting leads expired fsbo absentee dialer'],['▤','Deals & Payouts','deals-payouts.html'],['◔','Key Dates','key-dates.html'],['◇','Referrals','referral-tracker.html'],['▾','Request Landlord Funds','landlord-funds.html'],['✓','Transaction Checklist','transaction-checklist.html'],['⚠','Wire Safety','wire-safety.html','wire fraud deposit safety scam wiring instructions'],['∑','Commission Calculator','commission-calc.html'],['▤','Inventory','for-sale-folder.html','inventory for sale folder shared deal packages rent roll om listing off market'],['◈','Access','doors.html','premarket off market pocket listings deal network buyers buy box introductions boston']]],
+    ['Deals',[['＋','Submit a Deal','agent-add-deal.html'],['◉','Call List','grove-leads.html','cold call prospecting leads expired fsbo absentee dialer'],['▤','Deals & Payouts','deals-payouts2.html'],['◔','Key Dates','key-dates.html'],['◇','Referrals','referral-tracker.html'],['▾','Request Landlord Funds','landlord-funds.html'],['✓','Transaction Checklist','transaction-checklist.html'],['⚠','Wire Safety','wire-safety.html','wire fraud deposit safety scam wiring instructions'],['∑','Commission Calculator','commission-calc.html'],['▤','Inventory','for-sale-folder.html','inventory for sale folder shared deal packages rent roll om listing off market'],['◈','Access','https://access-network.onrender.com/','premarket off market pocket listings deal network buyers buy box introductions boston']]],
     ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
     ['Money',[['▦','Books','grove-books.html?pf=grove','grove brokerage books bookkeeping commission income chart of accounts'],['▾','Log a Deposit','deposit.html'],['▢','QuickBooks','qbo-connect.html']]],
     ['Team',[['▧','My Pay','agent-pay.html'],['◎','Agent Goals','agent-goals.html']]],
@@ -292,19 +309,19 @@ var NAV={
     ['Money',[['▦','Books','grove-books.html?pf=summit'],['▧','Money','money.html'],['◇','Portfolio & Offers','summit-portfolio.html']]],
     ['Pipeline',[['✓','Nik — Task Board','nik-task-board.html','nik tasks onboarding daily weekly checklist'],['◫','Rehab Tracker','rehab-tracker.html'],['◎','Deals','track-record.html','deals investors track record flip wholesale entity personal market value mortgage equity']]],
     ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
-    ['Leads',[['◉','Lead Board','lead-feeds.html','probate foreclosure pulls filings leads'],['🎙','Voice Notes','summit-voice.html','voice notes inbox transcript webhook dictation tasks to-do cold calling'],['◈','Access','doors.html','premarket off market pocket listings deal network buyers buy box introductions boston']]],
+    ['Leads',[['◉','Lead Board','lead-feeds.html','probate foreclosure pulls filings leads'],['🎙','Voice Notes','summit-voice.html','voice notes inbox transcript webhook dictation tasks to-do cold calling'],['◈','Access','https://access-network.onrender.com/','premarket off market pocket listings deal network buyers buy box introductions boston']]],
     ['Tools',[['⚷','Summit Logins','summit-logins.html','summit shared logins passwords credentials']]],
     ['Admin',[['▣','Summit Backup','backups.html','summit backup export excel workbook']]]
   ],
   reserve:[OV,
-    ['Access',[['◈','Open Access','doors.html','reserve premarket off market pocket listings deal network buyers buy box introductions boston multifamily membership']]]
+    ['Access',[['◈','Open Access','https://access-network.onrender.com/','reserve premarket off market pocket listings deal network buyers buy box introductions boston multifamily membership']]]
   ]
 };
 /* Agent nav — the full toolset John opened up 2026-08-03. Keep in lockstep with
    server.js gates: everything here must NOT be in OWNER_ONLY_PAGES for agents. */
 var NAV_AGENT=[
   ['Overview',[['◧','Dashboard','#dash']]],
-  ['Deals',[['＋','Submit a Deal','agent-add-deal.html'],['▤','My Deals','my-deals.html'],['✓','Transaction Checklist','transaction-checklist.html'],['▾','Log a Deposit','deposit.html'],['▾','Request Landlord Funds','landlord-funds.html'],['∑','Commission Calculator','commission-calc.html'],['▤','Inventory','for-sale-folder.html','inventory for sale folder shared deal packages rent roll om listing off market'],['◈','Access','doors.html','premarket off market pocket listings deal network buyers buy box introductions boston']]],
+  ['Deals',[['＋','Submit a Deal','agent-add-deal.html'],['▤','My Deals','my-deals.html'],['✓','Transaction Checklist','transaction-checklist.html'],['▾','Log a Deposit','deposit.html'],['▾','Request Landlord Funds','landlord-funds.html'],['∑','Commission Calculator','commission-calc.html'],['▤','Inventory','for-sale-folder.html','inventory for sale folder shared deal packages rent roll om listing off market'],['◈','Access','https://access-network.onrender.com/','premarket off market pocket listings deal network buyers buy box introductions boston']]],
   ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
   ['You',[['▧','My Pay','agent-pay.html'],['◎','Goals','agent-goals.html']]],
   ['Tools',[['☾','Preferred Vendors','grove-vendors.html'],['⊞','Mortgage Calculator','mortgage-calc.html'],['◎','Owner Lookup & Research','owner-lookup.html'],['▥','Forms & Templates','forms-templates.html'],['⚷','Shared Logins','logins.html','shared logins passwords credentials'],['▢','W9','citicore-w9.pdf'],['⚠','Wire Safety','wire-safety.html','wire fraud deposit safety scam wiring instructions']]],
@@ -316,7 +333,7 @@ var NAV_AGENT=[
 var NAV_CITI=[
   ['Property',[['▦','Portfolio','citicore-portfolio.html'],['▤','Rent Roll','rent-roll.html'],['◫','Loan Tracker','loan-tracker.html'],['▧','Condo Fees','citicore-condo-fees.html']]],
   ['Operations',[['▢','Payroll & 401(k)','citicore-payroll.html']]],
-  ['Network',[['◈','Access','doors.html','reserve off market pocket listings deal network multifamily membership']]]
+  ['Network',[['◈','Access','https://access-network.onrender.com/','reserve off market pocket listings deal network multifamily membership']]]
 ];
 /* Bookkeeper: a limited financial login. Money pages read/write; property pages
    read-only (server enforces the read-only side on the note gate). Dormant until
@@ -325,7 +342,7 @@ var NAV_BOOKKEEPER=[
   ['Overview',[['◧','Dashboard','citicore-dashboard.html']]],
   ['Money',[['▦','Books','grove-books.html?pf=citicore'],['▤','Bank / Cash','citicore-bank.html'],['▥','Expense Log','expense-log.html'],['∑','P&L Tracker','pl-tracker.html'],['▢','Payroll & 401(k)','citicore-payroll.html'],['▧','Condo Fees','citicore-condo-fees.html'],['◫','Maintenance','citicore-maintenance.html']]],
   ['Property (read-only)',[['◆','Investments','citicore-properties.html'],['▤','Rent Roll','rent-roll.html'],['◫','Loan Tracker','loan-tracker.html'],['◈','Insurance','citicore-insurance.html'],['▨','Lease Tracker','lease-tracker.html'],['▤','Documents','citicore-documents.html']]],
-  ['Network',[['◈','Access','doors.html','reserve off market pocket listings deal network multifamily membership']]]
+  ['Network',[['◈','Access','https://access-network.onrender.com/','reserve off market pocket listings deal network multifamily membership']]]
 ];
 
 /* ── Who sees what ─────────────────────────────────────────────────────
@@ -353,7 +370,7 @@ var NAV_NONE=[['Overview',[['◧','Dashboard','#dash']]]];
    from both on purpose. */
 var NAV_SUMMIT=[
   ['Overview',[['◧','Dashboard','#dash'],['▦','Summit Dashboard','summit-dashboard.html','summit dashboard deals wholesale flip volume pipeline profit goal 200k resimpli add deal']]],
-  ['Leads',[['◉','Lead Board','lead-feeds.html','probate foreclosure pulls filings leads'],['🎙','Voice Notes','summit-voice.html','voice notes inbox transcript webhook dictation tasks to-do cold calling'],['◈','Access','doors.html','premarket off market pocket listings deal network buyers buy box introductions boston']]],
+  ['Leads',[['◉','Lead Board','lead-feeds.html','probate foreclosure pulls filings leads'],['🎙','Voice Notes','summit-voice.html','voice notes inbox transcript webhook dictation tasks to-do cold calling'],['◈','Access','https://access-network.onrender.com/','premarket off market pocket listings deal network buyers buy box introductions boston']]],
   ['Pipeline',[['◫','Rehab Tracker','rehab-tracker.html'],['◎','Deals','track-record.html','deals investors track record flip wholesale entity personal market value mortgage equity']]],
   ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
   ['Resources',[['◎','Social Media','/social-studio.html'],['▦','OM Builder','om-builder.html'],['⚷','Shared Logins','summit-logins.html','summit shared logins passwords credentials propstream sites']]]
@@ -381,8 +398,17 @@ function loadAccessNote(done){
 }
 function toggleCo(e){e.stopPropagation();$('coMenu').classList.toggle('open');}
 document.addEventListener('click',function(){$('coMenu').classList.remove('open');});
-function setCo(id){if(id==='reserve'){location.href='doors.html';return;}CO=id;renderSidebar();go('#dash','Overview');$('coMenu').classList.remove('open');}
+function setCo(id){if(id==='reserve'){location.href='https://access-network.onrender.com/';return;}CO=id;renderSidebar();go('#dash','Overview');$('coMenu').classList.remove('open');}
 function entJump(co,url,label){CO=co;renderSidebar();go(url,label);}
+/* Flat workspace switcher — swap the whole active workspace and land on its dashboard.
+   Access (reserve) opens the off-market doors app in place, matching setCo. */
+function switchWs(co){
+  if(co===CO)return;
+  if(co==='reserve'){location.href='https://access-network.onrender.com/';return;}
+  CO=co;setTopCo(co);renderSidebar();
+  var dashBy={grove:'#dash',citicore:'citicore-dashboard.html',summit:'summit-dashboard.html'};
+  go(dashBy[co]||'#dash','Dashboard');
+}
 function renderSidebar(){
   var owner=ME.role==='owner';
   if(owner){var ci=COINFO[CO]||{logo:'GROVE_WHITE',role:''};$('coLogo').src=LOGOS[ci.logo]||'';$('coRole').textContent=ci.role;$('coCv').style.display='';
@@ -402,7 +428,7 @@ function renderSidebar(){
   function itemsHtml(g,co){
     var isHid=g[0].indexOf('🚧')===0,items='';
     g[1].forEach(function(it){
-      var badge=(it[2]==='deals-payouts.html'&&window.__UACOUNT__)?('<span class="tag">'+window.__UACOUNT__+'</span>'):((it[2]==='citicore-properties.html'&&window.__CCP_MISS__)?('<span class="tag" style="background:#C0492E;color:#fff" title="Bank statement month(s) missing">❗</span>'):'');
+      var badge=(it[2]==='deals-payouts2.html'&&window.__UACOUNT__)?('<span class="tag">'+window.__UACOUNT__+'</span>'):((it[2]==='citicore-properties.html'&&window.__CCP_MISS__)?('<span class="tag" style="background:#C0492E;color:#fff" title="Bank statement month(s) missing">❗</span>'):'');
       if(MEDIT&&owner){
         var pf=mpFor(co),itHid=pf.hidden.indexOf(it[2])>=0,itPin=(pf.pinned||[]).indexOf(it[2])>=0;
         items+='<a class="mpedit'+(itHid?' off':'')+'" data-url="'+esc(it[2])+'">'
@@ -455,23 +481,31 @@ function renderSidebar(){
     }else{
       h+='<div class="gsec open"><div style="padding:5px 14px 8px;font-size:11px;color:var(--mut2);line-height:1.4">Tap <b>Edit</b> above to pin your most-used tools here.</div></div>';
     }
-    h+='<div class="grp" style="cursor:default">Workspaces<span class="tk" style="--tk:#17418A"></span></div>';
-    [['grove','Grove','Brokerage'],['citicore','Citicore','Portfolio'],['summit','Summit','Wholesale & flips'],['reserve','Access','Off-market network']].forEach(function(c){
-      var co=c[0],coOpen=MEDIT?true:(st['co:'+co]===true);
-      var groups=mpApply(NAV[co].filter(function(g){return g[0]!=='Overview';}),co);
-      var inner='';groups.forEach(function(g){
-        /* If a company's primary group shares the company's name (e.g. Citicore ▸ Citicore),
-           drop the redundant sub-heading and show its items directly under the company row.
-           Keep the header while editing the menu so it stays reorderable. */
-        if(!MEDIT && String(g[0]).toLowerCase()===String(c[1]).toLowerCase()){
-          inner+='<div class="gsec open">'+itemsHtml(g,co)+'</div>';
+    /* Workspace switcher — flat. One workspace is active at a time; its tools list flat
+       directly below. Clicking a chip swaps the whole workspace instead of expanding an
+       accordion, so there's no per-company expand/collapse churn. */
+    var WSMETA=[['grove','Grove','Brokerage','#17418A'],['citicore','Citicore','Portfolio','#0E7C6A'],['summit','Summit','Wholesale & flips','#E0674B'],['reserve','Access','Off-market network','#5B8DEF']];
+    h+='<div class="grp" style="cursor:default">Workspace<span class="tk" style="--tk:#17418A"></span></div>';
+    h+='<div class="wsw">';
+    WSMETA.forEach(function(c){
+      var co=c[0],active=(co===CO);
+      h+='<button class="wsb'+(active?' on':'')+'" onclick="switchWs(\''+co+'\')" style="--wc:'+c[3]+'"><span class="wsdot"></span><span class="wsl">'+c[1]+'</span><span class="wssub">'+c[2]+'</span></button>';
+    });
+    h+='</div>';
+    /* Active workspace's tools — flat, no per-company accordion. If a tool group shares the
+       company's name (e.g. Citicore ▸ Citicore), its items show directly with no sub-heading;
+       other groups keep a lightweight, collapsible label. */
+    if(CO!=='reserve'){
+      var actName=({grove:'Grove',citicore:'Citicore',summit:'Summit'}[CO]||CO);
+      var agroups=mpApply(NAV[CO].filter(function(g){return g[0]!=='Overview';}),CO);
+      agroups.forEach(function(g){
+        if(!MEDIT && String(g[0]).toLowerCase()===actName.toLowerCase()){
+          h+='<div class="gsec open flat">'+itemsHtml(g,CO)+'</div>';
         } else {
-          inner+=groupHtml(g,co,co+'|'+g[0]);
+          h+=groupHtml(g,CO,CO+'|'+g[0]);
         }
       });
-      h+='<div class="conav'+(coOpen?' open':'')+'" data-g="co:'+co+'" onclick="toggleGrp(this)">'+c[1]+'<span class="cosub">'+c[2]+'</span><span class="car">▸</span></div>'
-        +'<div class="gsec cosec'+(coOpen?' open':'')+'">'+inner+'</div>';
-    });
+    }
     /* Standalone owner-admin item — outside the 3 companies, pinned at the bottom */
     h+='<div class="grp" style="cursor:default">Admin<span class="tk" style="--tk:#94A3B8"></span></div>'
       +'<div class="gsec open"><a data-url="team-access.html" onclick="go(\'team-access.html\',\'Team & Access\')"><span class="ic">⚙</span>Team &amp; Access</a></div>';
@@ -496,7 +530,7 @@ var NAVSTATE=null;
    Hidden tools drop into a collapsed "🚧 In progress" group at the bottom —
    still reachable, just out of the way while they're being worked on. */
 var MPREFS=null,MEDIT=false,_mpT=null;
-function mpFor(co){co=co||CO;if(!MPREFS)MPREFS={};if(!MPREFS[co])MPREFS[co]={order:{},hidden:[]};if(!MPREFS[co].order)MPREFS[co].order={};if(!Array.isArray(MPREFS[co].hidden))MPREFS[co].hidden=[];if(!MPREFS[co].moved||typeof MPREFS[co].moved!=='object')MPREFS[co].moved={};if(!Array.isArray(MPREFS[co].pinned))MPREFS[co].pinned=(co==='grove'?['deals-payouts.html','quick-underwrite.html','commission-calc.html']:[]);return MPREFS[co];}
+function mpFor(co){co=co||CO;if(!MPREFS)MPREFS={};if(!MPREFS[co])MPREFS[co]={order:{},hidden:[]};if(!MPREFS[co].order)MPREFS[co].order={};if(!Array.isArray(MPREFS[co].hidden))MPREFS[co].hidden=[];if(!MPREFS[co].moved||typeof MPREFS[co].moved!=='object')MPREFS[co].moved={};if(!Array.isArray(MPREFS[co].pinned))MPREFS[co].pinned=(co==='grove'?['deals-payouts2.html','quick-underwrite.html','commission-calc.html']:[]);return MPREFS[co];}
 /* find a tool [icon,label,url,...] by url within a workspace's nav */
 function findTool(co,url){var arr=NAV[co]||[];for(var i=0;i<arr.length;i++){var it=arr[i][1];for(var j=0;j<it.length;j++){if(it[j][2]===url)return it[j];}}return null;}
 function getPins(co){return mpFor(co).pinned.filter(function(u){return !!findTool(co,u);});}
@@ -624,7 +658,7 @@ function toggleTheme(){
 function syncThemeBtn(){var b=document.getElementById('themeTop');if(b)b.textContent=document.documentElement.classList.contains('dark')?'◑ Dark':'◐ Light';}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncThemeBtn);else syncThemeBtn();
 function closeNav(){var s=$('side'),sc=$('navscrim');if(s)s.classList.remove('open');if(sc)sc.classList.remove('open');}
-function go(url,label){if(/^https?:\/\//i.test(url)){window.open(url,'_blank','noopener');return;}if(/^doors\.html/i.test(url)){location.href='doors.html';return;}CURURL=url;setActive(url);$('crumb').textContent=label||'';closeNav();
+function go(url,label){if(/^https?:\/\//i.test(url)){window.open(url,'_blank','noopener');return;}if(/^doors\.html/i.test(url)){location.href='https://access-network.onrender.com/';return;}CURURL=url;setActive(url);$('crumb').textContent=label||'';closeNav();
   var hv=(url.charAt(0)==='#'?url:'#'+url);if(location.hash!==hv){try{location.hash=hv;}catch(e){}}
   if(url==='#dash'){renderDashboard();}else if(url==='#personal'){renderPersonal();}else{
     // Cache-bust the iframe src: the tools load under their plain URLs, so the
@@ -825,6 +859,91 @@ function loadData(){
 }
 function note(key,cb){fetch('/api/grove?action=notes&notekey='+encodeURIComponent(key)+'&_='+Date.now(),{cache:'no-store',credentials:'include'}).then(function(r){return r.json();}).then(function(j){var v=null;try{v=(j&&j.value)?JSON.parse(j.value):null;}catch(e){}cb(v||{});}).catch(function(){cb({});});}
 
+/* ── Owner monthly uploads — statement chart ───────────────────────────────
+   Owner-only. A month × row grid: two book rows (Citicore, Summit) plus one
+   row per owned building. A cell is GREEN when that month is logged, RED when
+   it's outstanding, and a muted dot before a building's records start.
+   • Building statements are the SAME data as the Investments page
+     (ccp_properties + ccp_stmts) — a cell is done only when a real statement is
+     logged, and a red cell jumps you into that property's month to log it.
+   • Book rows are simple monthly ticks, stored in note `owner_uploads`
+     = {citicore:{"YYYY-MM":1}, summit:{...}}.
+   Months run Jan 2026 → the last CLOSED month (previous calendar month). */
+var UPPROPS=[],UPSTMTS={},UPBOOKS={citicore:{},summit:{}},UP_LOADED=false;
+function _p2(n){return String(n).length<2?('0'+n):String(n);}
+function upLastClosed(){var d=new Date(),y=d.getFullYear(),m=d.getMonth();return m===0?((y-1)+'-12'):(y+'-'+_p2(m));}
+function upAdd(ym,k){var y=+ym.slice(0,4),m=+ym.slice(5)+k;while(m>12){m-=12;y++;}while(m<1){m+=12;y--;}return y+'-'+_p2(m);}
+function upRange(a,b){var out=[];if(a>b)return out;var c=a;while(true){out.push(c);if(c===b)break;c=upAdd(c,1);if(out.length>240)break;}return out;}
+var UPMON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function upLabel(ym){var mo=UPMON[(+ym.slice(5))-1],yr=ym.slice(0,4);return mo+(yr!=='2026'?(" '"+ym.slice(2,4)):'');}
+function upFull(ym){return UPMON[(+ym.slice(5))-1]+' '+ym.slice(0,4);}
+function _pdYM(s){s=String(s||'').trim();if(!s)return '';var d=new Date(s);if(!isNaN(d))return d.getFullYear()+'-'+_p2(d.getMonth()+1);var m=s.match(/(20\d{2})/);return m?m[1]+'-01':'';}
+function upStart(p){var ym=_pdYM(p.purchaseDate);if(ym&&ym.slice(0,4)==='2026'&&ym>'2026-01')return ym;return '2026-01';}
+function upOwned(p){return p&&!p.invest&&(p.status||'owned')!=='sold';}
+function loadReminders(){ // (name kept — booted at startup)
+  if(ME.role!=='owner')return;
+  var g=function(k){return fetch('/api/grove?action=notes&notekey='+k+'&_='+Date.now(),{cache:'no-store',credentials:'include'}).then(function(r){return r.json();}).then(function(j){var v=(j&&(j.value||j.notes))||'';try{return JSON.parse(v);}catch(e){return null;}}).catch(function(){return null;});};
+  Promise.all([g('ccp_properties'),g('ccp_stmts'),g('owner_uploads')]).then(function(a){
+    UPPROPS=Array.isArray(a[0])?a[0]:[]; UPSTMTS=(a[1]&&typeof a[1]==='object')?a[1]:{};
+    var b=a[2]||{}; UPBOOKS={citicore:(b.citicore||{}),summit:(b.summit||{})};
+    UP_LOADED=true; if(CURURL==='#dash')renderDashboard();
+  }).catch(function(){UP_LOADED=true;});
+}
+function persistBooks(){fetch('/api/grove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'notes',notekey:'owner_uploads',value:JSON.stringify(UPBOOKS)})}).catch(function(){});}
+function markBook(co,ym){ UPBOOKS[co]=UPBOOKS[co]||{}; if(UPBOOKS[co][ym])delete UPBOOKS[co][ym]; else UPBOOKS[co][ym]=1; persistBooks(); renderDashboard(); }
+/* Cell states: 'na' (before start), 'ok' (logged), 'due' (outstanding). */
+function upCells(months){
+  var rows=[];
+  rows.push({kind:'book',co:'citicore',label:'Citicore books',sub:'Monthly bookkeeping export',
+    cell:function(ym){return UPBOOKS.citicore[ym]?'ok':'due';}});
+  rows.push({kind:'book',co:'summit',label:'Summit books',sub:'Monthly bookkeeping export',
+    cell:function(ym){return UPBOOKS.summit[ym]?'ok':'due';}});
+  UPPROPS.filter(upOwned).sort(function(a,b){return (b.marketValue||0)-(a.marketValue||0);}).forEach(function(p){
+    var start=upStart(p),s=UPSTMTS[p.propId]||{};
+    rows.push({kind:'prop',propId:p.propId,label:p.name||'Building',sub:'Owner statement',
+      cell:function(ym){ if(ym<start)return 'na'; return s[ym]?'ok':'due'; }});
+  });
+  return rows;
+}
+function remindersHTML(){ // (name kept — inserted by renderDashboard)
+  if(!UP_LOADED)return '';
+  var months=upRange('2026-01',upLastClosed());
+  if(!months.length)months=[upLastClosed()];
+  var rows=upCells(months);
+  var outstanding=0;
+  rows.forEach(function(r){months.forEach(function(ym){if(r.cell(ym)==='due')outstanding++;});});
+  var accent=outstanding?'var(--bad,#C0492E)':'var(--good,#2E9E6E)';
+  var head='<div class="between" style="margin-bottom:10px"><b style="font-size:14px;display:flex;align-items:center;gap:8px">'
+      +'<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:'+accent+';color:#fff;font-weight:900;font-size:15px">'+(outstanding?'!':'✓')+'</span>Alerts &amp; reminders</b>'
+      +'<span class="sub">'+(outstanding?(outstanding+' outstanding'):'All caught up')+'</span></div>';
+  // Grid: sticky row-label column + one column per month. Horizontal scroll if wide.
+  var cw=34, lw=132;
+  var thead='<tr><th style="position:sticky;left:0;z-index:2;background:var(--card);text-align:left;min-width:'+lw+'px;padding:4px 8px 6px 2px"></th>'
+      +months.map(function(ym){return '<th style="min-width:'+cw+'px;padding:0 0 6px;font:700 10px Inter,sans-serif;color:var(--mut);text-align:center;letter-spacing:.02em">'+upLabel(ym).replace(' ','<br>')+'</th>';}).join('')+'</tr>';
+  var body=rows.map(function(r){
+    var tds=months.map(function(ym){
+      var st=r.cell(ym);
+      if(st==='na')return '<td style="text-align:center;padding:3px 0"><span style="color:var(--line2,#c9ced6)">·</span></td>';
+      if(st==='ok'){
+        var onOk = r.kind==='book' ? ' onclick="markBook(\''+r.co+'\',\''+ym+'\')" title="Uploaded — tap to undo"' : ' title="Statement logged"';
+        return '<td style="text-align:center;padding:3px 0"><span'+onOk+' style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:22px;border-radius:6px;background:var(--goodbg,#E4F3EC);color:var(--good,#2E9E6E);font-weight:900;font-size:12px;cursor:'+(r.kind==='book'?'pointer':'default')+'">✓</span></td>';
+      }
+      // due
+      var act = r.kind==='book'
+        ? 'markBook(\''+r.co+'\',\''+ym+'\')'
+        : 'go(\'citicore-properties.html?logstmt='+encodeURIComponent(r.propId)+'&ym='+ym+'\',\'Investments\')';
+      var tip = r.kind==='book' ? 'Not uploaded — tap to mark done' : 'Outstanding — tap to log '+upFull(ym);
+      return '<td style="text-align:center;padding:3px 0"><span onclick="'+act+'" title="'+esc(tip)+'" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:22px;border-radius:6px;background:var(--badbg,#F7EBEA);color:var(--bad,#C0492E);font-weight:900;font-size:12px;cursor:pointer">!</span></td>';
+    }).join('');
+    return '<tr><td style="position:sticky;left:0;z-index:1;background:var(--card);padding:3px 8px 3px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+lw+'px"><div style="font-weight:600;font-size:12.5px;overflow:hidden;text-overflow:ellipsis">'+esc(r.label)+'</div></td>'+tds+'</tr>';
+  }).join('');
+  var grid='<div style="overflow-x:auto;margin:2px -2px 0"><table style="border-collapse:collapse;width:100%">'+thead+body+'</table></div>';
+  var legend='<div class="sub" style="margin-top:8px;display:flex;gap:14px;flex-wrap:wrap;font-size:11px">'
+      +'<span><b style="color:var(--bad,#C0492E)">!</b> outstanding — tap to log</span>'
+      +'<span><b style="color:var(--good,#2E9E6E)">✓</b> uploaded</span>'
+      +'<span style="color:var(--mut)">· not yet due</span></div>';
+  return '<div class="card p" style="border:1px solid '+accent+';box-shadow:0 0 0 1px '+accent+'">'+head+grid+legend+'</div>';
+}
 function renderDashboard(){
   var hr=new Date().getHours();var greet=hr<12?'Good morning':(hr<18?'Good afternoon':'Good evening');
   var nm=(ME.name||'').split(' ')[0]||'there';
@@ -835,6 +954,7 @@ function renderDashboard(){
   if(ME.role==='owner'||lcem(ME.email)==='nik@shbuyers.com'){
     h+='<div class="card p qadd" onclick="window.open(\'https://dashboard.resimpli.com\',\'_blank\',\'noopener\')"><span class="qi">🚗</span><span><b>Drive-by? Add it in REsimpli</b><span class="sub">Leads and calling live in REsimpli now.</span></span></div>';
   }
+  if(owner){ h+=remindersHTML(); }
   if(ME.role==='summit'){
     /* Lead board first — it's the reason to open the hub. If the pulls have
        stopped or nothing is reaching the sheet, say so here rather than making
@@ -896,10 +1016,10 @@ function renderDashboard(){
   }
   if(owner){
     h+='<div class="ent3">';
-    h+='<div class="card entc co-grove" onclick="entJump(\'grove\',\'deals-payouts.html\',\'Deals & Payouts\')"><div class="enth"><b>Grove</b><span>Brokerage</span></div><div class="entbig">'+moneyK(DASH.ytdFees||0)+'</div><div class="entsub">YTD fees</div><div class="entr"><span>Pipeline · under agr.</span><b>'+moneyK(DASH.uaVol||0)+'</b></div><div class="entr"><span>Ready to disburse</span><b>'+money(DASH.owed||0)+'</b></div><div class="entr"><span>Active deals</span><b>'+((DASH.ua?DASH.ua.length:0)+(DASH.fs?DASH.fs.length:0))+'</b></div><div class="entopen">Open →</div></div>';
+    h+='<div class="card entc co-grove" onclick="entJump(\'grove\',\'deals-payouts2.html\',\'Deals & Payouts\')"><div class="enth"><b>Grove</b><span>Brokerage</span></div><div class="entbig">'+moneyK(DASH.ytdFees||0)+'</div><div class="entsub">YTD fees</div><div class="entr"><span>Pipeline · under agr.</span><b>'+moneyK(DASH.uaVol||0)+'</b></div><div class="entr"><span>Ready to disburse</span><b>'+money(DASH.owed||0)+'</b></div><div class="entr"><span>Active deals</span><b>'+((DASH.ua?DASH.ua.length:0)+(DASH.fs?DASH.fs.length:0))+'</b></div><div class="entopen">Open →</div></div>';
     h+='<div class="card entc co-citicore" onclick="entJump(\'citicore\',\'portfolio.html\',\'Portfolio\')"><div class="enth"><b>Citicore</b><span>Rentals</span></div><div class="entbig">'+(DASH.citiReady&&DASH.rentHas?money(DASH.rentMo):'—')+'</div><div class="entsub">rent / month</div><div class="entr"><span>Units</span><b>'+(DASH.citiReady&&DASH.rentHas?DASH.units:'—')+'</b></div><div class="entr"><span>Loan balance</span><b>'+(DASH.loanBal?moneyK(DASH.loanBal):(DASH.loansReady?'$0':'—'))+'</b></div><div class="entr"><span>Fees owed</span><b>'+money(DASH.condoOwe||0)+'</b></div><div class="entopen">Open →</div></div>';
     h+='<div class="card entc co-summit" onclick="entJump(\'summit\',\'summit-portfolio.html\',\'Portfolio & Offers\')"><div class="enth"><b>Summit</b><span>Wholesale &amp; flips</span></div><div class="entbig">'+(DASH.smReady&&DASH.smHas?DASH.smDeals:'—')+'</div><div class="entsub">active deals</div><div class="entr"><span>Total ARV</span><b>'+(DASH.smReady&&DASH.smHas?moneyK(DASH.smArv):'—')+'</b></div><div class="entr"><span>Equity spread</span><b>'+(DASH.smReady&&DASH.smHas?moneyK(DASH.smEq):'—')+'</b></div><div class="entr"><span>Open offers</span><b>'+(DASH.smReady&&DASH.smHas?DASH.smOffers:'—')+'</b></div><div class="entopen">Open →</div></div>';
-    h+='<div class="card entc co-access" onclick="go(\'doors.html\',\'Access\')"><div class="enth"><b>Access</b><span>Off-market network</span></div><div class="entbig">◈</div><div class="entsub">members-only deal network</div>'
+    h+='<div class="card entc co-access" onclick="go(\'https://access-network.onrender.com/\',\'Access\')"><div class="enth"><b>Access</b><span>Off-market network</span></div><div class="entbig">◈</div><div class="entsub">members-only deal network</div>'
       +(function(){var pm=DASH.pm;if(!pm){var d=DASH.pmReady?'0':'…';return '<div class="entr"><span>Live deals</span><b>'+d+'</b></div><div class="entr"><span>Active volume</span><b>'+(DASH.pmReady?'$0':'…')+'</b></div><div class="entr"><span>Members</span><b>'+d+'</b></div>';}
         return '<div class="entr"><span>Live deals</span><b>'+(pm.liveDeals||0)+'</b></div>'
           +'<div class="entr"><span>Active volume</span><b>'+moneyK(pm.volume||0)+'</b></div>'
@@ -924,7 +1044,7 @@ function renderDashboard(){
       +tile('Closed YTD',myClosed.length,money(myClosed.reduce(function(a,d){return a+dpFee(d);},0))+' in fees')+'</div>';
   }
   // recent + upcoming
-  var dealsPg=owner?'deals-payouts.html':'my-deals.html',dealsTitle=owner?'Deals & Payouts':'My Deals';
+  var dealsPg=owner?'deals-payouts2.html':'my-deals.html',dealsTitle=owner?'Deals & Payouts':'My Deals';
   h+='<div class="grid g2">';
   var recent=DASH.ua.concat(DASH.fs).sort(function(a,b){return (Number(b.price)||0)-(Number(a.price)||0);}).slice(0,5);
   h+='<div class="card p"><div class="between" style="margin-bottom:8px"><b style="font-size:13.5px">Active deals</b><span class="link" onclick="go(\''+dealsPg+'\',\''+dealsTitle+'\')">Open →</span></div><table class="dtable"><tbody>';
@@ -959,7 +1079,7 @@ function buildContentIndex(cb){
   jobs.push(fetch((owner?'/api/deals':'/api/mydeals')+'?_='+Date.now(),{credentials:'include'}).then(function(r){return r.ok?r.json():null;}).then(function(j){
     ((j&&j.deals)||[]).forEach(function(d){ if(!d)return; var addr=String(d.property||'').trim(); if(!addr)return;
       CIDX.push({type:'Deal',icon:'▤',label:addr+(d.unit&&d.unit!=='-'?(' #'+d.unit):''),sub:(d.type||'')+(d.date?(' · '+d.date):''),q:(addr+' '+(d.type||'')).toLowerCase(),
-        url:(owner?'deals-payouts.html':'my-deals.html')+'?find='+encodeURIComponent(addr)}); });
+        url:(owner?'deals-payouts2.html':'my-deals.html')+'?find='+encodeURIComponent(addr)}); });
   }).catch(function(){}));
   // Inventory
   jobs.push(fetch('/api/grove?action=notes&notekey=forsale_folder&_='+Date.now(),{credentials:'include'}).then(function(r){return r.ok?r.json():null;}).then(function(j){
@@ -968,12 +1088,31 @@ function buildContentIndex(cb){
       CIDX.push({type:'Inventory',icon:'▤',label:addr,sub:(p.price?('$'+p.price):'')+(p.off?' · off-market':''),q:addr.toLowerCase(),
         url:'for-sale-folder.html?find='+encodeURIComponent(addr)}); });
   }).catch(function(){}));
-  // Saved underwrites (server-backed types). 'deal:' also matches 'deal:mf:' — filter it out.
-  [['deal:mf:','multifamily-underwriter.html','Multifamily'],['quick:','quick-underwrite.html','Quick Underwrite'],['deal:','deal-analyzer.html','Full Underwrite']].forEach(function(u){
+  // Saved underwrites. Multifamily is keyed by the property address, so its key is
+  // enough. Quick + Full save under a timestamp id (quick:q_… / deal:deal_…), so we
+  // fetch each record to pull the real address — otherwise they're unsearchable by
+  // address and show a raw id as the label. ?load=<key-suffix> tells the page which
+  // saved scenario to open. 'deal:' also matches the typed underwriters — filter those.
+  var UWTYPES=[['deal:mf:','multifamily-underwriter.html','Multifamily'],['quick:','quick-underwrite.html','Quick Underwrite'],['deal:','deal-analyzer.html','Full Underwrite']];
+  var UWFOREIGN=/^deal:(mf|flip|str|build):/;
+  UWTYPES.forEach(function(u){
     jobs.push(fetch('/api/uw?prefix='+encodeURIComponent(u[0])+'&_='+Date.now(),{credentials:'include'}).then(function(r){return r.ok?r.json():null;}).then(function(j){
-      ((j&&j.keys)||[]).forEach(function(k){ k=String(k); if(u[0]==='deal:'&&k.indexOf('deal:mf:')===0)return; var addr=k.slice(u[0].length).trim(); if(!addr)return;
-        CIDX.push({type:'Underwrite',icon:'∑',label:addr,sub:u[2],q:(addr+' '+u[2]+' underwrite').toLowerCase(),
-          url:u[1]+'?load='+encodeURIComponent(addr)}); });
+      var keys=((j&&j.keys)||[]).map(String).filter(function(k){return !(u[0]==='deal:'&&UWFOREIGN.test(k));});
+      if(u[0]==='deal:mf:'){
+        keys.forEach(function(k){ var addr=k.slice(u[0].length).trim(); if(!addr)return;
+          CIDX.push({type:'Underwrite',icon:'∑',label:addr,sub:u[2],q:(addr+' '+u[2]+' underwrite').toLowerCase(),
+            url:u[1]+'?load='+encodeURIComponent(addr)}); });
+        return;
+      }
+      return Promise.all(keys.map(function(k){ var suffix=k.slice(u[0].length).trim(); if(!suffix)return null;
+        return fetch('/api/uw/item?key='+encodeURIComponent(k)+'&_='+Date.now(),{credentials:'include'}).then(function(r){return r.ok?r.json():null;}).then(function(it){
+          var d=null,v=it&&it.value; try{d=(typeof v==='string')?JSON.parse(v):v;}catch(e){}
+          var addr=(d&&String(d.address||d.name||'').trim())||suffix;
+          if(/^(q_|deal_)/.test(addr))addr=suffix; // never surface a raw id as the label
+          CIDX.push({type:'Underwrite',icon:'∑',label:addr,sub:u[2],q:(addr+' '+u[2]+' underwrite').toLowerCase(),
+            url:u[1]+'?load='+encodeURIComponent(suffix)});
+        }).catch(function(){});
+      }));
     }).catch(function(){}));
   });
   Promise.all(jobs).then(function(){CIDX_LOADED=true;CIDX_LOADING=false;cb&&cb();});
@@ -1045,7 +1184,7 @@ fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).the
   if(ME.role!=='owner')CO='grove';
   loadAccessNote(function(){
     mpLoad(function(){
-      renderSidebar();buildPal();if(!routeFromHash())go(ME.role==='guest'?'citicore-portfolio.html':'#dash',ME.role==='guest'?'Portfolio':'Overview');loadData();
+      renderSidebar();buildPal();if(!routeFromHash())go(ME.role==='guest'?'citicore-portfolio.html':'#dash',ME.role==='guest'?'Portfolio':'Overview');loadData();loadReminders();
     });
   });
 }).catch(function(){renderSidebar();if(!routeFromHash())go('#dash','Overview');loadData();});
