@@ -53,6 +53,36 @@ const pmEmail = u => _lc((u && u.email) || '');
 function pmId(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 const PM_KEYS = { listings: 'pm_listings', intros: 'pm_intros', buyboxes: 'pm_buyboxes' };
 
+// ── give-to-get reciprocity ─────────────────────────────────────────────────
+// The network only works if members contribute. A member keeps FULL access
+// (seeing addresses + contacting posters) while they have a live deal OR a live
+// client need in the last GG_DAYS. New members get a GG_GRACE-day grace window
+// to explore first. Owner is always exempt; a profile flag exemptGiveGet/founder
+// exempts specific members. Set GIVE_GET_OFF=1 to disable enforcement (demo).
+const GG_DAYS = parseInt(process.env.GIVE_GET_DAYS || '', 10) || 60;
+const GG_GRACE = parseInt(process.env.GIVE_GET_GRACE || '', 10) || 21;
+const GG_ENFORCE = !process.env.GIVE_GET_OFF;
+function _daysSince(iso) { if (!iso) return Infinity; const t = new Date(iso).getTime(); return isNaN(t) ? Infinity : (Date.now() - t) / 86400000; }
+function pmReciprocity(email, listings, boxes, profs) {
+  const e = _lc(email);
+  const prof = (profs || []).find(p => p && _lc(p.email) === e) || {};
+  if (prof.exemptGiveGet || prof.founder) return { active: true, exempt: true, enforce: GG_ENFORCE, hasDeal: true, hasNeed: false, inGrace: false, graceDaysLeft: 0, lastDealDays: 0, lastNeedDays: null, windowDays: GG_DAYS };
+  let lastDeal = Infinity, lastNeed = Infinity;
+  (listings || []).forEach(l => { if (l && _lc(l.owner) === e && (l.status || 'active') !== 'off') { const d = _daysSince(l.updatedAt || l.createdAt); if (d < lastDeal) lastDeal = d; } });
+  (boxes || []).forEach(b => { if (b && _lc(b.owner) === e) { const d = _daysSince(b.updatedAt || b.createdAt); if (d < lastNeed) lastNeed = d; } });
+  const hasDeal = lastDeal <= GG_DAYS, hasNeed = lastNeed <= GG_DAYS;
+  const graceUsed = _daysSince(prof.approvedAt || prof.createdAt);
+  const inGrace = graceUsed <= GG_GRACE;
+  const active = !GG_ENFORCE || hasDeal || hasNeed || inGrace;
+  return {
+    active, exempt: false, enforce: GG_ENFORCE, hasDeal, hasNeed, inGrace,
+    graceDaysLeft: inGrace ? Math.max(0, Math.ceil(GG_GRACE - graceUsed)) : 0,
+    lastDealDays: isFinite(lastDeal) ? Math.floor(lastDeal) : null,
+    lastNeedDays: isFinite(lastNeed) ? Math.floor(lastNeed) : null,
+    windowDays: GG_DAYS
+  };
+}
+
 // Gate: signed in AND (admin OR approved member). Invite-only — a pending or
 // unknown session gets nothing from the API.
 async function pmGate(req, res, next) {
@@ -72,10 +102,10 @@ function pmEntitled(listing, u, intros) {
   const email = pmEmail(u);
   return (intros || []).some(i => i && i.listingId === listing.id && _lc(i.buyer) === email && i.status === 'approved');
 }
-function pmPublicView(l, full) {
+function pmPublicView(l, full, gated) {
   if (!l) return null;
   const zip = String(l.zip || '');
-  const showAddr = full || !l.hideAddress;
+  const showAddr = full || (!l.hideAddress && !gated);
   const expired = l.expiresAt ? (new Date(l.expiresAt) < new Date()) : false;
   const out = {
     id: l.id, owner: l.owner, ownerName: l.ownerName || '',
@@ -189,28 +219,32 @@ app.post('/api/pm/import', ensureAuth, async (req, res) => {
 // ── feed / listings ─────────────────────────────────────────────────────────
 app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
   try {
-    const [listings, intros, profs] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros), pmLoad('pm_profiles')]);
+    const [listings, intros, profs, boxes] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros), pmLoad('pm_profiles'), pmLoad(PM_KEYS.buyboxes)]);
     const meEmail = pmEmail(req.user);
     const meProf = profs.find(p => p && _lc(p.email) === meEmail) || {};
     const isOwner = req.user.role === 'owner';
     const mine = l => _lc(l.owner) === meEmail;
+    const recip = pmReciprocity(meEmail, listings, boxes, profs);
+    const gated = !isOwner && !recip.active;   // throttle non-contributors
     const isExpired = l => l.expiresAt && (new Date(l.expiresAt) < new Date());
     const rows = listings
       .filter(l => l && (((l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls') || mine(l) || isOwner))
       .filter(l => !isExpired(l) || mine(l) || isOwner)
-      .map(l => pmPublicView(l, mine(l) || isOwner))
+      .map(l => pmPublicView(l, mine(l) || isOwner, gated && !mine(l)))
       .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
-    res.json({ ok: true, listings: rows, me: { email: req.user.email, role: req.user.role, focus: meProf.focus || '' } });
+    res.json({ ok: true, listings: rows, me: { email: req.user.email, role: req.user.role, focus: meProf.focus || '', reciprocity: recip } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
 app.get('/api/pm/listing/:id', ensureAuth, pmGate, async (req, res) => {
   try {
-    const [listings, intros] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros)]);
+    const [listings, intros, boxes, profs] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros), pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles')]);
     const l = listings.find(x => x && x.id === String(req.params.id));
     if (!l) return res.status(404).json({ ok: false, error: 'not_found' });
     const full = _lc(l.owner) === pmEmail(req.user) || req.user.role === 'owner';
-    res.json({ ok: true, listing: pmPublicView(l, full) });
+    const recip = pmReciprocity(pmEmail(req.user), listings, boxes, profs);
+    const gated = !full && !recip.active;
+    res.json({ ok: true, listing: pmPublicView(l, full, gated), reciprocity: recip });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
@@ -319,6 +353,11 @@ app.post('/api/pm/intro', ensureAuth, pmGate, async (req, res) => {
     const l = listings.find(x => x && x.id === listingId);
     if (!l) return res.status(404).json({ ok: false, error: 'not_found' });
     if (_lc(l.owner) === pmEmail(req.user)) return res.status(400).json({ ok: false, error: 'own_listing' });
+    if (req.user.role !== 'owner') {
+      const [gboxes, gprofs] = await Promise.all([pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles')]);
+      if (!pmReciprocity(pmEmail(req.user), listings, gboxes, gprofs).active)
+        return res.status(403).json({ ok: false, error: 'contribute_required', message: 'Post a deal or a live client need to contact members.' });
+    }
     const intros = await pmLoad(PM_KEYS.intros);
     const email = pmEmail(req.user);
     const live = intros.find(i => i && i.listingId === listingId && _lc(i.buyer) === email && i.status !== 'declined');
@@ -678,6 +717,7 @@ app.post('/api/pm/admin/approve', ensureAuth, pmGate, async (req, res) => {
     const idx = profs.findIndex(p => p && _lc(p.email) === email);
     if (idx < 0) return res.status(404).json({ ok: false, error: 'not_found' });
     profs[idx].status = decision; profs[idx].decidedAt = new Date().toISOString();
+    if (decision === 'approved' && !profs[idx].approvedAt) profs[idx].approvedAt = profs[idx].decidedAt; // start give-to-get grace clock
     await pmSave('pm_profiles', profs);
     try { await pmSendEmail(email, 'ACCESS · your membership was ' + decision, decision === 'approved' ? 'You\'re approved. Sign in to ACCESS to post deals and message members.' : 'Your ACCESS application was not approved at this time.'); } catch (e) {}
     res.json({ ok: true, email, status: decision });
