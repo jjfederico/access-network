@@ -118,6 +118,11 @@ html.dark .bdg.pof{color:#E7C374!important;border-color:rgba(231,195,116,.32)!im
 .deal .comm{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--acc);font-weight:600;background:rgba(23,65,138,.07);border:1px solid rgba(23,65,138,.18);padding:4px 8px;border-radius:6px;white-space:nowrap}
 .deal .ago{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--mut2)}
 .empty{grid-column:1/-1;text-align:center;color:var(--mut);padding:60px 20px;border:1px dashed var(--line2);border-radius:16px}
+.emptybig{grid-column:1/-1;text-align:center;padding:48px 24px;border:1px dashed var(--line2);border-radius:16px;background:var(--card2)}
+.emptybig .eb-ic{font-size:40px;line-height:1;margin-bottom:10px}
+.emptybig h3{margin:0 0 6px;font-size:19px;font-weight:800}
+.emptybig p{color:var(--mut);font-size:14px;line-height:1.5;max-width:44ch;margin:0 auto 18px}
+.emptybig .eb-act{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
 /* ── modal ── */
 .mbg{position:fixed;inset:0;background:rgba(5,7,10,.72);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:28px 16px;overflow-y:auto}
 .mbg.on{display:flex}
@@ -163,7 +168,8 @@ body.mlock{overflow:hidden}
   .nlink.ico{padding:6px 6px}
   .btn.acc.sm{padding:8px 11px;font-size:12px}
 }
-@media(max-width:480px){.cta-txt{display:none}.nav .in{gap:8px}}
+@media(max-width:900px){.cta-txt{display:none}}
+@media(max-width:480px){.nav .in{gap:8px}}
 @media(max-width:560px){.fgrid{grid-template-columns:1fr}input,select,textarea{font-size:16px!important}}
 /* ── ACCESS brand skin: Big Shoulders headings + Public Sans body + Plex Mono labels;
    bone/gold accents on ink. Matches the ACCESS landing. Logo wordmark stays Archivo. ── */
@@ -273,10 +279,16 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .mtab .ct{color:var(--mut2);font-size:11px;font-weight:700}
 .mtab.on{background:var(--acc);border-color:var(--acc);color:#fff}
 .mtab.on .ct{color:rgba(255,255,255,.75)}
-.soonpill{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);background:rgba(23,65,138,.08);border:1px solid rgba(23,65,138,.2);border-radius:100px;padding:6px 12px;display:inline-flex;align-items:center;gap:7px}
-.soonpill .dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:soonpulse 1.8s infinite}
-@keyframes soonpulse{0%{box-shadow:0 0 0 0 rgba(23,65,138,.4)}70%{box-shadow:0 0 0 6px rgba(23,65,138,0)}100%{box-shadow:0 0 0 0 rgba(23,65,138,0)}}
+.soonpill{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:linear-gradient(100deg,var(--acc),var(--acc2));border:none;border-radius:100px;padding:9px 18px;display:inline-flex;align-items:center;gap:9px;box-shadow:0 6px 20px -6px rgba(23,65,138,.55)}
+.soonpill .lbl{opacity:.85}
+.soonpill b{color:#fff;font-weight:800;letter-spacing:.02em}
+.soonpill .city{display:inline-block;animation:soonfade .5s ease}
+@keyframes soonfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.soonpill .dot{width:9px;height:9px;border-radius:50%;background:#fff;box-shadow:0 0 0 0 rgba(255,255,255,.7);animation:soonpulse 1.6s infinite}
+@keyframes soonpulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.6)}70%{box-shadow:0 0 0 9px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+@media(max-width:640px){.soonpill{margin-left:0;font-size:11.5px;padding:8px 14px}}
 .mktlayout{display:grid;grid-template-columns:250px 1fr;gap:22px;align-items:start}
+.results{min-width:0}
 .rail{position:sticky;top:86px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
 .rail h3{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .rail h3 a{color:var(--acc);font-size:11px;cursor:pointer;text-transform:none;letter-spacing:0}
@@ -296,6 +308,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .sortbar .r{margin-left:auto;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .sortbar input{background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:8px 12px;font:inherit;font-size:13px;color:var(--tx);width:190px}
 .sortbar input:focus{outline:none;border-color:var(--acc)}
+@media(max-width:560px){.sortbar .r{margin-left:0;width:100%}.sortbar input{flex:1 1 auto;width:auto;min-width:0}.sortbar select{flex:1 1 auto;min-width:0}}
 .railtog{display:none}
 /* ── guided tour ── */
 #tourWrap{display:none;position:fixed;inset:0;z-index:400}
@@ -369,7 +382,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
 <body>
 
 <div class="nav"><div class="wrap in">
-  <div class="brand"><svg class="rb" viewBox="0 0 64 64" aria-label="ACCESS"><rect x="5" y="15" width="54" height="34" rx="8" fill="#1C1C1A"/><rect x="12" y="22" width="15" height="12" rx="2.6" fill="#B4882E"/><rect x="12" y="40" width="30" height="3.2" rx="1.6" fill="#F5F4F1" opacity=".32"/></svg>access<small>Off-Market</small></div>
+  <div class="brand" onclick="goHome()" role="button" tabindex="0" title="Back to dashboard — clears filters" style="cursor:pointer"><svg class="rb" viewBox="0 0 64 64" aria-label="ACCESS"><rect x="5" y="15" width="54" height="34" rx="8" fill="#1C1C1A"/><rect x="12" y="22" width="15" height="12" rx="2.6" fill="#B4882E"/><rect x="12" y="40" width="30" height="3.2" rx="1.6" fill="#F5F4F1" opacity=".32"/></svg>access<small>Off-Market</small></div>
   <div class="sp"></div>
   <span class="nlink hideM" onclick="scrollTo(0,document.getElementById('feed').offsetTop-70)">Deal feed</span>
   <span class="nlink hideM" onclick="openBuyBox()">Client needs</span>
@@ -440,9 +453,9 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
       <button data-cat="commercial" onclick="setCat('commercial')">Commercial</button>
       <button data-cat="all" class="on" onclick="setCat('all')">All</button>
     </div>
-    <div class="mksel">Market <select id="fMarket" onchange="render()"><option value="MA">Massachusetts</option></select></div>
+    <div class="mksel">Market <select id="fMarket" onchange="setMarket(this.value)"><option value="MA">Massachusetts</option><option value="NH">New Hampshire</option><option value="RI">Rhode Island</option></select></div>
     <div class="mktabs" id="regionTabs"></div>
-    <span class="soonpill"><span class="dot"></span>Coming soon · <b id="soonCity2">Providence, RI</b></span>
+    <span class="soonpill"><span class="dot"></span><span class="lbl">Expanding to</span> <b id="soonCity2" class="city">Hartford, CT</b></span>
   </div>
   <div class="mktlayout">
     <!-- filter rail -->
@@ -539,7 +552,7 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
 .grid.view-compact .deal .foot{margin-top:8px;padding-top:8px}
 .grid.view-map{display:block}
 .dealmap{width:100%;height:min(640px,72vh);border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--card2)}
-.grid.view-list{grid-template-columns:1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.grid.view-list{grid-template-columns:1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow-x:auto}
 .drow-head{display:flex;align-items:center;gap:12px;padding:8px 13px;background:var(--card2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
 .drow-head span{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--mut2)}
 .drow-head .li-type{width:104px;flex:none}.drow-head .li-sub{flex:1;min-width:0}.drow-head .li-addr{width:150px;flex:none}.drow-head .li-kpi{width:74px;flex:none;text-align:right}.drow-head .li-price{width:90px;flex:none;text-align:right}.drow-head .li-badges{width:52px;flex:none}
@@ -554,7 +567,7 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
 .drow-item .li-kpi{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--mut);width:74px;flex:none;text-align:right}
 .drow-item .li-price{font-weight:800;font-size:15px;width:90px;flex:none;text-align:right}
 .drow-item .li-badges{display:flex;gap:5px;flex:none}
-@media(max-width:640px){.drow-item .li-addr,.drow-item .li-kpi{display:none}.drow-item .li-type{width:auto}}
+@media(max-width:640px){.drow-item .li-addr,.drow-item .li-kpi,.drow-head .li-addr,.drow-head .li-kpi{display:none}.drow-item .li-type,.drow-head .li-type{width:auto}}
 /* photo uploader */
 .phdrop{border:2px dashed var(--line2);border-radius:11px;background:var(--card2);padding:16px;text-align:center;color:var(--mut);font-size:13px;cursor:pointer;transition:all .15s}
 .phdrop.hot{border-color:var(--acc);background:var(--accdim);color:var(--acc)}
@@ -596,7 +609,7 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
 
 <!-- SUBMIT DEAL -->
 <div class="mbg" id="mSubmit" onclick="if(event.target===this)close_('mSubmit')"><div class="modal wide">
-  <div class="mhead"><h3>Post a deal</h3><button class="x" onclick="close_('mSubmit')">×</button></div>
+  <div class="mhead"><h3 id="sTitle">Post a deal</h3><button class="x" onclick="close_('mSubmit')">×</button></div>
   <div class="mbody">
     <div class="f full"><label>Property address</label><input id="sAddr" class="gaddr" autocomplete="off" placeholder="Start typing the address…"></div>
     <div class="f full" style="display:flex;flex-direction:row;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:8px 11px;margin-top:-3px">
@@ -631,7 +644,7 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
     <div class="f full"><label>Distribution</label>
       <select id="sDist"><option value="broad">Broad — everyone in the network sees it</option><option value="private">Private — visible, intro requires your approval</option><option value="pocket">Pocket — only matched client needs see it</option></select>
     </div>
-    <div class="mact"><span class="msg" id="sMsg"></span><button class="btn ghost" onclick="close_('mSubmit')">Cancel</button><button class="btn acc" onclick="submitDeal()">Post deal</button></div>
+    <div class="mact"><span class="msg" id="sMsg"></span><button class="btn ghost" onclick="close_('mSubmit')">Cancel</button><button class="btn acc" id="sBtn" onclick="submitDeal()">Post deal</button></div>
   </div>
 </div></div>
 
@@ -762,7 +775,8 @@ function syncDealFields(){var t=($('sType')&&$('sType').value)||'';var hide=DEAL
 var MAPS_KEY=(window.__MAPS_KEY__||'');
 function loadMaps(cb){if(window.google&&window.google.maps&&window.google.maps.places){cb&&cb();return;}if(!MAPS_KEY)return;if(!window._mapsCbs)window._mapsCbs=[];window._mapsCbs.push(cb);if(window._mapsLoading)return;window._mapsLoading=1;window._mapsReady=function(){(window._mapsCbs||[]).forEach(function(f){f&&f();});window._mapsCbs=[];};var s=document.createElement('script');s.async=true;s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(MAPS_KEY)+'&libraries=places&callback=_mapsReady';document.head.appendChild(s);}
 var SUBMIT_COORDS=null; // {lat,lng} captured from the address autocomplete, saved with the deal
-function initAddrAuto(){if(!MAPS_KEY)return;if(!window._pacCss){window._pacCss=1;var st=document.createElement('style');st.textContent='.pac-container{z-index:100001!important}';document.head.appendChild(st);}loadMaps(function(){document.querySelectorAll('input.gaddr').forEach(function(el){if(el._ac)return;el._ac=1;var ac=new google.maps.places.Autocomplete(el,{types:['address'],componentRestrictions:{country:'us'},fields:['formatted_address','address_components','geometry']});ac.addListener('place_changed',function(){var p=ac.getPlace();if(!p)return;if(p.formatted_address)el.value=p.formatted_address;if(el.id==='sAddr'){if(p.geometry&&p.geometry.location){SUBMIT_COORDS={lat:p.geometry.location.lat(),lng:p.geometry.location.lng()};}var c=p.address_components||[];function g(t){var x=c.find(function(a){return a.types.indexOf(t)>=0;});return x?x.long_name:'';}var nb=g('neighborhood')||g('sublocality')||g('locality');if(nb&&$('sSub')&&!$('sSub').value)$('sSub').value=nb;}});});});}
+var SUBMIT_STATE='';    // 2-letter state (MA/NH/RI) captured from the address autocomplete
+function initAddrAuto(){if(!MAPS_KEY)return;if(!window._pacCss){window._pacCss=1;var st=document.createElement('style');st.textContent='.pac-container{z-index:100001!important}';document.head.appendChild(st);}loadMaps(function(){document.querySelectorAll('input.gaddr').forEach(function(el){if(el._ac)return;el._ac=1;var ac=new google.maps.places.Autocomplete(el,{types:['address'],componentRestrictions:{country:'us'},fields:['formatted_address','address_components','geometry']});ac.addListener('place_changed',function(){var p=ac.getPlace();if(!p)return;if(p.formatted_address)el.value=p.formatted_address;if(el.id==='sAddr'){if(p.geometry&&p.geometry.location){SUBMIT_COORDS={lat:p.geometry.location.lat(),lng:p.geometry.location.lng()};}var c=p.address_components||[];function g(t){var x=c.find(function(a){return a.types.indexOf(t)>=0;});return x?x.long_name:'';}function gs(t){var x=c.find(function(a){return a.types.indexOf(t)>=0;});return x?x.short_name:'';}var nb=g('neighborhood')||g('sublocality')||g('locality');if(nb&&$('sSub')&&!$('sSub').value)$('sSub').value=nb;var stt=gs('administrative_area_level_1');if(stt)SUBMIT_STATE=String(stt).toUpperCase();}});});});}
 
 /* ── data (all reads/writes go through the secure /api/pm/* API — addresses are
    redacted server-side and only revealed to the seller or an approved buyer) ── */
@@ -895,27 +909,48 @@ function renderStats(){
 
 /* ── markets / filters ── */
 var REGION='all';
-var REGIONS=[
- {k:'all',name:'All MA',cities:null},
- {k:'boston',name:'Boston',cities:['boston','south boston','dorchester','roxbury','jamaica plain','east boston','charlestown','roslindale','hyde park','mattapan','allston','brighton','south end','fenway','back bay','downtown','west roxbury','brighton']},
- {k:'north',name:'North Shore',cities:['lynn','salem','peabody','beverly','saugus','revere','chelsea','everett','malden','medford','somerville','gloucester','marblehead','swampscott','danvers','melrose','stoneham','winthrop']},
- {k:'merrimack',name:'Merrimack Valley',cities:['lowell','lawrence','haverhill','methuen','andover','tewksbury','dracut','chelmsford','billerica']},
- {k:'south',name:'South Shore',cities:['quincy','weymouth','braintree','randolph','milton','brockton','hingham','plymouth','marshfield','abington','rockland','holbrook','canton','stoughton']},
- {k:'southeast',name:'Southeast',cities:['fall river','new bedford','taunton','dartmouth','somerset','swansea','attleboro','raynham','middleboro']},
- {k:'metrowest',name:'MetroWest',cities:['framingham','natick','waltham','marlborough','newton','needham','wellesley','ashland','hudson','milford','watertown','dedham']},
- {k:'worcester',name:'Worcester',cities:['worcester','fitchburg','leominster','shrewsbury','auburn','millbury','gardner','clinton','westborough','grafton']},
- {k:'western',name:'Western MA',cities:['springfield','chicopee','holyoke','westfield','pittsfield','northampton','amherst','agawam','west springfield','ludlow']}
-];
+var MARKET='MA';
+var MARKETS={
+ MA:{name:'Massachusetts',regions:[
+   {k:'all',name:'All MA',cities:null},
+   {k:'boston',name:'Boston',cities:['boston','south boston','dorchester','roxbury','jamaica plain','east boston','charlestown','roslindale','hyde park','mattapan','allston','brighton','south end','fenway','back bay','downtown','west roxbury']},
+   {k:'north',name:'North Shore',cities:['lynn','salem','peabody','beverly','saugus','revere','chelsea','everett','malden','medford','somerville','gloucester','marblehead','swampscott','danvers','melrose','stoneham','winthrop']},
+   {k:'merrimack',name:'Merrimack Valley',cities:['lowell','lawrence','haverhill','methuen','andover','tewksbury','dracut','chelmsford','billerica']},
+   {k:'south',name:'South Shore',cities:['quincy','weymouth','braintree','randolph','milton','brockton','hingham','plymouth','marshfield','abington','rockland','holbrook','canton','stoughton']},
+   {k:'southeast',name:'Southeast',cities:['fall river','new bedford','taunton','dartmouth','somerset','swansea','attleboro','raynham','middleboro']},
+   {k:'metrowest',name:'MetroWest',cities:['framingham','natick','waltham','marlborough','newton','needham','wellesley','ashland','hudson','milford','watertown','dedham']},
+   {k:'worcester',name:'Worcester',cities:['worcester','fitchburg','leominster','shrewsbury','auburn','millbury','gardner','clinton','westborough','grafton']},
+   {k:'western',name:'Western MA',cities:['springfield','chicopee','holyoke','westfield','pittsfield','northampton','amherst','agawam','west springfield','ludlow']}
+ ]},
+ NH:{name:'New Hampshire',regions:[
+   {k:'all',name:'All NH',cities:null},
+   {k:'nh-manchester',name:'Manchester',cities:['manchester','bedford','goffstown','hooksett','auburn']},
+   {k:'nh-nashua',name:'Nashua',cities:['nashua','merrimack','hudson','litchfield','amherst']},
+   {k:'nh-seacoast',name:'Seacoast',cities:['portsmouth','dover','rochester','exeter','hampton','durham','somersworth']},
+   {k:'nh-concord',name:'Concord',cities:['concord','bow','pembroke','loudon']},
+   {k:'nh-south',name:'Southern NH',cities:['salem','derry','londonderry','windham','pelham','hampstead']}
+ ]},
+ RI:{name:'Rhode Island',regions:[
+   {k:'all',name:'All RI',cities:null},
+   {k:'ri-providence',name:'Providence',cities:['providence','east providence','north providence','johnston']},
+   {k:'ri-warwick',name:'Warwick',cities:['warwick','cranston','west warwick','coventry']},
+   {k:'ri-blackstone',name:'Blackstone Valley',cities:['pawtucket','central falls','woonsocket','cumberland','lincoln']},
+   {k:'ri-newport',name:'Newport County',cities:['newport','middletown','portsmouth','tiverton']},
+   {k:'ri-southcounty',name:'South County',cities:['south kingstown','narragansett','westerly','north kingstown']}
+ ]}
+};
+function curRegions(){return (MARKETS[MARKET]||MARKETS.MA).regions;}
 function regionMatch(d){
   if(REGION==='all')return true;
-  var r=REGIONS.filter(function(x){return x.k===REGION;})[0]; if(!r||!r.cities)return true;
+  var r=curRegions().filter(function(x){return x.k===REGION;})[0]; if(!r||!r.cities)return true;
   var loc=((d.submarket||'')+' '+(d.city||'')+' '+(d.area||'')).toLowerCase();
   return r.cities.some(function(c){return loc.indexOf(c)>=0;});
 }
 function setRegion(k){REGION=k;renderRegionTabs();render();}
+function setMarket(m){MARKET=(MARKETS[m]?m:'MA');REGION='all';renderRegionTabs();render();}
 function renderRegionTabs(){
   var t=$('regionTabs'); if(!t)return;
-  t.innerHTML=REGIONS.map(function(r){var n=r.k==='all'?LISTINGS.filter(feedVisible).length:LISTINGS.filter(function(d){var sv=feedVisible(d);var save=REGION;REGION=r.k;var m=regionMatch(d);REGION=save;return sv&&m;}).length;
+  t.innerHTML=curRegions().map(function(r){var n=r.k==='all'?LISTINGS.filter(feedVisible).length:LISTINGS.filter(function(d){var sv=feedVisible(d);var save=REGION;REGION=r.k;var m=regionMatch(d);REGION=save;return sv&&m;}).length;
     return '<span class="mtab'+(REGION===r.k?' on':'')+'" onclick="setRegion(\''+r.k+'\')">'+esc(r.name)+(n?' <span class="ct">'+n+'</span>':'')+'</span>';}).join('');
 }
 function typeChecked(){var s=[];$('typeChecks').querySelectorAll('input:checked').forEach(function(i){s.push(i.value);});return s;}
@@ -925,6 +960,17 @@ function clearFilters(){
   $('distChecks').querySelectorAll('input').forEach(function(i){i.checked=false;});
   ['fMin','fMax','fCap','fUmin','fUmax','fSearch'].forEach(function(id){if($(id))$(id).value='';});
   $('fShown').checked=false;$('fSort').value='new';render();
+}
+// Logo click → back to a clean dashboard: clear every filter, reset category,
+// region and search, and scroll to the top.
+function goHome(){
+  ['mSubmit','mBuy','mDetail','mActivity','mIntro','mMsgs','mContact','mNotifs','mMarket','mBoard','mProfile','mNotifSet','mAdmin','mDirectory','mReferral'].forEach(close_);
+  try{setCat('all');}catch(e){}
+  MARKET='MA';REGION='all';if($('fMarket'))$('fMarket').value='MA';
+  clearFilters();
+  try{renderRegionTabs();}catch(e){}
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 // The property-type checkboxes only list the types in the current category.
 function fillTypeChecks(){var tc=$('typeChecks');if(!tc)return;tc.innerHTML=catTypes(CAT).map(function(t){return '<label class="ck"><input type="checkbox" value="'+esc(t)+'" onchange="render()">'+esc(t)+'<span class="sw" style="background:'+typeColor(t)+'"></span></label>';}).join('');}
@@ -945,7 +991,7 @@ function fillFilters(){
 // Save the current filters as a client need (buy box) so matching deals alert you.
 function saveSearch(){
   var types=typeChecked();
-  var body={markets:(REGION==='all'?'':(REGIONS.filter(function(r){return r.k===REGION;})[0]||{}).name||''),
+  var body={markets:(REGION==='all'?'':(curRegions().filter(function(r){return r.k===REGION;})[0]||{}).name||''),
     propType:types.join(', '),
     minPrice:($('fMin').value||'').trim(),maxPrice:($('fMax').value||'').trim(),
     minUnits:($('fUmin').value||'').trim(),maxUnits:($('fUmax').value||'').trim(),
@@ -982,25 +1028,32 @@ function dealCard(d){
   badges+=trustBadges(d.ownerVerified,d.ownerPof);
   var kp='';
   // Adaptive KPIs: income deals show Units/Cap; a house/condo shows Beds/Baths instead of empty dashes.
+  // Only show KPIs the poster actually filled in — a blank field is intentional,
+  // so we never render an empty "—" cell. Grid sizes to the number shown.
   var income=(num(d.units)>1||num(d.cap)>0||num(d.noi)>0);
+  var cells=[];
+  var addCell=function(label,val){cells.push('<div><div class="k">'+label+'</div><div class="v">'+val+'</div></div>');};
   if(income){
-    kp+='<div><div class="k">Units</div><div class="v">'+(num(d.units)||'—')+'</div></div>';
-    kp+='<div><div class="k">Cap</div><div class="v">'+(num(d.cap)?num(d.cap).toFixed(1)+'%':'—')+'</div></div>';
+    if(num(d.units))addCell('Units',num(d.units));
+    if(num(d.cap))addCell('Cap',num(d.cap).toFixed(1)+'%');
   }else{
-    kp+='<div><div class="k">Beds</div><div class="v">'+(num(d.beds)||'—')+'</div></div>';
-    kp+='<div><div class="k">Baths</div><div class="v">'+(num(d.baths)||'—')+'</div></div>';
+    if(num(d.beds))addCell('Beds',num(d.beds));
+    if(num(d.baths))addCell('Baths',num(d.baths));
   }
-  kp+='<div><div class="k">SF</div><div class="v">'+(num(d.sf)?Math.round(num(d.sf)/1000)+'k':'—')+'</div></div>';
+  if(num(d.sf))addCell('SF',Math.round(num(d.sf)/1000)+'k');
+  cells=cells.slice(0,3);
+  kp=cells.join('');
   var addrTxt=open?((d.addr&&esc(d.addr))||'Address shown'):'Address hidden';
   if(d.photoCount)badges+='<span class="bdg">📷 '+d.photoCount+'</span>';
-  var cover=(open&&d.photos&&d.photos.length)?'<div class="dcover" style="background-image:url('+JSON.stringify(d.photos[0].url)+')"></div>':'';
+  var cov=(open&&d.photos&&d.photos.length&&d.photos[0]&&d.photos[0].url)?String(d.photos[0].url):'';
+  var cover=cov?'<div class="dcover"><img src="'+esc(cov)+'" alt="" loading="lazy" onerror="var p=this.closest(\'.dcover\');if(p)p.style.display=\'none\'"></div>':'';
   return '<div class="deal'+(d.featured?' feat':'')+'" style="--tc:'+typeColor(d.type)+'" onclick="openDetail(\''+d.id+'\')">'
     +cover
     +'<div class="top"><div class="type">'+esc(d.type||'Investment')+'</div><div class="badges">'+badges+'</div></div>'
     +'<div class="sub">'+esc(d.submarket||'Greater Boston')+'</div>'
     +'<div class="addr'+(open?' open':'')+'">'+addrIcon(open)+addrTxt+'</div>'
     +'<div class="desc">'+esc(d.desc||'Off-market opportunity.')+'</div>'
-    +'<div class="kpis">'+kp+'</div>'
+    +(cells.length?('<div class="kpis" style="grid-template-columns:repeat('+cells.length+',1fr)">'+kp+'</div>'):'')
     +'<div class="foot"><div class="price">'+money(d.price)+'</div><div class="fr"><span class="comm" title="Buyer-broker commission — what the seller side pays the buyer agent">'+(num(d.commission)?num(d.commission).toFixed(1)+'% BBC':'—')+'</span><span class="ago">'+ago(d.at)+'</span></div></div>'
     +'</div>';
 }
@@ -1011,13 +1064,13 @@ function dealRow(d){
   if(d.featured)badges+='<span class="bdg feat">★</span>';
   if(d.photoCount)badges+='<span class="bdg">📷 '+d.photoCount+'</span>';
   if(isMine(d))badges+='<span class="bdg mine">Yours</span>';
-  var kpi=num(d.cap)?num(d.cap).toFixed(1)+'% cap':(num(d.units)?num(d.units)+' units':'—');
+  var kpi=num(d.cap)?num(d.cap).toFixed(1)+'% cap':(num(d.units)?num(d.units)+' units':(num(d.beds)?num(d.beds)+' bd':''));
   return '<div class="drow-item" style="--tc:'+typeColor(d.type)+'" onclick="openDetail(\''+d.id+'\')">'
     +'<span class="li-type">'+esc(d.type||'Deal')+'</span>'
     +'<span class="li-sub">'+esc(d.submarket||'Greater Boston')+'</span>'
     +'<span class="li-addr">'+addrIcon(open)+(open?((d.addr&&esc(d.addr))||'Shown'):'Hidden')+'</span>'
     +'<span class="li-kpi">'+kpi+'</span>'
-    +'<span class="li-kpi">'+(num(d.commission)?num(d.commission).toFixed(1)+'% BBC':'—')+'</span>'
+    +'<span class="li-kpi">'+(num(d.commission)?num(d.commission).toFixed(1)+'% BBC':'')+'</span>'
     +'<span class="li-price">'+money(d.price)+'</span>'
     +'<span class="li-badges">'+badges+'</span>'
   +'</div>';
@@ -1073,9 +1126,15 @@ function renderMap(list){
     if(any){DEALMAP.fitBounds(bounds);google.maps.event.addListenerOnce(DEALMAP,'idle',function(){if(DEALMAP.getZoom()>14)DEALMAP.setZoom(14);});}
   });
 }
+// Which state-market a deal belongs to. Uses the deal's stored state (captured
+// from the address autocomplete); blank/unknown defaults to MA so existing deals
+// stay put. NH/RI deals show only when posted with that state.
+function dealMarket(d){var s=String(d.state||'').toUpperCase();return (s==='NH'||s==='RI')?s:'MA';}
+function marketMatch(d){return dealMarket(d)===MARKET;}
 function feedVisible(d){
   if(d.status==='off'||d.status==='mls')return false;
   if(d.dist==='pocket'&&!isMine(d)&&ME.role!=='owner')return false;   // pocket hidden from the general feed
+  if(!marketMatch(d))return false;                                    // only the selected state-market
   return true;
 }
 function render(){
@@ -1104,10 +1163,15 @@ function render(){
   else if(sort==='cap')list.sort(function(a,b){return fs(a,b)||num(b.cap)-num(a.cap);});
   else list.sort(function(a,b){return fs(a,b)||new Date(b.at)-new Date(a.at);});
   if($('rCount'))$('rCount').textContent=list.length;
-  if($('rLabel'))$('rLabel').textContent=(list.length===1?'deal':'deals')+' in '+(REGION==='all'?'Massachusetts':((REGIONS.filter(function(r){return r.k===REGION;})[0]||{}).name||'MA'));
+  if($('rLabel'))$('rLabel').textContent=(list.length===1?'deal':'deals')+' in '+(REGION==='all'?(MARKETS[MARKET]||MARKETS.MA).name:((curRegions().filter(function(r){return r.k===REGION;})[0]||{}).name||'MA'));
   g.className='grid view-'+DEALVIEW;
   if(DEALVIEW==='map'){renderMap(list);return;}
-  var empty='<div class="empty">No deals match your filters.<br><br><button class="btn acc" onclick="clearFilters()">Clear filters</button></div>';
+  // Two empty states: nothing in this market yet (intentional/new) vs filtered-to-zero.
+  var anyInMarket=LISTINGS.some(feedVisible);
+  var mktName=(MARKETS[MARKET]||MARKETS.MA).name;
+  var empty=anyInMarket
+    ? '<div class="empty">No deals match your filters.<br><br><button class="btn acc" onclick="clearFilters()">Clear filters</button></div>'
+    : '<div class="emptybig"><div class="eb-ic">📭</div><h3>No live deals in '+esc(mktName)+' yet</h3><p>This market is just getting started. Post the first off-market deal — or a client need — and it shows up right here.</p><div class="eb-act"><button class="btn acc" onclick="openSubmit()">＋ Post the first deal</button><button class="btn ghost" onclick="openBuyBox()">Post a client need</button></div></div>';
   if(DEALVIEW==='list'){g.innerHTML=list.length?(listHeader()+list.map(dealRow).join('')):empty;}
   else{g.innerHTML=list.length?list.map(dealCard).join(''):empty;}
 }
@@ -1183,7 +1247,7 @@ function openDetail(id){
   var cta = mine
     ? (d.status==='mls'
         ? '<button class="btn acc" onclick="markMLS(\''+d.id+'\',false)">Relist to network</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>'
-        : '<button class="btn ghost" onclick="renewDeal(\''+d.id+'\')">'+renewLbl+'</button>'+featBtn+'<button class="btn ghost" onclick="toggleOff(\''+d.id+'\')">'+(d.status==='off'?'Relist':'Take off-market')+'</button><button class="btn ghost" onclick="markMLS(\''+d.id+'\',true)">Moved to MLS</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>')
+        : '<button class="btn acc" onclick="openEdit(\''+d.id+'\')">✎ Edit</button><button class="btn ghost" onclick="renewDeal(\''+d.id+'\')">'+renewLbl+'</button>'+featBtn+'<button class="btn ghost" onclick="toggleOff(\''+d.id+'\')">'+(d.status==='off'?'Relist':'Take off-market')+'</button><button class="btn ghost" onclick="markMLS(\''+d.id+'\',true)">Moved to MLS</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>')
     : '<button class="btn acc" onclick="openContact(\''+d.id+'\')">Contact agent</button><button class="btn ghost" onclick="mcFromDeal('+num(d.price)+')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="4" y="2.5" width="16" height="19" rx="2.2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8.5" y1="12" x2="8.5" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="15.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="8.5" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/></svg>Calc payment</button>';
   var expBadge=d.expiresAt?('<div class="drow"><span>Expires</span><b class="mono">'+ago2(d.expiresAt)+'</b></div>'):'';
   $('detailBody').innerHTML=
@@ -1352,21 +1416,24 @@ function uploadDocs(){
 }
 /* ── submit deal ── */
 function submitDeal(){
+  var editing=!!EDIT_ID;
+  var cur=editing?LISTINGS.find(function(x){return x.id===EDIT_ID;}):null;
+  var keepStatus=cur?(cur.status==='off'?'off':cur.status==='mls'?'mls':'active'):'active';
   var body={address:($('sAddr').value||'').trim(),area:($('sSub').value||'').trim(),propType:$('sType').value,
     ownerName:ME.name||(PROFILE&&PROFILE.name)||'',price:noComma('sPrice'),commissionPct:($('sComm').value||'').trim(),
     units:($('sUnits').value||'').trim(),capRate:($('sCap').value||'').trim(),noi:noComma('sNoi'),
     sqft:noComma('sSf'),beds:($('sBeds').value||'').trim(),baths:($('sBaths').value||'').trim(),yearBuilt:($('sYb').value||'').trim(),
-    notes:($('sDesc').value||'').trim(),dist:$('sDist').value,status:'active',
+    notes:($('sDesc').value||'').trim(),dist:$('sDist').value,status:keepStatus,
     hideAddress:$('sHideAddr').checked,docs:SUBMIT_DOCS,photos:SUBMIT_PHOTOS,
-    lat:(SUBMIT_COORDS?SUBMIT_COORDS.lat:''),lng:(SUBMIT_COORDS?SUBMIT_COORDS.lng:'')};
+    lat:(SUBMIT_COORDS?SUBMIT_COORDS.lat:''),lng:(SUBMIT_COORDS?SUBMIT_COORDS.lng:''),state:SUBMIT_STATE||''};
+  if(editing)body.id=EDIT_ID;
   if(!body.area){$('sMsg').textContent='Add a submarket.';return;}
   if(!num(body.price)){$('sMsg').textContent='Add an asking price.';return;}
-  $('sMsg').textContent='Posting…';
+  $('sMsg').textContent=editing?'Saving…':'Posting…';
   api('/api/pm/listing',body).then(function(j){
     if(j&&j.error==='not_approved'){$('sMsg').textContent='Your membership isn’t approved yet.';return;}
-    $('sMsg').textContent=(j&&j.ok)?'Posted ✓':'Failed — retry';
-    if(j&&j.ok){['sAddr','sSub','sPrice','sComm','sUnits','sCap','sNoi','sSf','sBeds','sBaths','sYb','sDesc'].forEach(function(id){$(id).value='';});
-      $('sHideAddr').checked=false;SUBMIT_DOCS=[];renderDocList();SUBMIT_PHOTOS=[];renderPhotoList();SUBMIT_COORDS=null;syncDealFields();
+    $('sMsg').textContent=(j&&j.ok)?(editing?'Saved ✓':'Posted ✓'):'Failed — retry';
+    if(j&&j.ok){resetSubmitForm();renderDocList();renderPhotoList();syncDealFields();EDIT_ID=null;
       loadAll();setTimeout(function(){close_('mSubmit');$('sMsg').textContent='';},800);}
   });
 }
@@ -1772,7 +1839,35 @@ function postBroadcast(){var cat=$('bcCat').value,title=($('bcTitle').value||'')
 /* ── modal open/close ── */
 function open_(id){$(id).classList.add('on');document.body.classList.add('mlock');}
 function close_(id){var m=$(id);if(m)m.classList.remove('on');if(!document.querySelector('.mbg.on'))document.body.classList.remove('mlock');}
-function openSubmit(){fillFilters();attachMoney(['sPrice','sNoi','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();open_('mSubmit');}
+var EDIT_ID=null;
+function resetSubmitForm(){
+  ['sAddr','sSub','sPrice','sComm','sUnits','sCap','sNoi','sSf','sBeds','sBaths','sYb','sDesc'].forEach(function(id){var el=$(id);if(el)el.value='';});
+  if($('sHideAddr'))$('sHideAddr').checked=false;
+  if($('sType'))$('sType').value=(TYPES[0]||'');
+  if($('sDist'))$('sDist').value='broad';
+  SUBMIT_DOCS=[];SUBMIT_PHOTOS=[];SUBMIT_COORDS=null;SUBMIT_STATE='';
+}
+function openSubmit(){EDIT_ID=null;resetSubmitForm();if($('sTitle'))$('sTitle').textContent='Post a deal';if($('sBtn'))$('sBtn').textContent='Post deal';if($('sMsg'))$('sMsg').textContent='';
+  fillFilters();attachMoney(['sPrice','sNoi','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();open_('mSubmit');}
+// Edit an existing deal — same form, prefilled, saved back to the same id.
+function openEdit(id){
+  var d=LISTINGS.find(function(x){return x.id===id;});if(!d)return;
+  close_('mDetail');
+  EDIT_ID=id;
+  fillFilters();
+  var set=function(elId,v){var el=$(elId);if(el)el.value=(v==null?'':v);};
+  set('sAddr',d.addr);set('sSub',d.submarket||d.area);set('sType',d.type||'');
+  set('sPrice',d.price?fmtMoneyInput(String(d.price)):'');set('sComm',d.commission);
+  set('sUnits',d.units);set('sCap',d.cap);set('sNoi',d.noi?fmtMoneyInput(String(d.noi)):'');
+  set('sSf',d.sf?fmtMoneyInput(String(d.sf)):'');set('sBeds',d.beds);set('sBaths',d.baths);set('sYb',d.yb);
+  set('sDesc',d.desc);if($('sDist'))$('sDist').value=(d.dist||'broad');
+  if($('sHideAddr'))$('sHideAddr').checked=!!d.hideAddress;
+  SUBMIT_DOCS=Array.isArray(d.docs)?d.docs.slice():[];
+  SUBMIT_PHOTOS=Array.isArray(d.photos)?d.photos.slice():[];
+  SUBMIT_COORDS=(d.lat&&d.lng)?{lat:d.lat,lng:d.lng}:null;SUBMIT_STATE=String(d.state||'').toUpperCase();
+  if($('sTitle'))$('sTitle').textContent='Edit deal';if($('sBtn'))$('sBtn').textContent='Save changes';if($('sMsg'))$('sMsg').textContent='';
+  attachMoney(['sPrice','sNoi','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();open_('mSubmit');
+}
 function checkedVals(wrapId){var w=$(wrapId);if(!w)return [];return Array.prototype.slice.call(w.querySelectorAll('input:checked')).map(function(i){return i.value;});}
 function buildChecks(wrapId,opts,preSel){var w=$(wrapId);if(!w)return;var pre=String(preSel||'').toLowerCase();w.innerHTML=opts.map(function(o){var on=pre&&pre.indexOf(o.toLowerCase())>=0?' checked':'';return '<label class="ck" style="font-size:12.5px"><input type="checkbox" value="'+esc(o)+'"'+on+'>'+esc(o)+'</label>';}).join('');}
 function openBuyBox(){
@@ -1853,13 +1948,13 @@ function tourPlace(el,place){
   else{top=r.bottom+gap;}
   card.style.left=left+'px';card.style.top=Math.max(12,top)+'px';
 }
-function maybeAutoTour(){if(_autoTourDone)return;_autoTourDone=true;var seen;try{seen=localStorage.getItem('doors_tour_v1');}catch(e){seen='1';}if(!seen)setTimeout(function(){startTour(false);},700);}
+function maybeAutoTour(){if(_autoTourDone)return;_autoTourDone=true;if(window.innerWidth<=560)return;var seen;try{seen=localStorage.getItem('doors_tour_v1');}catch(e){seen='1';}if(!seen)setTimeout(function(){startTour(false);},700);}
 window.addEventListener('resize',function(){if($('tourWrap')&&$('tourWrap').classList.contains('on')&&TOURI>=0){var s=TOUR[TOURI],el=s.el?document.querySelector(s.el):null;if(el)tourPlace(el,s.place||'bottom');}});
 document.addEventListener('keydown',function(e){if($('tourWrap')&&$('tourWrap').classList.contains('on')){if(e.key==='Escape')endTour();else if(e.key==='ArrowRight')tourGo(1);else if(e.key==='ArrowLeft')tourGo(-1);}});
 
 /* market-bar "coming soon" city rotation */
-(function(){var el=$('soonCity2');if(!el)return;var c=['Providence, RI','Manchester, NH','Hartford, CT','Portland, ME','Nashua, NH','New York, NY'],i=0;
-  setInterval(function(){i=(i+1)%c.length;el.style.opacity=0;setTimeout(function(){el.textContent=c[i];el.style.opacity=1;},220);},2600);el.style.transition='opacity .22s';})();
+(function(){var el=$('soonCity2');if(!el)return;var c=['Hartford, CT','Portland, ME','Burlington, VT','New York, NY','Bridgeport, CT','Portsmouth, NH'],i=0;
+  setInterval(function(){i=(i+1)%c.length;el.textContent=c[i];el.classList.remove('city');void el.offsetWidth;el.classList.add('city');},2600);})();
 /* ── init ── */
 /* ── light / dark theme toggle ── */
 var THEME_MOON='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
