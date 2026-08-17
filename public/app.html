@@ -485,7 +485,13 @@ html.dark .nudge{background:#1B2740;border-color:#2E4C86}
 .grid.view-compact .deal .foot{margin-top:8px;padding-top:8px}
 .grid.view-map{display:block}
 .dealmap{width:100%;height:min(640px,72vh);border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--card2)}
-.grid.view-list{grid-template-columns:1fr;gap:5px}
+.grid.view-list{grid-template-columns:1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.drow-head{display:flex;align-items:center;gap:12px;padding:8px 13px;background:var(--card2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+.drow-head span{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--mut2)}
+.drow-head .li-type{width:104px;flex:none}.drow-head .li-sub{flex:1;min-width:0}.drow-head .li-addr{width:150px;flex:none}.drow-head .li-kpi{width:74px;flex:none;text-align:right}.drow-head .li-price{width:90px;flex:none;text-align:right}.drow-head .li-badges{width:52px;flex:none}
+.grid.view-list .drow-item{border:none;border-radius:0;border-bottom:1px solid var(--line);border-left:3px solid var(--tc,var(--acc));padding:7px 13px}
+.grid.view-list .drow-item:last-child{border-bottom:none}
+.grid.view-list .drow-item:nth-child(even){background:var(--card2)}
 .drow-item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;transition:border-color .12s,background .12s;border-left:3px solid var(--tc,var(--acc))}
 .drow-item:hover{border-color:var(--line2);background:var(--card2)}
 .drow-item .li-type{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--acc);width:104px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -912,7 +918,17 @@ var DEALVIEW='comfortable';
 function setDealView(v){DEALVIEW=(['comfortable','compact','list','map'].indexOf(v)>=0?v:'comfortable');try{localStorage.setItem('access_view',DEALVIEW);}catch(e){}
   var s=$('viewSeg');if(s)s.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-v')===DEALVIEW);});
   render();}
-function initDealView(){var v;try{v=localStorage.getItem('access_view');}catch(e){}setDealView(v||'comfortable');}
+function initDealView(){var v;try{v=localStorage.getItem('access_view');}catch(e){}setDealView(v||'list');}
+// Column header for the dense table (list) view.
+function listHeader(){return '<div class="drow-head">'
+  +'<span class="li-type">Type</span>'
+  +'<span class="li-sub">Market</span>'
+  +'<span class="li-addr">Address</span>'
+  +'<span class="li-kpi">Cap/Units</span>'
+  +'<span class="li-kpi">BBC</span>'
+  +'<span class="li-price">Price</span>'
+  +'<span class="li-badges"></span>'
++'</div>';}
 
 /* ── map view: plot the feed on a Google Map ── */
 var SUBMARKET_COORDS={
@@ -982,7 +998,9 @@ function render(){
   if($('rLabel'))$('rLabel').textContent=(list.length===1?'deal':'deals')+' in '+(REGION==='all'?'Massachusetts':((REGIONS.filter(function(r){return r.k===REGION;})[0]||{}).name||'MA'));
   g.className='grid view-'+DEALVIEW;
   if(DEALVIEW==='map'){renderMap(list);return;}
-  g.innerHTML=list.length?list.map(DEALVIEW==='list'?dealRow:dealCard).join(''):'<div class="empty">No deals match your filters.<br><br><button class="btn acc" onclick="clearFilters()">Clear filters</button></div>';
+  var empty='<div class="empty">No deals match your filters.<br><br><button class="btn acc" onclick="clearFilters()">Clear filters</button></div>';
+  if(DEALVIEW==='list'){g.innerHTML=list.length?(listHeader()+list.map(dealRow).join('')):empty;}
+  else{g.innerHTML=list.length?list.map(dealCard).join(''):empty;}
 }
 
 /* ── detail ── */
