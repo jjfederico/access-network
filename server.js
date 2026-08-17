@@ -974,6 +974,13 @@ app.get('/app.html', ensureAuth, (req, res) => {
   if (req.user.role !== 'owner' && req.user.status !== 'approved') return res.redirect('/?pending=1');
   serveWithIdentity(res, 'app.html', req.user);
 });
+// Legacy demo URL. A stale premarket-hub.html still lives in public/ from an
+// earlier build; this route shadows it (registered before express.static) so
+// the old link always serves the CURRENT app instead of the frozen copy.
+app.get('/premarket-hub.html', ensureAuth, (req, res) => {
+  if (req.user.role !== 'owner' && req.user.status !== 'approved') return res.redirect('/?pending=1');
+  serveWithIdentity(res, 'app.html', req.user);
+});
 // Landing: inject the Turnstile site key (captcha) before static serving.
 function serveLanding(req, res) {
   try {
