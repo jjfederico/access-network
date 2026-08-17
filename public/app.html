@@ -1479,6 +1479,11 @@ function openAdmin(){
       +'<div class="tabs"><span class="tab on" onclick="admTab(\'r\')" id="admTabR">Requests'+((rj.pending)?(' <span class="pill req">'+rj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'m\')" id="admTabM">Members'+((mj.pending)?(' <span class="pill req">'+mj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'d\')" id="admTabD">Deals</span></div>'
       +'<div id="admRequests">'+reqRows+'</div><div id="admMembers" style="display:none">'+memRows+'</div><div id="admDeals" style="display:none">'+dealRows+'</div>'
       +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
+        +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Smart-match digest</div>'
+        +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn ghost sm" onclick="adminDigest(true)">Preview</button><button class="btn acc sm" onclick="adminDigest(false)">Send digest now</button><span id="digMsg" style="font-size:12.5px;color:var(--mut)"></span></div>'
+        +'<div style="color:var(--mut2);font-size:11.5px;margin-top:6px">Emails each member only the new deals matching their buy box or alert settings since the last send — no blasts. Preview shows who\'d get one without sending. Automate it by scheduling a POST to /api/pm/digest/run?key=YOUR_DIGEST_KEY.</div>'
+      +'</div>'
+      +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
         +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Sample data (preview only)</div>'
         +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn acc sm" onclick="adminSeed(\'load\')">Load sample data</button><button class="btn ghost sm" onclick="adminSeed(\'clear\')">Clear sample data</button><span id="seedMsg" style="font-size:12.5px;color:var(--mut)"></span></div>'
         +'<div style="color:var(--mut2);font-size:11.5px;margin-top:6px">Loads demo deals, members &amp; client-needs so you can see the site populated and check the totals. Clear before real launch.</div>'
@@ -1491,6 +1496,10 @@ function admTab(t){$('admRequests').style.display=t==='r'?'':'none';$('admMember
 function adminReq(id,decision){api('/api/pm/admin/request/decide',{id:id,decision:decision}).then(function(){openAdmin();loadAdminDot();});}
 function adminApprove(email,status){api('/api/pm/admin/approve',{email:email,status:status}).then(function(){openAdmin();loadAdminDot();});}
 function adminFeature(id,on){api('/api/pm/admin/feature',{id:id,featured:on}).then(function(){openAdmin();loadAll();});}
+function adminDigest(dry){var m=$('digMsg');if(m)m.textContent=dry?'Previewing…':'Sending…';
+  api('/api/pm/digest/run',{dry:dry?'1':'0'}).then(function(j){if(!m)return;
+    if(j&&j.ok){m.textContent=(dry?('Would reach '+j.recipients+' member'+(j.recipients===1?'':'s')):('Sent — '+j.emailsSent+' email'+(j.emailsSent===1?'':'s')+' to '+j.recipients+' member'+(j.recipients===1?'':'s')))+'.';}
+    else{m.textContent='Failed — retry.';}});}
 function adminVerify(email,on){api('/api/pm/admin/verify',{email:email,verified:on}).then(function(){openAdmin();});}
 function adminSeed(mode){
   var m=$('seedMsg'); if(m){m.style.color='var(--mut)';m.textContent=(mode==='clear'?'Clearing…':'Loading…');}

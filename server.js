@@ -678,6 +678,74 @@ app.post('/api/pm/notifprefs', ensureAuth, pmGate, async (req, res) => {
     res.json({ ok: true, notifPrefs: profs[idx].notifPrefs });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
+// ── smart-match digest ───────────────────────────────────────────────────────
+// The anti-noise engine. Instead of blasting every deal to everyone, we email
+// each member ONLY the new deals that match their buy box (or their saved deal
+// alert prefs), since the digest last ran for them. Trigger on a schedule by
+// POSTing /api/pm/digest/run?key=DIGEST_KEY, or from the admin panel. ?dry=1
+// previews counts without sending.
+function pmDigestLine(l) {
+  const bits = [l.propType || 'Deal'];
+  const loc = l.area || l.city || l.state; if (loc) bits.push('in ' + loc);
+  const facts = [];
+  if (pmNum(l.price)) facts.push(pmMoneyShort(l.price));
+  if (pmNum(l.capRate)) facts.push(pmNum(l.capRate).toFixed(1) + '% cap');
+  else if (pmNum(l.units)) facts.push(pmNum(l.units) + ' units');
+  if (pmNum(l.commissionPct)) facts.push(pmNum(l.commissionPct).toFixed(1) + '% BBC');
+  return '• ' + bits.join(' ') + (facts.length ? ' — ' + facts.join(', ') : '');
+}
+function pmDigestFor(prof, listings, boxes, sinceMs) {
+  const email = _lc(prof.email);
+  const box = boxes.find(b => b && _lc(b.owner) === email) || null;
+  const np = prof.notifPrefs;
+  const hasPrefs = np && np.deals !== 'off' && ((Array.isArray(np.dealTypes) && np.dealTypes.length) || (Array.isArray(np.dealMarkets) && np.dealMarkets.length));
+  if (!box && !hasPrefs) return [];   // nothing to match on → no digest (never spam)
+  return listings.filter(l => {
+    if (!l || _lc(l.owner) === email) return false;
+    const st = l.status || 'active'; if (st === 'off' || st === 'mls') return false;
+    if (l.expiresAt && new Date(l.expiresAt) < new Date()) return false;
+    const created = l.createdAt ? new Date(l.createdAt).getTime() : 0;
+    if (!(created > sinceMs)) return false;
+    if (box && !pmMatch(l, box)) return false;
+    if (!pmWantsDealAlert(prof, l)) return false; // respects their type/market notif prefs + focus
+    return true;
+  }).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+}
+app.post('/api/pm/digest/run', async (req, res) => {
+  const q = req.query || {}, b = req.body || {};
+  const key = String(q.key || b.key || '');
+  const admin = req.user && req.user.role === 'owner';
+  const DKEY = process.env.DIGEST_KEY || '';
+  if (!admin && !(DKEY && key === DKEY)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const dry = String(q.dry || b.dry || '') === '1';
+  const days = Math.min(60, Math.max(1, parseInt(q.days || b.days || '7', 10) || 7));
+  try {
+    const [listings, boxes, profs, ns] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles'), pmLoad('pm_notifs')]);
+    const now = new Date().toISOString(), fallback = Date.now() - days * 86400000;
+    const results = []; let sent = 0, notifs = 0;
+    for (const prof of profs) {
+      if (!prof || prof.status !== 'approved') continue;
+      const sinceMs = prof.lastDigestAt ? new Date(prof.lastDigestAt).getTime() : fallback;
+      const matches = pmDigestFor(prof, listings, boxes, sinceMs);
+      if (!matches.length) { if (!dry) prof.lastDigestAt = now; continue; }
+      const top = matches.slice(0, 10);
+      results.push({ email: prof.email, name: prof.name || '', count: matches.length });
+      if (!dry) {
+        ns.push({ id: pmId('N'), to: _lc(prof.email), type: 'digest', text: matches.length + ' new deal' + (matches.length === 1 ? '' : 's') + ' match your criteria', at: now, read: false });
+        notifs++;
+        if (pmWantsEmail(prof, 'deals')) {
+          const body = matches.length + ' new off-market deal' + (matches.length === 1 ? '' : 's') + ' match your criteria on ACCESS:\n\n' +
+            top.map(pmDigestLine).join('\n') + (matches.length > top.length ? ('\n…and ' + (matches.length - top.length) + ' more') : '') +
+            '\n\nSee them and request intros: ' + PM_BASE + '/app.html\n\nToo many or too few? Tune your buy box and alert settings in ACCESS → Notifications.';
+          try { await pmSendEmail(prof.email, 'ACCESS · ' + matches.length + ' new deal' + (matches.length === 1 ? '' : 's') + ' match you', body); sent++; } catch (e) {}
+        }
+        prof.lastDigestAt = now;
+      }
+    }
+    if (!dry) { await pmSave('pm_profiles', profs); await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns); }
+    res.json({ ok: true, dry, days, recipients: results.length, emailsSent: sent, notifsCreated: notifs, breakdown: results.slice(0, 100) });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
 app.get('/api/pm/profile/:email', ensureAuth, pmGate, async (req, res) => {
   try {
     const profs = await pmLoad('pm_profiles');
