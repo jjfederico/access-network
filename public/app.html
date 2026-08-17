@@ -427,6 +427,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
 </div></div>
 
 <section id="feed"><div class="wrap">
+  <div id="welcomeCard" class="welcome" style="display:none"></div>
   <div id="ggBanner" class="ggbar" style="display:none"></div>
   <div id="notifNudge" class="nudge" style="display:none">
     <div class="ntxt"><span class="nb">🔔 Set your alert preferences</span> — choose which deals ping you, by property type and market, so you only hear about what you care about.</div>
@@ -449,12 +450,12 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
       <h3>Filters <a onclick="clearFilters()">Clear all</a></h3>
       <div class="fg"><div class="lbl">Property type</div><div id="typeChecks"></div></div>
       <div class="fg"><div class="lbl">Price</div><div class="rng"><input id="fMin" inputmode="numeric" placeholder="Min $" oninput="render()"><input id="fMax" inputmode="numeric" placeholder="Max $" oninput="render()"></div></div>
-      <div class="fg"><div class="lbl">Cap rate</div><div class="rng"><input id="fCap" inputmode="decimal" placeholder="Min %" oninput="render()"></div></div>
+      <div class="fg"><div class="lbl"><span class="tip" tabindex="0" data-tip="Cap rate = a property's yearly net income ÷ its price. Higher = more income per dollar. Used to compare income deals.">Cap rate</span></div><div class="rng"><input id="fCap" inputmode="decimal" placeholder="Min %" oninput="render()"></div></div>
       <div class="fg"><div class="lbl">Units</div><div class="rng"><input id="fUmin" inputmode="numeric" placeholder="Min" oninput="render()"><input id="fUmax" inputmode="numeric" placeholder="Max" oninput="render()"></div></div>
-      <div class="fg"><div class="lbl">Distribution</div><div id="distChecks">
-        <label class="ck"><input type="checkbox" value="broad" onchange="render()">Broad</label>
-        <label class="ck"><input type="checkbox" value="private" onchange="render()">Private</label>
-        <label class="ck"><input type="checkbox" value="pocket" onchange="render()">Pocket</label>
+      <div class="fg"><div class="lbl"><span class="tip" tabindex="0" data-tip="How widely a deal is shared: Broad = open to all members. Private = shown, but details on request. Pocket = quiet listing, hidden from the general feed.">Distribution</span></div><div id="distChecks">
+        <label class="ck"><input type="checkbox" value="broad" onchange="render()"><span class="tip" tabindex="0" data-tip="Open to every member — the widest exposure.">Broad</span></label>
+        <label class="ck"><input type="checkbox" value="private" onchange="render()"><span class="tip" tabindex="0" data-tip="Listed, but the full details unlock on request.">Private</span></label>
+        <label class="ck"><input type="checkbox" value="pocket" onchange="render()"><span class="tip" tabindex="0" data-tip="A quiet pocket listing — kept out of the general feed; only surfaced to strong matches.">Pocket</span></label>
       </div></div>
       <div class="fg"><label class="ck"><input type="checkbox" id="fShown" onchange="render()">Address shown only</label></div>
       <button class="save" onclick="saveSearch()">★ Save this search &amp; alert me</button>
@@ -501,6 +502,24 @@ html.dark .nudge{background:#1B2740;border-color:#2E4C86}
 .ggbar.ok .ggtx{color:var(--mut)}
 .ggbar.ok .ggtx b{color:var(--tx)}
 html.dark .ggbar{background:#33291180;border-color:#6E571E}
+/* first-run welcome */
+.welcome{position:relative;background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:16px;box-shadow:0 10px 30px rgba(20,25,40,.05)}
+.welcome h3{margin:0 0 3px;font-size:18px;font-weight:800;letter-spacing:-.01em}
+.welcome .wsub{color:var(--mut);font-size:13.5px;margin-bottom:15px;line-height:1.45}
+.welcome .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.welcome .step{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+.welcome .step .n{width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-family:'IBM Plex Mono',monospace}
+.welcome .step b{font-size:14px;display:block;margin-bottom:3px}
+.welcome .step span{color:var(--mut);font-size:12.5px;line-height:1.4}
+.welcome .wact{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.welcome .wx{position:absolute;top:12px;right:14px;color:var(--mut2);cursor:pointer;font-size:20px;line-height:1;background:none;border:none;padding:2px 6px}
+.welcome .wx:hover{color:var(--tx)}
+@media(max-width:640px){.welcome .steps{grid-template-columns:1fr}}
+/* tap/hover tooltips for jargon */
+.tip{position:relative;cursor:help;border-bottom:1px dotted var(--mut2);outline:none}
+.tip::after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + 7px);z-index:90;width:max-content;max-width:250px;background:var(--tx);color:var(--bg);font-family:'IBM Plex Sans',system-ui,sans-serif;font-weight:500;font-size:12px;line-height:1.4;letter-spacing:0;text-transform:none;padding:8px 10px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;transform:translateY(-3px);pointer-events:none;transition:opacity .12s,transform .12s}
+.tip:hover::after,.tip:focus::after{opacity:1;transform:translateY(0)}
+html.dark .tip::after{background:#EEF1F5;color:#1C212B}
 html.dark .ggbar .ggtx{color:#E7C374}
 html.dark .ggbar .ggtx b{color:#F0D89A}
 /* residential / commercial category toggle */
@@ -781,7 +800,7 @@ function loadAll(){
     LISTINGS=(feed.listings||[]).map(nL).filter(Boolean);
     $('adminLink').style.display=(ME.role==='owner')?'':'none';
     if(ME.role==='owner')loadAdminDot();
-    renderGiveGet();
+    renderGiveGet();renderWelcome();
     fillFilters();attachMoney(['fMin','fMax']);initDealView();initCat();renderStats();maybeAutoTour();
     // ── background loads — each updates the view as it returns, none can block it ──
     apiT('/api/pm/pay/status').then(function(pay){if(pay&&pay.ok){PAYCFG={enabled:!!pay.enabled,membership:!!pay.membership,prices:pay.prices||PAYCFG.prices};render();}});
@@ -821,6 +840,27 @@ function renderGiveGet(){
   } else { el.style.display='none'; }
 }
 function ggLocked(){return ME.reciprocity&&ME.reciprocity.enforce&&!ME.reciprocity.active&&ME.role!=='owner';}
+// Friendly first-run card: shown to a new member who hasn't posted yet and is
+// still unlocked (grace). Teaches the Post → Match → Connect loop in plain words.
+function welcomeDismissed(){try{return localStorage.getItem('access_welcome')==='done';}catch(e){return false;}}
+function dismissWelcome(){try{localStorage.setItem('access_welcome','done');}catch(e){}var el=$('welcomeCard');if(el)el.style.display='none';}
+function renderWelcome(){
+  var el=$('welcomeCard');if(!el)return;
+  var r=ME.reciprocity;
+  var contributed=r&&(r.hasDeal||r.hasNeed);
+  var show=ME.role!=='owner'&&!welcomeDismissed()&&!contributed&&!ggLocked();
+  if(!show){el.style.display='none';return;}
+  el.innerHTML='<button class="wx" onclick="dismissWelcome()" aria-label="Dismiss">×</button>'
+    +'<h3>Welcome to ACCESS 👋</h3>'
+    +'<div class="wsub">An invite-only network where agents move deals to each other before they hit the market. Here\'s the whole idea in three steps:</div>'
+    +'<div class="steps">'
+      +'<div class="step"><div class="n">1</div><b>Post</b><span>Share a deal or a client need. Contributing is what unlocks the network for you.</span></div>'
+      +'<div class="step"><div class="n">2</div><b>Get matched</b><span>We email you only the deals that fit your buy box — never a blast of everything.</span></div>'
+      +'<div class="step"><div class="n">3</div><b>Connect</b><span>Request an intro. The listing agent approves, the address unlocks, and you talk directly.</span></div>'
+    +'</div>'
+    +'<div class="wact"><button class="btn acc sm" onclick="dismissWelcome();openSubmit()">＋ Post a deal</button><button class="btn ghost sm" onclick="dismissWelcome();openBuyBox()">Post a client need</button><button class="btn link" onclick="dismissWelcome()" style="margin-left:2px">Just browsing →</button></div>';
+  el.style.display='';
+}
 function ggPrompt(){
   var m=$('mIntro');var html='<div class="mhead"><h3>Give to get</h3><button class="x" onclick="close_(\'mIntro\')">×</button></div>'
     +'<div class="mbody"><p style="color:var(--mut);font-size:14px;line-height:1.5;margin-bottom:14px">Contacting members and seeing addresses is reserved for contributors. Post one deal or a live client need and the whole network unlocks — instantly.</p>'
@@ -961,7 +1001,7 @@ function dealCard(d){
     +'<div class="addr'+(open?' open':'')+'">'+addrIcon(open)+addrTxt+'</div>'
     +'<div class="desc">'+esc(d.desc||'Off-market opportunity.')+'</div>'
     +'<div class="kpis">'+kp+'</div>'
-    +'<div class="foot"><div class="price">'+money(d.price)+'</div><div class="fr"><span class="comm">'+(num(d.commission)?num(d.commission).toFixed(1)+'% BBC':'—')+'</span><span class="ago">'+ago(d.at)+'</span></div></div>'
+    +'<div class="foot"><div class="price">'+money(d.price)+'</div><div class="fr"><span class="comm" title="Buyer-broker commission — what the seller side pays the buyer agent">'+(num(d.commission)?num(d.commission).toFixed(1)+'% BBC':'—')+'</span><span class="ago">'+ago(d.at)+'</span></div></div>'
     +'</div>';
 }
 // Dense list row (used by the "List" layout) — same click target, far less height.
@@ -994,7 +1034,7 @@ function listHeader(){return '<div class="drow-head">'
   +'<span class="li-sub">Market</span>'
   +'<span class="li-addr">Address</span>'
   +'<span class="li-kpi">Cap/Units</span>'
-  +'<span class="li-kpi">BBC</span>'
+  +'<span class="li-kpi"><span class="tip" tabindex="0" data-tip="Buyer-broker commission — what the seller side pays the buyer agent">BBC</span></span>'
   +'<span class="li-price">Price</span>'
   +'<span class="li-badges"></span>'
 +'</div>';}
