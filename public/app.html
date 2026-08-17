@@ -448,6 +448,19 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
     <div class="ntxt"><span class="nb">🔔 Set your alert preferences</span> — choose which deals ping you, by property type and market, so you only hear about what you care about.</div>
     <div class="nact"><button class="btn acc sm" onclick="dismissNotifNudge();openNotifSettings()">Set preferences</button><button class="btn ghost sm" onclick="dismissNotifNudge()">Not now</button></div>
   </div>
+  <!-- quick actions — the calm, do-this-first entry point -->
+  <div class="qa" id="quickActions">
+    <div class="qa-tile" onclick="openSubmit()" role="button" tabindex="0">
+      <div class="qa-ic">🔑</div>
+      <div class="qa-tx"><b>Post a deal</b><span>Share an off-market property with the network.</span></div>
+      <div class="qa-go">＋</div>
+    </div>
+    <div class="qa-tile" onclick="openBuyBox()" role="button" tabindex="0">
+      <div class="qa-ic">🎯</div>
+      <div class="qa-tx"><b>Post a client need</b><span>Tell the network what your buyer is hunting for.</span></div>
+      <div class="qa-go">＋</div>
+    </div>
+  </div>
   <!-- market bar -->
   <div class="mktbar">
     <div class="catseg" id="catSeg">
@@ -530,6 +543,16 @@ html.dark .ggbar{background:#33291180;border-color:#6E571E}
 .welcome .wx{position:absolute;top:12px;right:14px;color:var(--mut2);cursor:pointer;font-size:20px;line-height:1;background:none;border:none;padding:2px 6px}
 .welcome .wx:hover{color:var(--tx)}
 @media(max-width:640px){.welcome .steps{grid-template-columns:1fr}}
+/* quick-action tiles (TAN-style calm entry) */
+.qa{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.qa-tile{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;cursor:pointer;transition:border-color .14s,transform .12s,box-shadow .2s;box-shadow:0 6px 18px rgba(20,25,40,.04)}
+.qa-tile:hover{border-color:var(--acc);transform:translateY(-1px);box-shadow:0 12px 28px rgba(23,65,138,.12)}
+.qa-tile .qa-ic{font-size:30px;line-height:1;flex:none}
+.qa-tile .qa-tx{flex:1;min-width:0}
+.qa-tile .qa-tx b{display:block;font-size:16.5px;font-weight:800;letter-spacing:-.01em}
+.qa-tile .qa-tx span{display:block;color:var(--mut);font-size:12.5px;line-height:1.4;margin-top:2px}
+.qa-tile .qa-go{flex:none;width:36px;height:36px;border-radius:50%;background:var(--acc);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center}
+@media(max-width:640px){.qa{grid-template-columns:1fr;gap:10px}.qa-tile{padding:14px 16px}.qa-tile .qa-tx span{display:none}}
 /* tap/hover tooltips for jargon */
 .tip{position:relative;cursor:help;border-bottom:1px dotted var(--mut2);outline:none}
 .tip::after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + 7px);z-index:90;width:max-content;max-width:250px;background:var(--tx);color:var(--bg);font-family:'IBM Plex Sans',system-ui,sans-serif;font-weight:500;font-size:12px;line-height:1.4;letter-spacing:0;text-transform:none;padding:8px 10px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;transform:translateY(-3px);pointer-events:none;transition:opacity .12s,transform .12s}
