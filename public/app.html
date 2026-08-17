@@ -98,7 +98,8 @@ section{padding:40px 0}
 .bdg.broad{color:var(--acc);border-color:rgba(23,65,138,.28)}
 .bdg.private{color:var(--gold);border-color:rgba(180,136,46,.42)}
 .bdg.pocket{color:var(--acc);border-color:rgba(23,65,138,.28)}
-.bdg.feat{color:var(--bg);background:var(--gold);border-color:var(--gold)}
+.bdg.feat{color:#8A6A12;background:rgba(180,136,46,.14);border-color:rgba(180,136,46,.42)}
+html.dark .bdg.feat{color:#E7C374!important;background:rgba(231,195,116,.14)!important;border-color:rgba(231,195,116,.4)!important}
 .bdg.mine{color:var(--acc);border-color:rgba(23,65,138,.28)}
 .bdg.ver{color:#1E7A52;border-color:rgba(30,122,82,.32);background:rgba(30,122,82,.08)}
 .bdg.pof{color:#8A6A12;border-color:rgba(138,106,18,.32);background:rgba(180,136,46,.12)}
@@ -699,11 +700,12 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
 <script>
 var ME={role:'guest',email:'',name:''};
 var LISTINGS=[];
-var TYPES=['Single-family','Condo / Conversion','Townhouse','2–4 unit','Land','Multifamily','Mixed-use','Retail / Commercial','Industrial','Development site'];
-// Category grouping for the Residential / Commercial toggle. Crossover types (2–4 unit,
-// small MF, land) intentionally live in BOTH so an investor-minded residential agent still sees them.
-var RESI_TYPES=['Single-family','Condo / Conversion','Townhouse','2–4 unit','Land'];
-var COMM_TYPES=['2–4 unit','Multifamily','Mixed-use','Retail / Commercial','Industrial','Development site','Land'];
+var TYPES=['Single-family','Condo / Conversion','Townhouse','Multifamily','Land','Mixed-use','Retail / Commercial','Industrial','Development site'];
+// Category grouping for the Residential / Commercial toggle. Crossover types
+// (Multifamily — now covers 2–4 & 5+ — and Land) live in BOTH so an
+// investor-minded residential agent still sees them.
+var RESI_TYPES=['Single-family','Condo / Conversion','Townhouse','Multifamily','Land'];
+var COMM_TYPES=['Multifamily','Mixed-use','Retail / Commercial','Industrial','Development site','Land'];
 var CAT='all';
 function catTypes(c){return c==='residential'?RESI_TYPES:c==='commercial'?COMM_TYPES:TYPES;}
 function inCat(type,c){if(c==='all'||!c)return true;if(TYPES.indexOf(type)<0)return true;return catTypes(c).indexOf(type)>=0;}

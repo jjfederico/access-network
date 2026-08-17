@@ -137,8 +137,8 @@ const pmFocus = v => (['residential', 'commercial', 'both'].indexOf(String(v || 
 // Category grouping (mirrors the app). Crossover types (2–4 unit, land, multifamily)
 // count as BOTH so a commercial agent still hears about small multifamily & land,
 // but never single-family / condo / townhouse.
-const RESI_TYPES = ['Single-family', 'Condo / Conversion', 'Townhouse', '2–4 unit', 'Land'];
-const COMM_TYPES = ['2–4 unit', 'Multifamily', 'Mixed-use', 'Retail / Commercial', 'Industrial', 'Development site', 'Land'];
+const RESI_TYPES = ['Single-family', 'Condo / Conversion', 'Townhouse', 'Multifamily', 'Land'];
+const COMM_TYPES = ['Multifamily', 'Mixed-use', 'Retail / Commercial', 'Industrial', 'Development site', 'Land'];
 function pmFocusAllows(focus, propType) {
   focus = String(focus || '').toLowerCase();
   if (focus !== 'residential' && focus !== 'commercial') return true; // both / unset → everything
