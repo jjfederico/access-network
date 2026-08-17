@@ -461,6 +461,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
       <div class="qa-go">＋</div>
     </div>
   </div>
+  <div id="closedStrip" class="closedstrip" style="display:none" onclick="openMarket()"></div>
   <!-- market bar -->
   <div class="mktbar">
     <div class="catseg" id="catSeg">
@@ -553,6 +554,10 @@ html.dark .ggbar{background:#33291180;border-color:#6E571E}
 .qa-tile .qa-tx span{display:block;color:var(--mut);font-size:12.5px;line-height:1.4;margin-top:2px}
 .qa-tile .qa-go{flex:none;width:36px;height:36px;border-radius:50%;background:var(--acc);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center}
 @media(max-width:640px){.qa{grid-template-columns:1fr;gap:10px}.qa-tile{padding:14px 16px}.qa-tile .qa-tx span{display:none}}
+.closedstrip{display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;background:linear-gradient(120deg,rgba(30,122,82,.12),rgba(30,122,82,.05));border:1px solid rgba(30,122,82,.28);border-radius:12px;padding:10px 16px;margin-bottom:16px;cursor:pointer;font-size:13.5px}
+.closedstrip b{color:#1E7A52;font-weight:800}
+.closedstrip .go{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#1E7A52;letter-spacing:.05em}
+html.dark .closedstrip b,html.dark .closedstrip .go{color:#57ECC2}
 /* tap/hover tooltips for jargon */
 .tip{position:relative;cursor:help;border-bottom:1px dotted var(--mut2);outline:none}
 .tip::after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + 7px);z-index:90;width:max-content;max-width:250px;background:var(--tx);color:var(--bg);font-family:'IBM Plex Sans',system-ui,sans-serif;font-weight:500;font-size:12px;line-height:1.4;letter-spacing:0;text-transform:none;padding:8px 10px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;transform:translateY(-3px);pointer-events:none;transition:opacity .12s,transform .12s}
@@ -822,7 +827,7 @@ function api(path,body){
 function nL(l){
   if(!l)return null;
   return {id:l.id,byEmail:String(l.owner||''),by:l.ownerName||'',at:l.createdAt||l.updatedAt||'',
-    status:(l.status==='off'?'off':l.status==='mls'?'mls':'live'),mlsAt:l.mlsAt||'',
+    status:(l.status==='off'?'off':l.status==='mls'?'mls':l.status==='closed'?'closed':'live'),mlsAt:l.mlsAt||'',closedAt:l.closedAt||'',closePrice:l.closePrice||'',
     addressHidden:(l.addressHidden!==false),addr:l.address||'',hideAddress:!!l.hideAddress,
     submarket:l.area||l.city||'',city:l.city||'',area:l.area||'',state:l.state||'',zip:l.zip||l.zipPrefix||'',
     type:l.propType||'',price:l.price,commission:l.commissionPct,commNotes:l.commissionNotes||'',
@@ -853,6 +858,7 @@ function loadAll(){
     apiT('/api/pm/intros').then(function(intr){intr=intr||{};SENT=intr.asBuyer||[];INBOUND=intr.asSeller||[];render();updateReqDot();});
     apiT('/api/pm/buybox').then(function(bb){bb=bb||{};BUYBOX=bb.buybox||null;BBMATCHES=(bb.matches||[]).map(nL).filter(Boolean);});
     apiT('/api/pm/profile').then(function(pf){pf=pf||{};PROFILE=pf.profile||null;APPROVED=(pf.approved!==false);renderGate();maybeNotifNudge();});
+    apiT('/api/pm/closings').then(renderClosedStrip);
     loadThreads(function(){});loadNotifs(function(){});
   });
 }
@@ -890,6 +896,9 @@ function ggLocked(){return ME.reciprocity&&ME.reciprocity.enforce&&!ME.reciproci
 // still unlocked (grace). Teaches the Post → Match → Connect loop in plain words.
 function welcomeDismissed(){try{return localStorage.getItem('access_welcome')==='done';}catch(e){return false;}}
 function dismissWelcome(){try{localStorage.setItem('access_welcome','done');}catch(e){}var el=$('welcomeCard');if(el)el.style.display='none';}
+function renderClosedStrip(j){var el=$('closedStrip');if(!el)return;var n=(j&&j.totalCount)||0;if(!n){el.style.display='none';return;}
+  el.innerHTML='<span>🎉 <b>'+money(j.totalVolume||0)+'</b> closed through ACCESS across <b>'+n+'</b> deal'+(n===1?'':'s')+'.</span><span class="go">See the leaderboard →</span>';
+  el.style.display='';}
 function renderWelcome(){
   var el=$('welcomeCard');if(!el)return;
   var r=ME.reciprocity;
@@ -1278,14 +1287,17 @@ function openDetail(id){
   var renewLbl='↻ Renew 30 days'+(PAYCFG.enabled?(' ($'+PAYCFG.prices.renew+')'):'');
   var featBtn=PAYCFG.enabled?(d.featured?'<button class="btn ghost" disabled style="opacity:.6">★ Featured</button>':'<button class="btn acc" onclick="featureDeal(\''+d.id+'\')">★ Feature ($'+PAYCFG.prices.feature+')</button>'):'';
   var cta = mine
-    ? (d.status==='mls'
+    ? (d.status==='closed'
+        ? '<button class="btn acc" onclick="markClosed(\''+d.id+'\',false)">Reopen deal</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>'
+      : d.status==='mls'
         ? '<button class="btn acc" onclick="markMLS(\''+d.id+'\',false)">Relist to network</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>'
-        : '<button class="btn acc" onclick="openEdit(\''+d.id+'\')">✎ Edit</button>'+((d.dist==='broad'&&!d.hideAddress)?'<button class="btn ghost" onclick="openSocial(\''+d.id+'\')">📣 Social post</button>':'')+'<button class="btn ghost" onclick="renewDeal(\''+d.id+'\')">'+renewLbl+'</button>'+featBtn+'<button class="btn ghost" onclick="toggleOff(\''+d.id+'\')">'+(d.status==='off'?'Relist':'Take off-market')+'</button><button class="btn ghost" onclick="markMLS(\''+d.id+'\',true)">Moved to MLS</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>')
+        : '<button class="btn acc" onclick="openEdit(\''+d.id+'\')">✎ Edit</button><button class="btn acc" onclick="markClosed(\''+d.id+'\',true)" style="background:#1E7A52;border-color:#1E7A52">✓ Mark closed</button>'+((d.dist==='broad'&&!d.hideAddress)?'<button class="btn ghost" onclick="openSocial(\''+d.id+'\')">📣 Social post</button>':'')+'<button class="btn ghost" onclick="renewDeal(\''+d.id+'\')">'+renewLbl+'</button>'+featBtn+'<button class="btn ghost" onclick="toggleOff(\''+d.id+'\')">'+(d.status==='off'?'Relist':'Take off-market')+'</button><button class="btn ghost" onclick="markMLS(\''+d.id+'\',true)">Moved to MLS</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>')
     : '<button class="btn acc" onclick="openContact(\''+d.id+'\')">Contact agent</button><button class="btn ghost" onclick="mcFromDeal('+num(d.price)+')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="4" y="2.5" width="16" height="19" rx="2.2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8.5" y1="12" x2="8.5" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="15.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="8.5" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/></svg>Calc payment</button>';
   var expBadge=d.expiresAt?('<div class="drow"><span>Expires</span><b class="mono">'+ago2(d.expiresAt)+'</b></div>'):'';
   $('detailBody').innerHTML=
     '<div class="mhead"><div><h3>'+esc(d.submarket||'Off-market deal')+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★ Featured</span>':'')+'</h3><div style="color:var(--acc2);font-weight:700;font-size:12.5px;margin-top:3px">'+esc(d.type||'')+' · '+money(d.price)+'</div></div><button class="x" onclick="close_(\'mDetail\')">×</button></div>'
     +'<div class="mbody">'
+      +(d.status==='closed'?'<div class="reveal" style="background:rgba(30,122,82,.08);border-color:#1E7A52"><b style="color:#1E7A52">🎉 Closed through ACCESS'+(d.closedAt?(' · '+new Date(d.closedAt).toLocaleDateString()):'')+(num(d.closePrice)?(' · '+money(d.closePrice)):'')+'.</b> Counted in the network\'s closed-deal proof. Removed from the live feed.</div>':'')
       +(d.status==='mls'?'<div class="reveal" style="background:var(--card);border-color:var(--gold)"><b style="color:var(--gold)">✓ Moved to the MLS'+(d.mlsAt?(' · '+new Date(d.mlsAt).toLocaleDateString()):'')+'.</b> This deal is now public and has been removed from the ACCESS feed.</div>':'')
       +(d.desc?'<p style="color:var(--mut);font-size:14px;margin-bottom:12px">'+esc(d.desc)+'</p>':'')
       +addrBlock
@@ -1540,6 +1552,20 @@ function submitDeal(){
 function markMLS(id,on){
   if(on&&!confirm('Mark this deal as moved to the MLS?\n\nIt will be removed from the ACCESS feed and members can no longer contact you about it here. You can relist it later from “My activity.”'))return;
   api('/api/pm/listing/mls',{id:id,on:on}).then(function(j){
+    if(j&&j.ok){close_('mDetail');loadAll();}
+    else alert((j&&j.error)||'Could not update — try again.');
+  });
+}
+function markClosed(id,on){
+  if(!on){ if(!confirm('Reopen this deal to the network? It will no longer count as closed.'))return;
+    api('/api/pm/listing/close',{id:id,on:false}).then(function(j){if(j&&j.ok){close_('mDetail');loadAll();}else alert((j&&j.error)||'Could not update — try again.');});return; }
+  var d=LISTINGS.find(function(x){return x.id===id;})||{};
+  var pr=prompt('🎉 Closed through ACCESS!\n\nClosing price (optional — leave blank to keep private, or enter to show it in the network\'s closed-deal proof):', d.price?String(d.price):'');
+  if(pr===null)return;
+  var clean=String(pr).replace(/[^0-9.]/g,'');
+  var show=true;
+  if(clean){ show=confirm('Show this closing price ('+money(clean)+') publicly in the ACCESS closed-deal proof & leaderboard?\n\nOK = show it · Cancel = count the deal but keep the price private'); }
+  api('/api/pm/listing/close',{id:id,on:true,closePrice:clean,show:show}).then(function(j){
     if(j&&j.ok){close_('mDetail');loadAll();}
     else alert((j&&j.error)||'Could not update — try again.');
   });
@@ -1915,11 +1941,20 @@ function openNotifs(){loadNotifs(function(){
 });}
 
 /* ── market pulse ── */
-function openMarket(){api('/api/pm/market').then(function(j){var m=(j&&j.market)||{};
+function openMarket(){Promise.all([api('/api/pm/market'),api('/api/pm/closings')]).then(function(r){var j=r[0]||{},cj=r[1]||{};var m=(j&&j.market)||{};
   function stat(v,k){return '<div style="background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:15px 16px"><div style="font-family:\'Big Shoulders Display\',system-ui,sans-serif;font-size:25px;font-weight:800">'+v+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-top:3px">'+k+'</div></div>';}
+  // closed-deal proof block
+  var lb=(cj.leaderboard||[]);var lbRows=lb.length?lb.map(function(x,i){return '<div class="drow"><span>'+(i<3?['🥇','🥈','🥉'][i]:(i+1)+'.')+' '+esc(x.ownerName||x.email)+'</span><b class="mono">'+x.count+' deal'+(x.count===1?'':'s')+(num(x.volume)?(' · '+money(x.volume)):'')+'</b></div>';}).join(''):'<div style="color:var(--mut);font-size:13px">No closings logged yet — mark a deal “closed” to start the board.</div>';
+  var closRecent=(cj.recent||[]);var closRows=closRecent.length?closRecent.map(function(c){return '<div class="drow"><span>🎉 '+esc(c.propType||'Deal')+' in '+esc(c.area||'—')+(c.ownerName?(' <span style="color:var(--mut2)">· '+esc(c.ownerName)+'</span>'):'')+'</span><b class="mono">'+(num(c.price)?money(c.price):'—')+'</b></div>';}).join(''):'';
+  var closedBlock='<div style="background:linear-gradient(120deg,rgba(30,122,82,.1),var(--card2));border:1px solid rgba(30,122,82,.3);border-radius:14px;padding:16px 18px;margin-bottom:18px">'
+    +'<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><div style="font-family:\'Big Shoulders Display\',system-ui,sans-serif;font-size:30px;font-weight:800;color:#1E7A52">'+money(cj.totalVolume||0)+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)">closed through ACCESS · '+(cj.totalCount||0)+' deal'+((cj.totalCount||0)===1?'':'s')+'</div></div>'
+    +(lb.length?('<div style="margin-top:12px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:4px">Top closers</div>'+lbRows+'</div>'):'')
+    +(closRows?('<div style="margin-top:12px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:4px">Recently closed</div>'+closRows+'</div>'):'')
+    +'</div>';
   var areas=m.byArea||{};var areaRows=Object.keys(areas).sort(function(a,b){return areas[b]-areas[a];}).slice(0,8).map(function(a){return '<div class="drow"><span>'+esc(a)+'</span><b>'+areas[a]+'</b></div>';}).join('')||'<div style="color:var(--mut);font-size:13px">No live deals yet.</div>';
   var recent=(m.recent||[]).map(function(r){return '<div class="reqrow" style="cursor:pointer" onclick="close_(\'mMarket\');openDetail(\''+esc(r.id)+'\')"><div class="grow"><b>'+esc(r.area||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(r.propType||'')+' · '+money(r.price)+'</span></div><span style="color:var(--mut2);font-size:12px">'+ago(r.createdAt)+'</span></div>';}).join('')||'<div class="empty">No deals yet.</div>';
   $('mMarket').innerHTML='<div class="modal wide"><div class="mhead"><h3>Market pulse</h3><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody">'
+    +closedBlock
     +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px">'
     +stat(m.liveDeals||0,'Live deals')+stat(money(m.totalValue||0),'Total value')+stat(m.buyboxes||0,'Client needs')
     +stat((m.avgCommission||0).toFixed(1)+'%','Avg commission')+stat((m.avgCap||0).toFixed(1)+'%','Avg cap rate')+stat(m.offMarket||0,'Off-market')

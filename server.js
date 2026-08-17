@@ -122,7 +122,7 @@ function pmPublicView(l, full, gated) {
     notes: l.notes || '', docs: Array.isArray(l.docs) ? l.docs : [], views: l.views || 0,
     photoCount: Array.isArray(l.photos) ? l.photos.length : 0,
     hideAddress: !!l.hideAddress, addressHidden: !showAddr,
-    social: !!l.social
+    social: !!l.social, closedAt: l.closedAt || '', closePrice: l.closePrice || ''
   };
   if (showAddr) {
     out.address = l.address || ''; out.zip = zip;
@@ -245,7 +245,7 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
     const profBy = {}; profs.forEach(p => { if (p && p.email) profBy[_lc(p.email)] = p; });
     const attachOwner = r => { const p = profBy[_lc(r.owner)]; r.ownerVerified = !!(p && p.verified); r.ownerProducer = !!(p && p.producer); const pof = pmPofPublic(p || {}); r.ownerPof = pof.status === 'verified' ? { amount: pof.amount } : null; return r; };
     const rows = listings
-      .filter(l => l && (((l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls') || mine(l) || isOwner))
+      .filter(l => l && (((l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed') || mine(l) || isOwner))
       .filter(l => !isExpired(l) || mine(l) || isOwner)
       .map(l => attachOwner(pmPublicView(l, mine(l) || isOwner, gated && !mine(l))))
       .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -368,6 +368,47 @@ app.post('/api/pm/listing/mls', ensureAuth, pmGate, async (req, res) => {
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
+// Mark a deal closed through ACCESS (social proof). Owner of the deal or admin.
+// closePrice is optional; showClose controls whether it appears in public proof.
+app.post('/api/pm/listing/close', ensureAuth, pmGate, async (req, res) => {
+  const b = req.body || {};
+  const id = String(b.id || '');
+  if (!id) return res.status(400).json({ ok: false, error: 'no_id' });
+  try {
+    const listings = await pmLoad(PM_KEYS.listings);
+    const l = listings.find(x => x && x.id === id);
+    if (!l) return res.status(404).json({ ok: false, error: 'not_found' });
+    if (req.user.role !== 'owner' && _lc(l.owner) !== pmEmail(req.user)) return res.status(403).json({ ok: false, error: 'not_your_listing' });
+    if (b.on === false) { // undo
+      l.status = 'active'; delete l.closedAt; delete l.closePrice;
+    } else {
+      l.status = 'closed'; l.closedAt = new Date().toISOString();
+      l.closePrice = String(b.closePrice != null ? b.closePrice : (l.price || '')).replace(/[^0-9.]/g, '').slice(0, 24);
+      l.showClose = b.show !== false;
+    }
+    await pmSave(PM_KEYS.listings, listings);
+    res.json({ ok: true, status: l.status });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
+// Closed-deal proof: aggregate totals, recent public closings, and a leaderboard.
+app.get('/api/pm/closings', ensureAuth, pmGate, async (req, res) => {
+  try {
+    const [listings, profs] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad('pm_profiles')]);
+    const nameBy = {}; profs.forEach(p => { if (p && p.email) nameBy[_lc(p.email)] = p.name || ''; });
+    const closed = listings.filter(l => l && (l.status || '') === 'closed');
+    const totalCount = closed.length;
+    const totalVolume = closed.reduce((a, l) => a + pmNum(l.closePrice || l.price), 0);
+    const recent = closed.slice().sort((a, b) => String(b.closedAt).localeCompare(String(a.closedAt))).slice(0, 12).map(l => ({
+      area: l.area || l.city || '', propType: l.propType || '', state: l.state || '',
+      price: l.showClose === false ? '' : (l.closePrice || l.price || ''),
+      ownerName: l.ownerName || nameBy[_lc(l.owner)] || '', closedAt: l.closedAt || ''
+    }));
+    const board = {}; closed.forEach(l => { const k = _lc(l.owner); if (!board[k]) board[k] = { email: l.owner, ownerName: l.ownerName || nameBy[k] || l.owner, count: 0, volume: 0 }; board[k].count++; board[k].volume += pmNum(l.closePrice || l.price); });
+    const leaderboard = Object.values(board).sort((a, b) => (b.count - a.count) || (b.volume - a.volume)).slice(0, 15);
+    res.json({ ok: true, totalCount, totalVolume, recent, leaderboard });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
+
 // ── intros ──────────────────────────────────────────────────────────────────
 app.post('/api/pm/intro', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
@@ -460,7 +501,7 @@ app.get('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
     let matches = [];
     if (mine) {
       const isExpired = l => l.expiresAt && (new Date(l.expiresAt) < new Date());
-      matches = listings.filter(l => l && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && !isExpired(l) && _lc(l.owner) !== email && pmMatch(l, mine))
+      matches = listings.filter(l => l && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !isExpired(l) && _lc(l.owner) !== email && pmMatch(l, mine))
         .map(l => pmPublicView(l, false))
         .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
     }
@@ -487,7 +528,7 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
         const isExpired = l => l.expiresAt && (new Date(l.expiresAt) < new Date());
         const sellers = {};
         listings.forEach(l => {
-          if (l && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && !isExpired(l) && _lc(l.owner) !== email && pmMatch(l, rec)) {
+          if (l && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !isExpired(l) && _lc(l.owner) !== email && pmMatch(l, rec)) {
             const s = _lc(l.owner); (sellers[s] = sellers[s] || []).push(l);
             ns.push({ id: pmId('N'), to: s, type: 'buyer', text: 'New buyer for your ' + (l.area || l.city || 'deal') + ' listing — their buy box matches', listingId: l.id, at: now, read: false });
           }
@@ -731,7 +772,7 @@ function pmDigestFor(prof, listings, boxes, sinceMs) {
   if (!box && !hasPrefs) return [];   // nothing to match on → no digest (never spam)
   return listings.filter(l => {
     if (!l || _lc(l.owner) === email) return false;
-    const st = l.status || 'active'; if (st === 'off' || st === 'mls') return false;
+    const st = l.status || 'active'; if (st === 'off' || st === 'mls' || st === 'closed') return false;
     if (l.expiresAt && new Date(l.expiresAt) < new Date()) return false;
     const created = l.createdAt ? new Date(l.createdAt).getTime() : 0;
     if (!(created > sinceMs)) return false;
@@ -987,7 +1028,7 @@ app.get('/api/pm/stats', async (req, res) => {
   try {
     const [listings, boxes, profs] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles')]);
     const now = new Date();
-    const active = listings.filter(l => l && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && !(l.expiresAt && new Date(l.expiresAt) < now));
+    const active = listings.filter(l => l && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !(l.expiresAt && new Date(l.expiresAt) < now));
     const volume = active.reduce((a, l) => a + pmNum(l.price), 0);
     const commission = active.reduce((a, l) => a + pmNum(l.price) * pmNum(l.commissionPct) / 100, 0);
     const members = profs.filter(p => p && p.status === 'approved').length;
