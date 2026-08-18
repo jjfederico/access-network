@@ -631,7 +631,8 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
 .algrid .alcell img{width:100%;height:100%;object-fit:cover;display:block}
 .algrid .alcell.cov::after{content:'★ Cover';position:absolute;top:5px;left:5px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#1A1C22;background:var(--gold);padding:2px 5px;border-radius:5px}
 /* deal-card cover */
-.deal .dcover{height:104px;border-radius:9px;margin-bottom:9px;background-size:cover;background-position:center;background-color:#0d1626}
+.deal .dcover{height:104px;border-radius:9px;margin-bottom:9px;overflow:hidden;background-color:var(--card2)}
+.deal .dcover img{width:100%;height:100%;object-fit:cover;display:block}
 /* lightbox */
 .lbx{position:fixed;inset:0;background:rgba(8,12,22,.92);display:none;align-items:center;justify-content:center;z-index:300;padding:24px}
 .lbx.on{display:flex}
