@@ -79,6 +79,20 @@ async function userFor(email) {
   return { email: e, name: (p && p.name) || '', brokerage: (p && p.brokerage) || '', status, role };
 }
 
+// Create a login token and email the one-tap sign-in link. Used by the signup
+// flow so a new pending member gets their magic link immediately.
+async function sendMagicLink(email, baseUrl) {
+  const e = lc(email);
+  if (!e || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return false;
+  const token = crypto.randomBytes(24).toString('hex');
+  await putToken(token, e);
+  const link = (baseUrl || 'https://access-network.onrender.com') + '/auth/verify?token=' + token;
+  const sent = await sendEmail(e, 'Your ACCESS sign-in link',
+    `<p>Welcome to ACCESS — tap to sign in:</p><p><a href="${link}">Sign in</a></p><p>This link expires in 30 minutes.</p>`);
+  if (!sent) console.error('[ACCESS] signup sign-in email FAILED for', e);
+  return sent !== false;
+}
+
 function mount(app, baseUrl) {
   // Request a login link. Sent to any well-formed address; whether the session
   // can actually reach the app is decided at the gate (approved member / admin).
@@ -129,4 +143,4 @@ function ensureAuth(req, res, next) {
   return res.status(401).json({ ok: false, error: 'auth' });
 }
 
-module.exports = { mount, attachUser, ensureAuth, userFor, profileFor, sendEmail, ADMIN, lc };
+module.exports = { mount, attachUser, ensureAuth, userFor, profileFor, sendEmail, sendMagicLink, ADMIN, lc };

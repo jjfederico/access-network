@@ -866,8 +866,8 @@ function renderGate(){
   if(!APPROVED&&ME.role==='member'){
     if(!el){el=document.createElement('div');el.id='gateBar';el.style.cssText='background:#FBF2DD;border-bottom:1px solid var(--gold);color:#5A4A1E;padding:11px 18px;text-align:center;font-size:13.5px';document.body.insertBefore(el,document.body.firstChild);}
     var pending=PROFILE&&PROFILE.status==='pending';
-    el.innerHTML=pending?'⏳ Your membership is pending approval. You can browse, but posting & messaging unlock once approved. <b style="cursor:pointer;text-decoration:underline" onclick="openProfile()">Review your profile →</b>'
-      :'👋 Complete your member profile (license # + brokerage required) to get approved. <b style="cursor:pointer;text-decoration:underline" onclick="openProfile()">Set up profile →</b>';
+    el.innerHTML=pending?'⏳ We\'re verifying your real estate license (usually within a day). You can browse now — posting, intros &amp; messaging unlock once you\'re verified. <b style="cursor:pointer;text-decoration:underline" onclick="openProfile()">Review your profile →</b>'
+      :'👋 Complete your member profile (license # + brokerage required) to get verified. <b style="cursor:pointer;text-decoration:underline" onclick="openProfile()">Set up profile →</b>';
   } else if(el){el.remove();}
 }
 
@@ -1667,9 +1667,11 @@ function openAdmin(){
         if(m.pof==='pending'||m.pof==='none'||!m.pof)pofBtn=(m.pofDoc?('<a class="btn ghost sm" href="'+esc(m.pofDoc)+'" target="_blank" rel="noopener">View POF doc</a>'):'')+'<button class="btn acc sm" onclick="adminPof(\''+esc(m.email)+'\',\'verified\','+JSON.stringify(m.pofAmount||'')+')">Verify POF'+(m.pofAmount?(' ('+esc(m.pofAmount)+')'):'')+'</button>';
         else if(m.pof==='verified')pofBtn='<button class="btn ghost sm" onclick="adminPof(\''+esc(m.email)+'\',\'none\','+JSON.stringify('')+')">Remove POF</button>';
       }
-      var act=m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+esc(m.email)+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\'rejected\')">Reject</button>')
+      var att=m.attested?(' <span title="Licensure certification accepted'+(m.attestedAt?(' '+new Date(m.attestedAt).toLocaleString()):'')+'" style="color:#1E7A52;font-size:11px;font-weight:600">✓ certified</span>'):' <span style="color:var(--bad);font-size:11px">no attestation</span>';
+      var lookup=m.license?(' <a href="https://elicensing.mass.gov/CitizenAccess/" target="_blank" rel="noopener" title="Look up on the MA license portal, then paste the number" style="color:var(--acc);text-decoration:none;font-weight:600">🔎 verify on Mass.gov ↗</a>'):'';
+      var act=m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+esc(m.email)+'\',\'approved\')">Verify &amp; approve</button><button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\'rejected\')">Reject</button>')
         :(verBtn+prodBtn+pofBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke':'Approve')+'</button>');
-      return '<div class="reqrow"><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+verBadge+prodBadge+pofBadge+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">Lic '+esc(m.license||'—')+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
+      return '<div class="reqrow"><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+verBadge+prodBadge+pofBadge+att+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+esc(m.state||'MA')+' Lic <b>'+esc(m.license||'—')+'</b>'+lookup+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+(m.phone?(' · '+esc(m.phone)):'')+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
     }).join(''):'<div class="empty">No members yet.</div>';
     var dealRows=deals.length?deals.slice(0,40).map(function(d){
       return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+money(d.price)+' · '+esc(d.by||d.byEmail)+'</span>'+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★</span>':'')+(d.expired?' <span class="pill dec">Expired</span>':'')+(d.status==='mls'?' <span class="pill dec">On MLS</span>':'')+'</div><button class="btn '+(d.featured?'ghost':'acc')+' sm" onclick="adminFeature(\''+d.id+'\','+(!d.featured)+')">'+(d.featured?'Unfeature':'Feature')+'</button></div>';

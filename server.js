@@ -53,6 +53,10 @@ const pmEmail = u => _lc((u && u.email) || '');
 function pmId(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 const PM_KEYS = { listings: 'pm_listings', intros: 'pm_intros', buyboxes: 'pm_buyboxes' };
 
+// Canonical licensure attestation — the exact text a member must accept at signup.
+// Stored verbatim on their profile with a timestamp + IP so acceptance is provable.
+const ATTEST_TEXT = "I certify that I am a currently licensed real estate agent in good standing, that my name, license number, brokerage, and all information I've provided are true and accurate, and that I am not misrepresenting my identity or licensure. I understand ACCESS verifies licenses and that any false statement is grounds for immediate termination without refund.";
+
 // ── give-to-get reciprocity ─────────────────────────────────────────────────
 // The network only works if members contribute. A member keeps FULL access
 // (seeing addresses + contacting posters) while they have a live deal OR a live
@@ -85,9 +89,12 @@ function pmReciprocity(email, listings, boxes, profs) {
 
 // Gate: signed in AND (admin OR approved member). Invite-only — a pending or
 // unknown session gets nothing from the API.
+// Signed-in gate. Owner + approved + PENDING members all pass (pending can browse
+// a limited feed and set up their profile). Write/contact actions separately
+// require pmApproved (verified), so pending can look but not post or contact.
 async function pmGate(req, res, next) {
   if (!req.user || !req.user.email) return res.status(403).json({ ok: false, error: 'forbidden' });
-  if (req.user.role === 'owner' || req.user.status === 'approved') return next();
+  if (req.user.role === 'owner' || req.user.status === 'approved' || req.user.status === 'pending') return next();
   return res.status(403).json({ ok: false, error: 'not_approved' });
 }
 async function pmApproved(user) {
@@ -411,6 +418,7 @@ app.post('/api/pm/intro', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const listingId = String(b.listingId || '');
   if (!listingId) return res.status(400).json({ ok: false, error: 'no_listing' });
+  if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_verified', message: 'Contacting members unlocks once your license is verified.' });
   try {
     const listings = await pmLoad(PM_KEYS.listings);
     const l = listings.find(x => x && x.id === listingId);
@@ -510,6 +518,7 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const S = (v, n) => String(v == null ? '' : v).slice(0, n || 120);
   try {
+    if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_verified', message: 'Posting unlocks once your license is verified.' });
     const boxes = await pmLoad(PM_KEYS.buyboxes);
     const email = pmEmail(req.user);
     const now = new Date().toISOString();
@@ -652,6 +661,7 @@ app.post('/api/pm/broadcast', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const title = String(b.title || '').slice(0, 160).trim(), body = String(b.body || '').slice(0, 4000).trim(), category = String(b.category || 'Misc').slice(0, 40);
   if (!title && !body) return res.status(400).json({ ok: false, error: 'empty' });
+  if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_verified', message: 'Posting unlocks once your license is verified.' });
   try {
     const bs = await pmLoad('pm_broadcasts');
     const rec = { id: pmId('B'), from: req.user.email, fromName: String(req.user.name || '').slice(0, 80), category, title, body, at: new Date().toISOString() };
@@ -876,7 +886,9 @@ app.get('/api/pm/profile/:email', ensureAuth, pmGate, async (req, res) => {
     const profs = await pmLoad('pm_profiles');
     const p = profs.find(x => x && _lc(x.email) === _lc(req.params.email));
     if (!p) return res.json({ ok: true, profile: null });
-    res.json({ ok: true, profile: { email: p.email, name: p.name || '', brokerage: p.brokerage || '', license: p.license || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, producer: !!p.producer, pof: pmPofPublic(p), status: p.status || 'pending' } });
+    // Pending (unverified) viewers can see who an agent is, but not their contact details.
+    const canContact = req.user.role === 'owner' || req.user.status === 'approved';
+    res.json({ ok: true, profile: { email: canContact ? p.email : '', name: p.name || '', brokerage: p.brokerage || '', license: p.license || '', markets: p.markets || '', bio: p.bio || '', phone: canContact ? (p.phone || '') : '', linkedin: canContact ? (p.linkedin || '') : '', instagram: canContact ? (p.instagram || '') : '', facebook: canContact ? (p.facebook || '') : '', x: canContact ? (p.x || '') : '', website: canContact ? (p.website || '') : '', verified: !!p.verified, producer: !!p.producer, pof: pmPofPublic(p), status: p.status || 'pending' } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.get('/api/pm/directory', ensureAuth, pmGate, async (req, res) => {
@@ -896,7 +908,7 @@ app.get('/api/pm/admin/members', ensureAuth, pmGate, async (req, res) => {
   try {
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
-    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', status: p.status || 'pending', verified: !!p.verified, producer: !!p.producer, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
+    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', state: p.state || 'MA', status: p.status || 'pending', verified: !!p.verified, producer: !!p.producer, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', attested: !!(p.attestation && p.attestation.accepted), attestedAt: (p.attestation && p.attestation.at) || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
     res.json({ ok: true, members, pending: members.filter(m => m.status === 'pending').length, pofPending: members.filter(m => m.pof === 'pending').length });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -910,9 +922,12 @@ app.post('/api/pm/admin/approve', ensureAuth, pmGate, async (req, res) => {
     const idx = profs.findIndex(p => p && _lc(p.email) === email);
     if (idx < 0) return res.status(404).json({ ok: false, error: 'not_found' });
     profs[idx].status = decision; profs[idx].decidedAt = new Date().toISOString();
-    if (decision === 'approved' && !profs[idx].approvedAt) profs[idx].approvedAt = profs[idx].decidedAt; // start give-to-get grace clock
+    if (decision === 'approved') {
+      if (!profs[idx].approvedAt) profs[idx].approvedAt = profs[idx].decidedAt; // start give-to-get grace clock
+      profs[idx].verified = true; profs[idx].verifiedAt = profs[idx].verifiedAt || profs[idx].decidedAt; // license checked → Verified badge
+    }
     await pmSave('pm_profiles', profs);
-    try { await pmSendEmail(email, 'ACCESS · your membership was ' + decision, decision === 'approved' ? 'You\'re approved. Sign in to ACCESS to post deals and message members.' : 'Your ACCESS application was not approved at this time.'); } catch (e) {}
+    try { await pmSendEmail(email, 'ACCESS · your membership was ' + decision, decision === 'approved' ? 'You\'re verified and in. Sign in to ACCESS to post deals, request intros, and message members.' : 'Your ACCESS application was not approved at this time.'); } catch (e) {}
     res.json({ ok: true, email, status: decision });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -951,17 +966,36 @@ app.post('/api/pm/request', async (req, res) => {
   const b = req.body || {};
   const S = (v, n) => String(v == null ? '' : v).slice(0, n || 120).trim();
   const email = S(b.email, 120).toLowerCase(), name = S(b.name, 100);
+  const phone = S(b.phone, 40), license = S(b.license, 60), brokerage = S(b.brokerage, 120);
   if (!name || !email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Name and a valid email are required.' });
+  if (!phone || !license || !brokerage) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Phone, license number, and brokerage are all required.' });
+  if (b.attest !== true) return res.status(400).json({ ok: false, error: 'attest_required', message: 'You must accept the licensure certification to join.' });
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip;
   if (!(await verifyTurnstile(b.captcha, ip))) return res.status(400).json({ ok: false, error: 'captcha_failed', message: 'Please complete the verification and try again.' });
   try {
+    const now = new Date().toISOString();
+    const attestation = { text: ATTEST_TEXT, accepted: true, at: now, ip };
+    // 1) Create/refresh the pending PROFILE so the member can sign in immediately.
+    const profs = await pmLoad('pm_profiles');
+    const pIdx = profs.findIndex(p => p && _lc(p.email) === email);
+    if (pIdx >= 0) {
+      const cur = profs[pIdx];
+      profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: cur.state || 'MA', attestation, updatedAt: now, status: (cur.status === 'approved' ? 'approved' : 'pending') });
+    } else {
+      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'pending', attestation, createdAt: now, updatedAt: now });
+    }
+    await pmSave('pm_profiles', profs);
+    // 2) Keep a request record (referral credit + admin notify + Requests queue).
     const reqs = await pmLoad('pm_requests');
-    if (reqs.some(r => r && _lc(r.email) === email && r.status !== 'denied')) return res.json({ ok: true, already: true });
-    const rec = { id: pmId('R'), email, name, license: S(b.license, 60), brokerage: S(b.brokerage, 120), phone: S(b.phone, 40), markets: S(b.markets, 200), focus: pmFocus(b.focus), note: S(b.note, 1000), referredBy: S(b.ref, 12).toUpperCase().replace(/[^A-Z0-9]/g, '') || '', status: 'pending', at: new Date().toISOString() };
-    reqs.push(rec);
-    await pmSave('pm_requests', reqs.length > 2000 ? reqs.slice(-2000) : reqs);
-    if (ADMIN) { try { await pmSendEmail(ADMIN, 'ACCESS · new access request', name + ' requested access to ACCESS.\n\nEmail: ' + email + '\nLicense: ' + (rec.license || '—') + '\nBrokerage: ' + (rec.brokerage || '—') + '\nMarkets: ' + (rec.markets || '—') + (rec.note ? ('\n\nNote: ' + rec.note) : '') + '\n\nApprove them in the ACCESS admin panel.'); } catch (e) {} }
-    res.json({ ok: true });
+    if (!reqs.some(r => r && _lc(r.email) === email && r.status !== 'denied')) {
+      reqs.push({ id: pmId('R'), email, name, license, brokerage, phone, markets: S(b.markets, 200), focus: pmFocus(b.focus), note: S(b.note, 1000), referredBy: S(b.ref, 12).toUpperCase().replace(/[^A-Z0-9]/g, '') || '', status: 'pending', at: now });
+      await pmSave('pm_requests', reqs.length > 2000 ? reqs.slice(-2000) : reqs);
+    }
+    // 3) Send the sign-in link now so they can log in as a pending member.
+    let linkSent = false;
+    try { linkSent = await authMod.sendMagicLink(email, BASE_URL || ('https://' + (req.headers.host || ''))); } catch (e) {}
+    if (ADMIN) { try { await pmSendEmail(ADMIN, 'ACCESS · new member to verify', name + ' signed up and is pending license verification.\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nVerify their license and approve them in the ACCESS admin panel (Members tab).'); } catch (e) {} }
+    res.json({ ok: true, linkSent });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.get('/api/pm/admin/requests', ensureAuth, pmGate, async (req, res) => {

@@ -320,23 +320,23 @@ body{font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;letter-spaci
 <div class="rbg" id="reqBg" onclick="if(event.target===this)closeReq()">
   <div class="rmodal" style="position:relative">
     <button class="rx" onclick="closeReq()" aria-label="Close">×</button>
-    <div class="rhead"><h3>Request access</h3><p>Free for founding members ($50/mo after launch). Approval-only for licensed Massachusetts agents — we review every request by hand.</p><div id="refNote" style="display:none;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)">◆ Referred by a member</div></div>
+    <div class="rhead"><h3>Join ACCESS</h3><p>Free for founding members ($50/mo after launch). For licensed Massachusetts agents. Create your account now — you can browse right away, and posting &amp; messaging unlock the moment we verify your license.</p><div id="refNote" style="display:none;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)">◆ Referred by a member</div></div>
     <div class="rbody" id="reqBody">
       <div class="rgrid">
-        <div class="rf"><label>Full name <span class="req">*</span></label><input id="qName" autocomplete="name"></div>
+        <div class="rf"><label>Full legal name <span class="req">*</span> <span style="color:var(--mut2);font-weight:400">(as on license)</span></label><input id="qName" autocomplete="name"></div>
         <div class="rf"><label>Email <span class="req">*</span></label><input id="qEmail" type="email" autocomplete="email"></div>
-        <div class="rf"><label>License # <span class="req">*</span></label><input id="qLicense"></div>
+        <div class="rf"><label>Phone <span class="req">*</span></label><input id="qPhone" type="tel" autocomplete="tel"></div>
+        <div class="rf"><label>MA license # <span class="req">*</span></label><input id="qLicense"></div>
         <div class="rf"><label>Brokerage <span class="req">*</span></label><input id="qBrokerage"></div>
-        <div class="rf"><label>Phone</label><input id="qPhone" type="tel" autocomplete="tel"></div>
         <div class="rf"><label>Markets you cover</label><input id="qMarkets" placeholder="e.g. South Boston, Quincy"></div>
         <div class="rf"><label>What do you mostly do?</label><select id="qFocus"><option value="">— choose —</option><option value="residential">Residential</option><option value="commercial">Commercial &amp; investment</option><option value="both">Both</option></select></div>
       </div>
-      <div class="rf full"><label>Anything else?</label><textarea id="qNote" rows="2" placeholder="A line about your business (optional)"></textarea></div>
       <div class="rmsg" id="qMsg"></div>
       <div id="cfBox" style="margin:4px 0 10px;display:none"></div>
+      <label class="attn" style="display:flex;gap:9px;align-items:flex-start;background:rgba(180,136,46,.08);border:1px solid rgba(180,136,46,.3);border-radius:10px;padding:11px 13px;margin:4px 0 10px;cursor:pointer"><input type="checkbox" id="qAttest" style="margin-top:3px;flex:none;width:16px;height:16px;accent-color:var(--gold)"><span style="font-size:11.5px;line-height:1.45;color:var(--mut)">I certify that I am a currently licensed real estate agent in good standing, that my name, license number, brokerage, and all information I've provided are true and accurate, and that I am not misrepresenting my identity or licensure. I understand ACCESS verifies licenses and that any false statement is grounds for immediate termination without refund. <span class="req">*</span></span></label>
       <p style="font-size:11.5px;line-height:1.5;color:var(--mut);margin:2px 0 10px">By requesting access you confirm you are a <b>licensed real estate agent in good standing</b> and you agree to our Terms and Privacy Policy, and consent to receive emails from ACCESS — including sign-in links, deal alerts, and periodic updates and announcements. You can unsubscribe from marketing emails at any time.</p>
       <p style="font-size:11px;line-height:1.5;color:var(--mut2);margin:0 0 10px">ACCESS is a private, invite-only networking platform for licensed agents — it is <b>not a broker, MLS, or listing service</b> and does not market properties to the public. You are solely responsible for your own compliance with all applicable laws, license and brokerage obligations, fair-housing requirements, MLS rules, and NAR's Clear Cooperation Policy — including timely submission of a listing to the MLS where required, and obtaining any client/seller consent needed to market a property off-market or pre-market. You will only post deals you are authorized to share. Deal details and figures are member-submitted and not verified by ACCESS; the built-in analysis is an estimate. Nothing here is legal advice.</p>
-      <button class="btn p big" id="qBtn" style="width:100%;justify-content:center" onclick="sendReq()">Submit request</button>
+      <button class="btn p big" id="qBtn" style="width:100%;justify-content:center" onclick="sendReq()">Create account</button>
     </div>
   </div>
 </div>
@@ -412,22 +412,24 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeReq();}
 (function(){ if((new URLSearchParams(location.search).get('ref')||'').trim()){ var n=document.getElementById('refNote'); if(n) n.style.display='block'; } })();
 function sendReq(){
   var g=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
-  var body={name:g('qName'),email:g('qEmail'),license:g('qLicense'),brokerage:g('qBrokerage'),phone:g('qPhone'),markets:g('qMarkets'),focus:g('qFocus'),note:g('qNote'),ref:(new URLSearchParams(location.search).get('ref')||'').toUpperCase()};
+  var attest=!!(document.getElementById('qAttest')&&document.getElementById('qAttest').checked);
+  var body={name:g('qName'),email:g('qEmail'),license:g('qLicense'),brokerage:g('qBrokerage'),phone:g('qPhone'),markets:g('qMarkets'),focus:g('qFocus'),note:g('qNote'),attest:attest,ref:(new URLSearchParams(location.search).get('ref')||'').toUpperCase()};
   var msg=document.getElementById('qMsg');
-  if(!body.name||!body.email){msg.style.color='var(--bad)';msg.textContent='Name and email are required.';return;}
+  if(!body.name||!body.email){msg.style.color='var(--bad)';msg.textContent='Full legal name and email are required.';return;}
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email)){msg.style.color='var(--bad)';msg.textContent='Enter a valid email.';return;}
-  if(!body.license||!body.brokerage){msg.style.color='var(--bad)';msg.textContent='License # and brokerage are required for review.';return;}
+  if(!body.phone||!body.license||!body.brokerage){msg.style.color='var(--bad)';msg.textContent='Phone, MA license #, and brokerage are all required.';return;}
+  if(!attest){msg.style.color='var(--bad)';msg.textContent='Please check the licensure certification to continue.';return;}
   if((window.__TURNSTILE_SITE__||'')&&!CF_TOKEN){msg.style.color='var(--bad)';msg.textContent='Please complete the verification below.';return;}
   body.captcha=CF_TOKEN;
-  var btn=document.getElementById('qBtn');btn.disabled=true;btn.textContent='Sending…';msg.style.color='var(--mut)';msg.textContent='';
+  var btn=document.getElementById('qBtn');btn.disabled=true;btn.textContent='Creating…';msg.style.color='var(--mut)';msg.textContent='';
   fetch('/api/pm/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
     .then(function(r){return r.json().catch(function(){return {ok:false};});})
     .then(function(j){
       if(j&&j.ok){
-        document.getElementById('reqBody').innerHTML='<div class="rdone"><div class="big">Request received ✓</div><p style="color:var(--mut);font-size:14px;line-height:1.5">Thanks, '+ (body.name.split(' ')[0]||'') +'. We review every request by hand and will email you at <b>'+body.email.replace(/</g,'')+'</b> once you\'re approved — then you can activate your membership.</p><button class="btn p big" style="margin-top:16px;justify-content:center" onclick="closeReq()">Done</button></div>';
-      } else { btn.disabled=false;btn.textContent='Submit request';msg.style.color='var(--bad)';msg.textContent=(j&&j.message)||'Something went wrong — try again.';CF_TOKEN='';if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}} }
+        document.getElementById('reqBody').innerHTML='<div class="rdone"><div class="big">Account created ✓</div><p style="color:var(--mut);font-size:14px;line-height:1.5">Welcome, '+ (body.name.split(' ')[0]||'') +'. We just emailed a one-tap sign-in link to <b>'+body.email.replace(/</g,'')+'</b> — tap it to log in and set up your profile. You can browse right away; <b>posting &amp; messaging unlock as soon as we verify your license</b> (usually within a day).</p><p style="color:var(--mut2);font-size:12px;margin-top:8px">No link in a minute? Check spam, or use “Sign in” with this email.</p><button class="btn p big" style="margin-top:16px;justify-content:center" onclick="closeReq()">Done</button></div>';
+      } else { btn.disabled=false;btn.textContent='Create account';msg.style.color='var(--bad)';msg.textContent=(j&&j.message)||'Something went wrong — try again.';CF_TOKEN='';if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}} }
     })
-    .catch(function(){btn.disabled=false;btn.textContent='Submit request';msg.style.color='var(--bad)';msg.textContent='Network error — try again.';CF_TOKEN='';if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}}});
+    .catch(function(){btn.disabled=false;btn.textContent='Create account';msg.style.color='var(--bad)';msg.textContent='Network error — try again.';CF_TOKEN='';if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}}});
 }
 </script>
 <div class="rbg" id="siBg" onclick="if(event.target===this)closeSignin()">
