@@ -122,7 +122,7 @@ function pmPublicView(l, full, gated) {
     notes: l.notes || '', docs: Array.isArray(l.docs) ? l.docs : [], views: l.views || 0,
     photoCount: Array.isArray(l.photos) ? l.photos.length : 0,
     hideAddress: !!l.hideAddress, addressHidden: !showAddr,
-    social: !!l.social, closedAt: l.closedAt || '', closePrice: l.closePrice || ''
+    closedAt: l.closedAt || '', closePrice: l.closePrice || ''
   };
   if (showAddr) {
     out.address = l.address || ''; out.zip = zip;
@@ -293,10 +293,7 @@ app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
       lat: S(b.lat, 24), lng: S(b.lng, 24),
       grossIncome: S(b.grossIncome, 24), expenses: S(b.expenses, 24),
       commissionPct: S(b.commissionPct, 16), commissionNotes: S(b.commissionNotes, 300),
-      notes: S(b.notes, 3000), docs: docsIn, photos: photosIn,
-      // Social-promo consent — only ever honored for a broad listing with a visible
-      // address. Private/pocket/hidden-address deals can never be flagged for social.
-      social: (!!b.social && b.dist === 'broad' && !b.hideAddress)
+      notes: S(b.notes, 3000), docs: docsIn, photos: photosIn
     };
     const in30 = new Date(Date.now() + 30 * 864e5).toISOString();
     let rec, isNew = false;
@@ -561,12 +558,13 @@ app.get('/api/pm/activity', ensureAuth, pmGate, async (req, res) => {
 app.post('/api/pm/message', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const to = _lc(b.to), body = String(b.body || '').slice(0, 4000).trim(), listingId = String(b.listingId || '');
-  if (!to || !body) return res.status(400).json({ ok: false, error: 'bad_request' });
+  const att = (b.docUrl) ? { url: String(b.docUrl).slice(0, 6000000), name: String(b.docName || 'file').slice(0, 160) } : null;
+  if (!to || (!body && !att)) return res.status(400).json({ ok: false, error: 'bad_request' });
   if (to === pmEmail(req.user)) return res.status(400).json({ ok: false, error: 'cannot_message_self' });
   try {
     if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
     const msgs = await pmLoad('pm_messages');
-    const rec = { id: pmId('M'), key: pmThreadKey(req.user.email, to, listingId), from: req.user.email, fromName: String(req.user.name || '').slice(0, 80), to, listingId, body, at: new Date().toISOString(), readBy: [pmEmail(req.user)] };
+    const rec = { id: pmId('M'), key: pmThreadKey(req.user.email, to, listingId), from: req.user.email, fromName: String(req.user.name || '').slice(0, 80), to, listingId, body, att, at: new Date().toISOString(), readBy: [pmEmail(req.user)] };
     msgs.push(rec);
     await pmSave('pm_messages', msgs);
     res.json({ ok: true, message: rec });
@@ -595,13 +593,15 @@ app.get('/api/pm/thread', ensureAuth, pmGate, async (req, res) => {
   const other = _lc(req.query.with), listingId = String(req.query.listingId || '');
   if (!other) return res.status(400).json({ ok: false, error: 'no_party' });
   try {
-    const msgs = await pmLoad('pm_messages');
+    const [msgs, listings] = await Promise.all([pmLoad('pm_messages'), pmLoad(PM_KEYS.listings)]);
     const key = pmThreadKey(req.user.email, other, listingId), email = pmEmail(req.user);
     let changed = false;
     const thread = msgs.filter(m => m && m.key === key).sort((a, b) => String(a.at).localeCompare(String(b.at)));
     thread.forEach(m => { if (_lc(m.to) === email) { m.readBy = m.readBy || []; if (!m.readBy.map(_lc).includes(email)) { m.readBy.push(req.user.email); changed = true; } } });
     if (changed) { try { await pmSave('pm_messages', msgs); } catch (e) {} }
-    res.json({ ok: true, messages: thread.map(m => ({ id: m.id, from: m.from, fromName: m.fromName, mine: _lc(m.from) === email, body: m.body, at: m.at })), me: { email: req.user.email } });
+    const l = listingId ? listings.find(x => x && x.id === listingId) : null;
+    const listing = l ? { id: l.id, area: l.area || l.city || '', price: l.price || '', propType: l.propType || '' } : null;
+    res.json({ ok: true, messages: thread.map(m => ({ id: m.id, from: m.from, fromName: m.fromName, mine: _lc(m.from) === email, body: m.body, att: m.att || null, at: m.at })), listing, me: { email: req.user.email } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 

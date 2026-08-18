@@ -558,6 +558,9 @@ html.dark .ggbar{background:#33291180;border-color:#6E571E}
 .closedstrip b{color:#1E7A52;font-weight:800}
 .closedstrip .go{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#1E7A52;letter-spacing:.05em}
 html.dark .closedstrip b,html.dark .closedstrip .go{color:#57ECC2}
+.dealroom-head{display:flex;align-items:center;gap:12px;background:var(--accdim);border:1px solid var(--acc);border-radius:11px;padding:10px 13px;margin-bottom:12px}
+.dealroom-head .rk{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--acc);font-weight:600;margin-bottom:1px}
+html.dark .dealroom-head{background:#1B2740;border-color:#2E4C86}
 /* tap/hover tooltips for jargon */
 .tip{position:relative;cursor:help;border-bottom:1px dotted var(--mut2);outline:none}
 .tip::after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + 7px);z-index:90;width:max-content;max-width:250px;background:var(--tx);color:var(--bg);font-family:'IBM Plex Sans',system-ui,sans-serif;font-weight:500;font-size:12px;line-height:1.4;letter-spacing:0;text-transform:none;padding:8px 10px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;transform:translateY(-3px);pointer-events:none;transition:opacity .12s,transform .12s}
@@ -643,7 +646,7 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
   <div class="mbody">
     <div class="f full"><label>Property address</label><input id="sAddr" class="gaddr" autocomplete="off" placeholder="Start typing the address…"></div>
     <div class="f full" style="display:flex;flex-direction:row;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:8px 11px;margin-top:-3px">
-      <input type="checkbox" id="sHideAddr" onchange="syncSocial()" style="width:16px;height:16px;accent-color:var(--gold);flex:none">
+      <input type="checkbox" id="sHideAddr" style="width:16px;height:16px;accent-color:var(--gold);flex:none">
       <label for="sHideAddr" style="margin:0;cursor:pointer;font-size:12.5px;color:var(--tx);text-transform:none;letter-spacing:0;font-weight:500;font-family:'Public Sans',system-ui,sans-serif">Hide the exact address <span style="color:var(--mut)">— shown on a map if left unchecked</span></label>
     </div>
     <div class="fgrid">
@@ -672,12 +675,7 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
       <div id="sDocList" style="margin-top:8px;display:flex;flex-direction:column;gap:5px"></div>
     </div>
     <div class="f full"><label>Distribution</label>
-      <select id="sDist" onchange="syncSocial()"><option value="broad">Broad — everyone in the network sees it</option><option value="private">Private — visible, intro requires your approval</option><option value="pocket">Pocket — only matched client needs see it</option></select>
-    </div>
-    <div class="f full" id="socialWrap" style="display:none;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:12px 14px">
-      <label class="ck" style="align-items:flex-start;gap:9px"><input type="checkbox" id="sSocial" checked style="margin-top:2px">
-        <span style="text-transform:none;letter-spacing:0;font-weight:500;font-size:13px;line-height:1.45;color:var(--tx)">📣 <b>Promote this deal on ACCESS social media.</b> <span style="color:var(--mut)">We may create an Instagram / LinkedIn post featuring this listing — crediting you and your brokerage — to drive exposure to the network. Broad listings with a visible address only; we never post private, pocket, or address-hidden deals.<br><span style="color:var(--gold)">⚠︎ Public promotion may trigger MLS “Clear Cooperation” timing rules — confirm your listing obligations before opting in.</span></span></span>
-      </label>
+      <select id="sDist"><option value="broad">Broad — everyone in the network sees it</option><option value="private">Private — visible, intro requires your approval</option><option value="pocket">Pocket — only matched client needs see it</option></select>
     </div>
     <div class="mact"><span class="msg" id="sMsg"></span><button class="btn ghost" onclick="close_('mSubmit')">Cancel</button><button class="btn acc" id="sBtn" onclick="submitDeal()">Post deal</button></div>
   </div>
@@ -804,9 +802,7 @@ var DEAL_HIDE={
   'Industrial':['sBeds','sBaths']
 };
 var DEAL_TOGGLE=['sUnits','sNoi','sCap','sSf','sBeds','sBaths','sYb'];
-function syncDealFields(){var t=($('sType')&&$('sType').value)||'';var hide=DEAL_HIDE[t]||[];DEAL_TOGGLE.forEach(function(id){var el=$(id);if(!el)return;var w=el.closest('.f');var h=hide.indexOf(id)>=0;if(w)w.style.display=h?'none':'';if(h)el.value='';});syncSocial();}
-// Social promo consent is only offered for broad listings with a visible address.
-function syncSocial(){var w=$('socialWrap');if(!w)return;var elig=($('sDist')&&$('sDist').value==='broad')&&!($('sHideAddr')&&$('sHideAddr').checked);w.style.display=elig?'':'none';}
+function syncDealFields(){var t=($('sType')&&$('sType').value)||'';var hide=DEAL_HIDE[t]||[];DEAL_TOGGLE.forEach(function(id){var el=$(id);if(!el)return;var w=el.closest('.f');var h=hide.indexOf(id)>=0;if(w)w.style.display=h?'none':'';if(h)el.value='';});}
 
 /* ── Google Maps: address autocomplete on all .gaddr inputs ── */
 var MAPS_KEY=(window.__MAPS_KEY__||'');
@@ -834,7 +830,7 @@ function nL(l){
     units:l.units,cap:l.capRate,noi:l.noi,sf:l.sqft,gross:l.grossIncome,exp:l.expenses,
     beds:l.beds,baths:l.baths,yb:l.yearBuilt,desc:l.notes||'',dist:l.dist||'broad',
     docs:Array.isArray(l.docs)?l.docs:[],photos:Array.isArray(l.photos)?l.photos:[],photoCount:(l.photoCount||(Array.isArray(l.photos)?l.photos.length:0)),lat:l.lat||'',lng:l.lng||'',views:l.views||0,featured:!!l.featured,
-    social:!!l.social,ownerVerified:!!l.ownerVerified,ownerProducer:!!l.ownerProducer,ownerPof:l.ownerPof||null,expiresAt:l.expiresAt||'',expired:!!l.expired};
+    ownerVerified:!!l.ownerVerified,ownerProducer:!!l.ownerProducer,ownerPof:l.ownerPof||null,expiresAt:l.expiresAt||'',expired:!!l.expired};
 }
 var PROFILE=null, APPROVED=true, BBMATCHES=[], PAYCFG={enabled:false,membership:false,prices:{renew:10,feature:25}};
 // api() with a timeout so one slow/hanging Apps Script call can never resolve late
@@ -1291,7 +1287,7 @@ function openDetail(id){
         ? '<button class="btn acc" onclick="markClosed(\''+d.id+'\',false)">Reopen deal</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>'
       : d.status==='mls'
         ? '<button class="btn acc" onclick="markMLS(\''+d.id+'\',false)">Relist to network</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>'
-        : '<button class="btn acc" onclick="openEdit(\''+d.id+'\')">✎ Edit</button><button class="btn acc" onclick="markClosed(\''+d.id+'\',true)" style="background:#1E7A52;border-color:#1E7A52">✓ Mark closed</button>'+((d.dist==='broad'&&!d.hideAddress)?'<button class="btn ghost" onclick="openSocial(\''+d.id+'\')">📣 Social post</button>':'')+'<button class="btn ghost" onclick="renewDeal(\''+d.id+'\')">'+renewLbl+'</button>'+featBtn+'<button class="btn ghost" onclick="toggleOff(\''+d.id+'\')">'+(d.status==='off'?'Relist':'Take off-market')+'</button><button class="btn ghost" onclick="markMLS(\''+d.id+'\',true)">Moved to MLS</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>')
+        : '<button class="btn acc" onclick="openEdit(\''+d.id+'\')">✎ Edit</button><button class="btn acc" onclick="markClosed(\''+d.id+'\',true)" style="background:#1E7A52;border-color:#1E7A52">✓ Mark closed</button><button class="btn ghost" onclick="renewDeal(\''+d.id+'\')">'+renewLbl+'</button>'+featBtn+'<button class="btn ghost" onclick="toggleOff(\''+d.id+'\')">'+(d.status==='off'?'Relist':'Take off-market')+'</button><button class="btn ghost" onclick="markMLS(\''+d.id+'\',true)">Moved to MLS</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>')
     : '<button class="btn acc" onclick="openContact(\''+d.id+'\')">Contact agent</button><button class="btn ghost" onclick="mcFromDeal('+num(d.price)+')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="4" y="2.5" width="16" height="19" rx="2.2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8.5" y1="12" x2="8.5" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="15.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="8.5" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/></svg>Calc payment</button>';
   var expBadge=d.expiresAt?('<div class="drow"><span>Expires</span><b class="mono">'+ago2(d.expiresAt)+'</b></div>'):'';
   $('detailBody').innerHTML=
@@ -1328,71 +1324,6 @@ function openDetail(id){
   }); }
 }
 
-/* ── auto social post (Traded-style) ── */
-var SOC_CANVAS=null;
-function socialCaption(d){
-  var loc=d.submarket||d.area||'';
-  var st=(d.state||'MA');
-  var bits=[];
-  if(num(d.price))bits.push(money(d.price));
-  if(num(d.cap))bits.push(num(d.cap).toFixed(1)+'% cap');
-  if(num(d.units))bits.push(num(d.units)+' units');
-  if(num(d.commission))bits.push(num(d.commission).toFixed(1)+'% BBC');
-  var slug=function(s){return String(s||'').replace(/[^a-z0-9]/gi,'').toLowerCase();};
-  var tags=['#offmarket','#realestate','#investmentproperty'];
-  if(slug(loc))tags.push('#'+slug(loc));
-  if(slug(d.type))tags.push('#'+slug(d.type));
-  tags.push('#'+st.toLowerCase()+'realestate','#ACCESSoffmarket');
-  return '🏙️ Off-market — '+(d.type||'deal')+' in '+loc+'\n'
-    +(bits.length?('💰 '+bits.join(' · ')+'\n'):'')
-    +'\nMoving agent-to-agent on ACCESS before it hits the market.\nLicensed MA / NH / RI agents — DM or link in bio to join.\n\n'
-    +tags.join(' ');
-}
-function drawSocialCard(d,cb){
-  var C=document.createElement('canvas');C.width=1080;C.height=1080;var x=C.getContext('2d');
-  var F=function(s){return '"IBM Plex Sans",Arial,sans-serif'.replace('',s);};
-  function paint(img){
-    var photoH=600;
-    x.fillStyle='#0F1A2E';x.fillRect(0,0,1080,1080);
-    if(img){var iw=img.width,ih=img.height,s=Math.max(1080/iw,photoH/ih),w=iw*s,h=ih*s;x.drawImage(img,(1080-w)/2,(photoH-h)/2,w,h);
-      var g=x.createLinearGradient(0,photoH-200,0,photoH);g.addColorStop(0,'rgba(15,26,46,0)');g.addColorStop(1,'#0F1A2E');x.fillStyle=g;x.fillRect(0,photoH-200,1080,200);
-    } else {var g2=x.createLinearGradient(0,0,1080,photoH);g2.addColorStop(0,'#17418A');g2.addColorStop(1,'#0F1A2E');x.fillStyle=g2;x.fillRect(0,0,1080,photoH);
-      x.fillStyle='rgba(255,255,255,.85)';x.font='700 46px Arial';x.textAlign='center';x.fillText(String(d.type||'Off-market deal').toUpperCase(),540,photoH/2+12);x.textAlign='left';}
-    // brand
-    x.fillStyle='#B4882E';x.fillRect(60,52,50,50);x.fillStyle='#fff';x.font='800 36px Arial';x.fillText('access',128,92);
-    x.font='600 19px Arial';x.fillStyle='rgba(255,255,255,.72)';x.fillText('OFF-MARKET',128,116);
-    // off-market ribbon
-    x.fillStyle='#B4882E';x.font='800 24px Arial';x.textAlign='right';x.fillText('★ OFF-MARKET',1020,90);x.textAlign='left';
-    // body
-    var by=photoH+96;
-    x.fillStyle='#EAF0FB';x.font='800 66px Arial';x.fillText(String(d.submarket||d.area||'Off-market deal').slice(0,26),60,by);
-    x.fillStyle='#84AAFF';x.font='800 60px Arial';x.fillText(money(d.price),60,by+86);
-    var stats=[];if(num(d.units))stats.push(num(d.units)+' units');if(num(d.cap))stats.push(num(d.cap).toFixed(1)+'% cap');if(num(d.sf))stats.push(Math.round(num(d.sf)).toLocaleString('en-US')+' SF');if(num(d.commission))stats.push(num(d.commission).toFixed(1)+'% BBC');
-    x.fillStyle='rgba(255,255,255,.82)';x.font='500 32px Arial';x.fillText(stats.join('    ·    '),60,by+152);
-    x.fillStyle='rgba(255,255,255,.62)';x.font='500 27px Arial';x.fillText('Listed by '+String(d.by||'an ACCESS member').slice(0,40),60,1004);
-    x.fillStyle='rgba(255,255,255,.42)';x.font='500 24px Arial';x.fillText('Off-market on ACCESS · the invite-only agent network',60,1044);
-    cb(C);
-  }
-  var url=(d.photos&&d.photos[0]&&d.photos[0].url)?d.photos[0].url:'';
-  if(url){var im=new Image();im.onload=function(){paint(im);};im.onerror=function(){paint(null);};im.src=url;}
-  else paint(null);
-}
-function openSocial(id){
-  var d=LISTINGS.find(function(x){return x.id===id;});if(!d)return;
-  close_('mDetail');
-  var m=$('mSocial');if(!m){m=document.createElement('div');m.className='mbg';m.id='mSocial';m.onclick=function(e){if(e.target===m)close_('mSocial');};document.body.appendChild(m);}
-  m.innerHTML='<div class="modal wide"><div class="mhead"><div><h3>📣 Social post</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">A ready-to-share graphic + caption. Post it to Instagram or LinkedIn to pull agents into the network.</div></div><button class="x" onclick="close_(\'mSocial\')">×</button></div><div class="mbody">'
-    +'<div style="text-align:center;margin-bottom:14px"><img id="socImg" alt="Social preview" style="width:100%;max-width:340px;border-radius:14px;border:1px solid var(--line);background:var(--card2)"></div>'
-    +'<div class="f full"><label>Caption <span class="hint">— edit freely, then copy</span></label><textarea id="socCap" rows="8" style="font-size:13px;line-height:1.5">'+esc(socialCaption(d))+'</textarea></div>'
-    +'<div style="background:rgba(180,136,46,.1);border:1px solid rgba(180,136,46,.35);border-radius:9px;padding:9px 12px;font-size:11.5px;color:var(--mut);line-height:1.45;margin-bottom:12px"><b style="color:var(--gold)">⚠︎ Before you post publicly:</b> promoting a listing on social media may count as public marketing under MLS “Clear Cooperation” rules, which can start a clock to submit it to the MLS. Confirm your obligations for this listing first. Not legal advice.</div>'
-    +'<div class="mact"><span class="msg" id="socMsg"></span><button class="btn ghost" onclick="copySocial()">Copy caption</button><button class="btn acc" onclick="dlSocial(\''+esc(d.id)+'\')">⬇ Download image</button></div>'
-    +'</div></div>';
-  open_('mSocial');
-  SOC_CANVAS=null;
-  drawSocialCard(d,function(C){SOC_CANVAS=C;var im=$('socImg');if(im)im.src=C.toDataURL('image/png');});
-}
-function dlSocial(id){if(!SOC_CANVAS){var m=$('socMsg');if(m)m.textContent='Still rendering…';return;}var a=document.createElement('a');a.download='access-'+(id||'deal')+'.png';a.href=SOC_CANVAS.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();}
-function copySocial(){var t=$('socCap');if(!t)return;t.select();try{document.execCommand('copy');}catch(e){}if(navigator.clipboard)navigator.clipboard.writeText(t.value).catch(function(){});var m=$('socMsg');if(m){m.textContent='Copied ✓';setTimeout(function(){m.textContent='';},1500);}}
 
 /* ── intro request ── */
 var _introDeal=null;
@@ -1536,8 +1467,7 @@ function submitDeal(){
     sqft:noComma('sSf'),beds:($('sBeds').value||'').trim(),baths:($('sBaths').value||'').trim(),yearBuilt:($('sYb').value||'').trim(),
     notes:($('sDesc').value||'').trim(),dist:$('sDist').value,status:keepStatus,
     hideAddress:$('sHideAddr').checked,docs:SUBMIT_DOCS,photos:SUBMIT_PHOTOS,
-    lat:(SUBMIT_COORDS?SUBMIT_COORDS.lat:''),lng:(SUBMIT_COORDS?SUBMIT_COORDS.lng:''),state:SUBMIT_STATE||'',
-    social:(($('sDist').value==='broad')&&!$('sHideAddr').checked&&$('sSocial')&&$('sSocial').checked)};
+    lat:(SUBMIT_COORDS?SUBMIT_COORDS.lat:''),lng:(SUBMIT_COORDS?SUBMIT_COORDS.lng:''),state:SUBMIT_STATE||''};
   if(editing)body.id=EDIT_ID;
   if(!body.area){$('sMsg').textContent='Add a submarket.';return;}
   if(!num(body.price)){$('sMsg').textContent='Add an asking price.';return;}
@@ -1743,17 +1673,9 @@ function openAdmin(){
     var dealRows=deals.length?deals.slice(0,40).map(function(d){
       return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+money(d.price)+' · '+esc(d.by||d.byEmail)+'</span>'+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★</span>':'')+(d.expired?' <span class="pill dec">Expired</span>':'')+(d.status==='mls'?' <span class="pill dec">On MLS</span>':'')+'</div><button class="btn '+(d.featured?'ghost':'acc')+' sm" onclick="adminFeature(\''+d.id+'\','+(!d.featured)+')">'+(d.featured?'Unfeature':'Feature')+'</button></div>';
     }).join(''):'<div class="empty">No deals.</div>';
-    var socDeals=deals.filter(function(d){return d.social&&d.dist==='broad'&&!d.hideAddress&&d.status!=='off'&&d.status!=='mls';});
-    var socRows=socDeals.length?socDeals.map(function(d){
-      return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+'</span></div><button class="btn acc sm" onclick="openSocial(\''+d.id+'\')">📣 Generate post</button></div>';
-    }).join(''):'<div style="color:var(--mut2);font-size:12px">No deals opted in to social yet. Members opt in when posting a broad deal.</div>';
     $('mAdmin').innerHTML='<div class="modal wide"><div class="mhead"><h3>Admin</h3><button class="x" onclick="close_(\'mAdmin\')">×</button></div><div class="mbody">'
       +'<div class="tabs"><span class="tab on" onclick="admTab(\'r\')" id="admTabR">Requests'+((rj.pending)?(' <span class="pill req">'+rj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'m\')" id="admTabM">Members'+((mj.pending)?(' <span class="pill req">'+mj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'d\')" id="admTabD">Deals</span></div>'
       +'<div id="admRequests">'+reqRows+'</div><div id="admMembers" style="display:none">'+memRows+'</div><div id="admDeals" style="display:none">'+dealRows+'</div>'
-      +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
-        +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Social queue <span style="text-transform:none;letter-spacing:0">— broad deals opted in for promotion</span></div>'
-        +socRows
-      +'</div>'
       +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
         +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Smart-match digest</div>'
         +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn ghost sm" onclick="adminDigest(true)">Preview</button><button class="btn acc sm" onclick="adminDigest(false)">Send digest now</button><span id="digMsg" style="font-size:12.5px;color:var(--mut)"></span></div>'
@@ -1873,9 +1795,9 @@ function renderActivity(){
     var mine=LISTINGS.filter(isMine);
     h=mine.length?mine.map(function(d){var reqs=INBOUND.filter(function(x){return x.listingId===d.id&&x.status==='pending';}).length;return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+'</span>'+(d.status==='off'?' <span class="pill dec">Off-market</span>':'')+(d.status==='mls'?' <span class="pill dec" style="background:var(--gold);color:var(--bg)">Moved to MLS</span>':'')+(reqs?(' <span class="pill req">'+reqs+' pending intro'+(reqs>1?'s':'')+'</span>'):'')+'</div><button class="btn ghost sm" onclick="openDetail(\''+d.id+'\')">Open</button></div>';}).join(''):'<div class="empty">You haven\'t posted a deal yet.</div>';
   } else if(ACTTAB==='requests'){
-    h=INBOUND.length?INBOUND.map(function(x){var sub=x.listing?(x.listing.area||x.listing.city||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(x.buyerName||x.buyer||'Buyer')+'</b> '+trustBadges(x.buyerVerified,x.buyerPof,x.buyerProducer)+' '+pill(x.status)+'<div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(sub)+' · '+esc(x.message||'(no note)')+'</div></div>'+(x.status==='pending'?'<button class="btn acc sm" onclick="setIntro(\''+x.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="setIntro(\''+x.id+'\',\'declined\')">Decline</button>':'<span style="color:var(--mut);font-size:12px">'+esc(x.buyer||'')+'</span>')+'</div>';}).join(''):'<div class="empty">No introduction requests yet.</div>';
+    h=INBOUND.length?INBOUND.map(function(x){var sub=x.listing?(x.listing.area||x.listing.city||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(x.buyerName||x.buyer||'Buyer')+'</b> '+trustBadges(x.buyerVerified,x.buyerPof,x.buyerProducer)+' '+pill(x.status)+'<div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(sub)+' · '+esc(x.message||'(no note)')+'</div></div>'+(x.status==='pending'?'<button class="btn acc sm" onclick="setIntro(\''+x.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="setIntro(\''+x.id+'\',\'declined\')">Decline</button>':(x.status==='approved'?'<button class="btn acc sm" onclick="close_(\'mActivity\');openThread(\''+esc(x.buyer)+'\',\''+esc(x.listingId||'')+'\')">💬 Deal room</button>':'<span style="color:var(--mut);font-size:12px">'+esc(x.buyer||'')+'</span>'))+'</div>';}).join(''):'<div class="empty">No introduction requests yet.</div>';
   } else if(ACTTAB==='sent'){
-    h=SENT.length?SENT.map(function(x){var l=x.listing?nL(x.listing):null;var sub=l?(l.submarket||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(sub||'Deal')+'</b> <span style="color:var(--mut)">· '+(l?money(l.price):'')+'</span> '+pill(x.status)+(x.status==='approved'&&l&&l.addr?('<div style="color:var(--acc2);font-size:13px;margin-top:4px">📍 '+esc(l.addr)+'</div>'):'')+'</div>'+(l?'<button class="btn ghost sm" onclick="openDetail(\''+l.id+'\')">Open</button>':'')+'</div>';}).join(''):'<div class="empty">You haven\'t requested any introductions yet.</div>';
+    h=SENT.length?SENT.map(function(x){var l=x.listing?nL(x.listing):null;var sub=l?(l.submarket||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(sub||'Deal')+'</b> <span style="color:var(--mut)">· '+(l?money(l.price):'')+'</span> '+pill(x.status)+(x.status==='approved'&&l&&l.addr?('<div style="color:var(--acc2);font-size:13px;margin-top:4px">📍 '+esc(l.addr)+'</div>'):'')+'</div>'+((x.status==='approved'&&l&&l.byEmail)?'<button class="btn acc sm" onclick="close_(\'mActivity\');openThread(\''+esc(l.byEmail)+'\',\''+esc(l.id)+'\')">💬 Deal room</button>':(l?'<button class="btn ghost sm" onclick="openDetail(\''+l.id+'\')">Open</button>':''))+'</div>';}).join(''):'<div class="empty">You haven\'t requested any introductions yet.</div>';
   } else {
     var x=BUYBOX;
     h=x?('<div class="reqrow"><div class="grow"><b>'+esc(x.propType||'Any type')+'</b> <span style="color:var(--mut)">· '+money(x.minPrice)+'–'+money(x.maxPrice)+'</span><div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(x.markets||'')+(x.notes?(' · '+esc(x.notes)):'')+'</div></div><button class="btn ghost sm" onclick="close_(\'mActivity\');openBuyBox()">Edit</button></div>'):'<div class="empty">No client needs posted yet. <button class="btn link" onclick="close_(\'mActivity\');openBuyBox()">Post one →</button></div>';
@@ -1900,18 +1822,33 @@ function renderThreads(){
   }).join(''):'<div class="empty">No messages yet. Open a deal and <b>Contact agent</b> to start a conversation.</div>';
   $('mMsgs').innerHTML='<div class="modal wide"><div class="mhead"><h3>Messages</h3><button class="x" onclick="close_(\'mMsgs\')">×</button></div><div class="mbody">'+body+'</div></div>';
 }
+function msgAtt(a){if(!a||!a.url)return '';var isImg=/^data:image\//.test(a.url)||/\.(png|jpe?g|gif|webp)$/i.test(a.name||'');
+  if(isImg)return '<a href="'+esc(a.url)+'" target="_blank" rel="noopener"><img src="'+esc(a.url)+'" alt="'+esc(a.name||'')+'" style="max-width:180px;max-height:150px;border-radius:8px;display:block;margin-top:4px"></a>';
+  return '<a href="'+esc(a.url)+'" target="_blank" rel="noopener" download="'+esc(a.name||'file')+'" style="display:inline-flex;align-items:center;gap:6px;margin-top:4px;color:inherit;text-decoration:underline;font-size:13px">📎 '+esc(a.name||'Document')+'</a>';}
 function openThread(other,listingId){
   api('/api/pm/thread?with='+encodeURIComponent(other)+(listingId?('&listingId='+encodeURIComponent(listingId)):'')).then(function(j){
-    var msgs=(j&&j.messages)||[];
+    var msgs=(j&&j.messages)||[];var L=j&&j.listing;
     var rows=msgs.map(function(m){
-      return '<div style="display:flex;justify-content:'+(m.mine?'flex-end':'flex-start')+';margin:6px 0"><div style="max-width:78%;background:'+(m.mine?'var(--acc)':'var(--card2)')+';color:'+(m.mine?'var(--bg)':'var(--tx)')+';border:1px solid var(--line2);border-radius:12px;padding:8px 12px;font-size:14px;line-height:1.45">'+(m.mine?'':'<div style="font-size:11px;font-weight:700;color:var(--mut2);margin-bottom:2px">'+esc(m.fromName||m.from)+'</div>')+esc(m.body)+'</div></div>';
-    }).join('')||'<div class="empty" style="padding:24px">No messages yet — say hello.</div>';
-    $('mMsgs').innerHTML='<div class="modal wide"><div class="mhead"><div><h3 style="font-size:16px">'+esc(other)+'</h3></div><button class="x" onclick="openMsgs()" title="Back">←</button></div><div class="mbody"><div id="thBody" style="max-height:46vh;overflow:auto;padding:2px">'+rows+'</div><div style="display:flex;gap:8px;margin-top:12px"><input id="thInput" placeholder="Write a message…" style="flex:1;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:11px 12px;font:inherit;font-size:14px" onkeydown="if(event.key===\'Enter\')sendThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\')"><button class="btn acc" onclick="sendThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\')">Send</button></div></div></div>';
+      return '<div style="display:flex;justify-content:'+(m.mine?'flex-end':'flex-start')+';margin:6px 0"><div style="max-width:78%;background:'+(m.mine?'var(--acc)':'var(--card2)')+';color:'+(m.mine?'var(--bg)':'var(--tx)')+';border:1px solid var(--line2);border-radius:12px;padding:8px 12px;font-size:14px;line-height:1.45">'+(m.mine?'':'<div style="font-size:11px;font-weight:700;color:var(--mut2);margin-bottom:2px">'+esc(m.fromName||m.from)+'</div>')+(m.body?esc(m.body):'')+msgAtt(m.att)+'</div></div>';
+    }).join('')||'<div class="empty" style="padding:24px">No messages yet — share the OM, rent roll, and take it from here.</div>';
+    var head=L?('<div class="dealroom-head"><div class="grow"><div class="rk mono">🔑 Deal room</div><b>'+esc(L.area||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(L.propType||'')+' · '+money(L.price)+'</span></div><button class="btn ghost sm" onclick="openDetail(\''+esc(L.id)+'\')">View deal</button></div>')
+      :('<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Direct message</div>');
+    $('mMsgs').innerHTML='<div class="modal wide"><div class="mhead"><div><h3 style="font-size:16px">'+esc(other)+'</h3></div><button class="x" onclick="openMsgs()" title="Back to messages">←</button></div><div class="mbody">'
+      +head
+      +'<div id="thBody" style="max-height:44vh;overflow:auto;padding:2px">'+rows+'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:12px;align-items:center"><input type="file" id="thFile" hidden onchange="attachThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\',this.files)"><button class="btn ghost" title="Attach a document or photo" onclick="$(\'thFile\').click()" style="flex:none;padding:11px 13px">📎</button><input id="thInput" placeholder="Write a message…" style="flex:1;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:11px 12px;font:inherit;font-size:14px" onkeydown="if(event.key===\'Enter\')sendThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\')"><button class="btn acc" onclick="sendThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\')">Send</button></div>'
+      +'<div id="thMsg" style="font-size:12px;color:var(--mut);margin-top:6px"></div></div></div>';
     open_('mMsgs');var tb=$('thBody');if(tb)tb.scrollTop=tb.scrollHeight;
   });
 }
 function sendThread(other,listingId){var el=$('thInput'),v=el?(el.value||'').trim():'';if(!v)return;el.value='';
   api('/api/pm/message',{to:other,listingId:listingId,body:v}).then(function(){openThread(other,listingId);loadThreads(function(){});});
+}
+function attachThread(other,listingId,files){
+  var f=files&&files[0];if(!f)return;var m=$('thMsg');if(m)m.textContent='Uploading '+(f.name||'file')+'…';
+  var send=function(url,name){api('/api/pm/message',{to:other,listingId:listingId,docUrl:url,docName:name}).then(function(j){if(j&&j.ok){openThread(other,listingId);loadThreads(function(){});}else if(m)m.textContent=(j&&j.message)||'Upload failed — try a smaller file.';});};
+  if(/^image\//.test(f.type)){downscaleImg(f,function(dataUrl){if(!dataUrl){if(m)m.textContent='Could not read that image.';return;}var b64=String(dataUrl).replace(/^data:[^,]*,/,'');api('/api/pm/upload',{name:f.name,mime:'image/jpeg',data:b64}).then(function(j){if(j&&j.ok&&j.url)send(j.url,f.name);else if(m)m.textContent=(j&&j.message)||'Upload failed.';});});}
+  else{var rd=new FileReader();rd.onload=function(){var b64=String(rd.result).replace(/^data:[^,]*,/,'');api('/api/pm/upload',{name:f.name,mime:f.type||'application/octet-stream',data:b64}).then(function(j){if(j&&j.ok&&j.url)send(j.url,f.name);else if(m)m.textContent=(j&&j.message)||'File too large — max 3MB for now.';});};rd.readAsDataURL(f);}
 }
 function openContact(id){
   var d=LISTINGS.find(function(x){return x.id===id;});if(!d)return;close_('mDetail');
@@ -1991,9 +1928,7 @@ function resetSubmitForm(){
   if($('sHideAddr'))$('sHideAddr').checked=false;
   if($('sType'))$('sType').value=(TYPES[0]||'');
   if($('sDist'))$('sDist').value='broad';
-  if($('sSocial'))$('sSocial').checked=true;
   SUBMIT_DOCS=[];SUBMIT_PHOTOS=[];SUBMIT_COORDS=null;SUBMIT_STATE='';
-  syncSocial();
 }
 function openSubmit(){EDIT_ID=null;resetSubmitForm();if($('sTitle'))$('sTitle').textContent='Post a deal';if($('sBtn'))$('sBtn').textContent='Post deal';if($('sMsg'))$('sMsg').textContent='';
   fillFilters();attachMoney(['sPrice','sNoi','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();open_('mSubmit');}
@@ -2010,8 +1945,6 @@ function openEdit(id){
   set('sSf',d.sf?fmtMoneyInput(String(d.sf)):'');set('sBeds',d.beds);set('sBaths',d.baths);set('sYb',d.yb);
   set('sDesc',d.desc);if($('sDist'))$('sDist').value=(d.dist||'broad');
   if($('sHideAddr'))$('sHideAddr').checked=!!d.hideAddress;
-  if($('sSocial'))$('sSocial').checked=(d.social!==false);
-  syncSocial();
   SUBMIT_DOCS=Array.isArray(d.docs)?d.docs.slice():[];
   SUBMIT_PHOTOS=Array.isArray(d.photos)?d.photos.slice():[];
   SUBMIT_COORDS=(d.lat&&d.lng)?{lat:d.lat,lng:d.lng}:null;SUBMIT_STATE=String(d.state||'').toUpperCase();
