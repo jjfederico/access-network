@@ -240,29 +240,30 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .btn.p:hover{background:#0056c9;box-shadow:0 10px 26px -12px rgba(0,100,229,.7)}
 .btn.g{border:1px solid var(--line2);color:var(--ink)}
 .btn.g:hover{border-color:var(--acc);color:var(--acc);background:rgba(0,100,229,.04)}
-/* ── HERO: light, with faded architectural backdrop ── */
-.hero{background:#fff;color:var(--ink);overflow:hidden}
-.hero .herovid,.hero .scrim,.hero .mesh,.hero .lines{display:none!important}
-.hero::before{content:"";position:absolute;inset:0;z-index:0;background:url('/brand/axess/hero.png') center bottom/100% auto no-repeat}
-.hero::after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.3) 40%,rgba(255,255,255,0) 78%)}
-.hero .in{position:relative;z-index:2;text-align:center;padding:92px 0 84px}
-.hero .ey{color:var(--acc);background:rgba(0,100,229,.08);border:1px solid rgba(0,100,229,.22)}
-.hero h1{color:var(--ink);font-weight:800;letter-spacing:-.03em}
-.hero h1 .u{color:var(--acc);border-bottom:0;padding:0;text-decoration:none}
-.hero p.sub{color:var(--mut)}
-.hero p.sub b{color:var(--ink)!important}
+/* ── HERO: dark, rotating architectural photos ── */
+.hero{background:var(--ink);color:#fff;overflow:hidden;position:relative}
+.hero .mesh,.hero .lines{display:none!important}
+.hero .hbg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.4s ease}
+.hero .hbg.on{opacity:1}
+.hero .scrim{position:absolute;inset:0;z-index:1;display:block!important;background:linear-gradient(180deg,rgba(9,12,18,.62) 0%,rgba(9,12,18,.66) 45%,rgba(9,12,18,.9) 100%)}
+.hero .in{position:relative;z-index:2;text-align:center;padding:96px 0 88px}
+.hero .ey{color:#cfe0ff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25)}
+.hero h1{color:#fff;font-weight:800;letter-spacing:-.03em;text-shadow:0 2px 24px rgba(0,0,0,.35)}
+.hero h1 .u{color:#7fb0ff;border-bottom:0;padding:0;text-decoration:none}
+.hero p.sub{color:rgba(255,255,255,.86)}
+.hero p.sub b{color:#fff!important}
 .hero .cta{justify-content:center}
 .hero .btn.p{background:var(--acc)!important;color:#fff!important}
-.hero .btn.ghostlight{background:#fff;color:var(--ink);border:1px solid var(--line2)}
-.hero .btn.ghostlight:hover{border-color:var(--acc);color:var(--acc)}
-.hero .mini{color:var(--mut);font-weight:600}
+.hero .btn.demo{background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.55);backdrop-filter:blur(4px)}
+.hero .btn.demo:hover{background:rgba(255,255,255,.18);border-color:#fff}
+.hero .btn.demo .pc{width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;display:inline-flex;align-items:center;justify-content:center;margin-right:2px}
+.hero .mini{color:rgba(255,255,255,.8);font-weight:600}
 @media(max-width:600px){
-  .hero .in{padding:34px 0 220px}          /* tighten top gap; leave room so skyline sits below the text */
+  .hero .in{padding:56px 0 52px}
   .hero h1{font-size:clamp(32px,8.5vw,42px)}
   .hero p.sub{font-size:15px}
-  .hero .mini{margin-top:22px;background:rgba(255,255,255,.75);display:inline-block;padding:6px 10px;border-radius:8px}
-  .hero::before{background-size:auto 200px}   /* skyline as a shorter band along the bottom */
-  .hero::after{background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.65) 55%,rgba(255,255,255,0) 100%)}
+  .hero .cta{flex-direction:column;align-items:stretch}
+  .hero .cta .btn{justify-content:center}
 }
 /* stats — clean white cards */
 .statwrap{margin-top:-30px}
@@ -271,7 +272,11 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .stats .s .v.a{color:var(--acc)}
 /* steps + feature icons */
 .step .n{background:var(--acc);color:#fff}
-.deal .ph{background:linear-gradient(135deg,#EEF2F8,#E3E9F2);color:#9aa6b8}
+.deal .ph{background:linear-gradient(135deg,#E5EDF9,#EEF2F8);color:var(--acc);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:0;overflow:hidden;position:relative}
+.deal .ph::before{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,rgba(0,100,229,.055) 0 10px,transparent 10px 20px)}
+.deal .ph svg.lk{width:32px;height:32px;position:relative;z-index:1}
+.deal .ph .lktxt{position:relative;z-index:1;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#5B6472;font-weight:700}
+.deal .ph .tico{position:absolute;top:9px;left:9px;z-index:2;width:27px;height:27px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 9px -2px rgba(11,12,14,.28)}
 .deal .type{color:var(--acc)}
 /* pricing card stays dark (near-black) for contrast; accents to blue */
 .price .amt small{color:rgba(255,255,255,.55)!important}
@@ -324,14 +329,14 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 </div></div>
 
 <header class="hero">
-  <video class="herovid" autoplay muted playsinline></video>
-  <div class="scrim"></div><div class="mesh"></div><div class="lines"></div>
+  <div class="hbg on" id="hbg1"></div><div class="hbg" id="hbg2"></div>
+  <div class="scrim"></div>
   <div class="wrap in">
     <span class="ey">◆ Invite-only · Agent-to-agent · Massachusetts</span>
     <h1>The deals that never <span class="u">hit the market</span>.</h1>
-    <p class="sub">An invite-only, <b style="color:var(--bone)">agent-to-agent</b> network for licensed Massachusetts agents — <b style="color:var(--bone)">not a public, open-market platform</b>. Trade off-market property of every kind — <b style="color:var(--bone)">single-family, condos, multifamily, commercial, and land</b> — directly with other vetted agents, post what your clients need, and keep every deal private until you choose to go public.</p>
-    <div class="cta"><button class="btn p big" onclick="openReq()">Request access</button><button class="btn ghostlight big" onclick="location.href='/demo.html'">▶ See a live demo</button></div>
-    <div class="mini">FOUNDING MEMBERS JOIN FREE · $50/MO AFTER LAUNCH · MASSACHUSETTS · <a href="/demo.html" style="color:inherit;text-decoration:underline">take the 60-sec demo</a></div>
+    <p class="sub">An invite-only, <b>agent-to-agent</b> network for licensed Massachusetts agents — <b>not a public, open-market platform</b>. Trade off-market property of every kind — <b>single-family, condos, multifamily, commercial, and land</b> — directly with other vetted agents, post what your clients need, and keep every deal private until you choose to go public.</p>
+    <div class="cta"><button class="btn p big" onclick="openReq()">Request access</button><button class="btn demo big" onclick="location.href='/demo.html'"><span class="pc"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>Watch the 60-second demo</button></div>
+    <div class="mini">FOUNDING MEMBERS JOIN FREE · $50/MO AFTER LAUNCH · MASSACHUSETTS</div>
   </div>
 </header>
 
@@ -538,24 +543,27 @@ var D=[
   {t:'Multifamily',s:'Dorchester',pr:'$2.95M',cm:'2.0% BBC'},
   {t:'Mixed-use',s:'Cambridge',pr:'$3.40M',cm:'3.0% BBC'}
 ];
-document.getElementById('grid').innerHTML=D.map(function(d){return '<div class="deal"><div class="ph">▦<div class="lock">🔒 ADDRESS HIDDEN</div></div><div class="bd"><div class="t">'+d.t+'</div><div class="s">'+d.s+'</div><div class="foot"><div class="pr mono">'+d.pr+'</div><div class="cm">'+d.cm+'</div></div></div></div>';}).join('');
-/* hero video playlist — plays hero.mp4, hero2.mp4, hero3.mp4 … in a loop.
-   Drop more files (hero2.mp4, hero3.mp4, up to hero8.mp4) in the repo root to add them.
-   Missing numbers 404 and are skipped; with one video it just loops that one. */
+function typeIcon(t){var m={'Multifamily':'🏢','Single-family':'🏠','Condo':'🏙️','Townhouse':'🏘️','Land':'🌳','Mixed-use':'🏬','Retail / Commercial':'🏪','Commercial':'🏪','Industrial':'🏭','Development site':'🏗️'};return m[t]||'📍';}
+var LOCK_SVG='<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.7" width="16" height="10.3" rx="2.4"/><path d="M8 10.7V7a4 4 0 0 1 8 0v3.7"/></svg>';
+document.getElementById('grid').innerHTML=D.map(function(d){return '<div class="deal"><div class="ph"><span class="tico">'+typeIcon(d.t)+'</span>'+LOCK_SVG+'<div class="lktxt">Off-market · Address hidden</div></div><div class="bd"><div class="t">'+d.t+'</div><div class="s">'+d.s+'</div><div class="foot"><div class="pr mono">'+d.pr+'</div><div class="cm">'+d.cm+'</div></div></div></div>';}).join('');
+/* hero photo rotation — random start, crossfades through the pool every 6s.
+   Add more by dropping h6.jpg, h7.jpg … in /brand/axess/heroes/ and extending POOL. */
 (function(){
-  var v=document.querySelector('.herovid'); if(!v) return;
-  var list=['/brand/hero.mp4','/brand/hero2.mp4','/brand/hero3.mp4','/brand/hero4.mp4','/brand/hero5.mp4','/brand/hero6.mp4','/brand/hero7.mp4','/brand/hero8.mp4'];
-  var i=0, dead={}, tries=0;
-  function play(idx){ i=idx; v.src=list[i]; try{v.load();}catch(e){} v.play().catch(function(){}); }
-  function next(){
-    if(Object.keys(dead).length>=list.length) return;   // nothing playable — animated fallback shows
-    tries=0;
-    do{ i=(i+1)%list.length; tries++; } while(dead[i] && tries<=list.length);
-    play(i);
-  }
-  v.addEventListener('ended', next);
-  v.addEventListener('error', function(){ dead[i]=1; if(Object.keys(dead).length<list.length) next(); });
-  play(0);
+  var POOL=['/brand/axess/heroes/h1.jpg','/brand/axess/heroes/h2.jpg','/brand/axess/heroes/h3.jpg','/brand/axess/heroes/h4.jpg','/brand/axess/heroes/h5.jpg','/brand/axess/heroes/h6.jpg','/brand/axess/heroes/h7.jpg','/brand/axess/heroes/h8.jpg','/brand/axess/heroes/h9.jpg'];
+  var a=document.getElementById('hbg1'), b=document.getElementById('hbg2');
+  if(!a||!b) return;
+  // random shuffle so the order differs each visit
+  for(var k=POOL.length-1;k>0;k--){var j=Math.floor(Math.random()*(k+1));var t=POOL[k];POOL[k]=POOL[j];POOL[j]=t;}
+  POOL.forEach(function(src){var im=new Image();im.src=src;});   // preload
+  var idx=0, top=a;
+  a.style.backgroundImage='url('+POOL[0]+')'; a.classList.add('on');
+  if(POOL.length<2) return;
+  setInterval(function(){
+    idx=(idx+1)%POOL.length;
+    var nextEl=(top===a)?b:a;
+    nextEl.style.backgroundImage='url('+POOL[idx]+')';
+    nextEl.classList.add('on'); top.classList.remove('on'); top=nextEl;
+  },6000);
 })();
 /* ── live stats ticker — real aggregate counts from the database, animated ── */
 (function(){
