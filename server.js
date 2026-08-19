@@ -998,6 +998,26 @@ app.post('/api/pm/request', async (req, res) => {
     res.json({ ok: true, linkSent });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
+// ── Contact / support: anyone (member or not) can send a question or issue. ──
+app.post('/api/pm/contact', async (req, res) => {
+  const b = req.body || {};
+  const S = (v, n) => String(v == null ? '' : v).slice(0, n || 120).trim();
+  const name = S(b.name, 100), email = S(b.email, 120).toLowerCase();
+  const subject = S(b.subject, 120) || 'General question';
+  const message = S(b.message, 4000);
+  if (!name || !email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Name and a valid email are required.' });
+  if (!message || message.length < 3) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Please add a short message.' });
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip;
+  try {
+    const now = new Date().toISOString();
+    const list = await pmLoad('pm_contacts');
+    list.push({ id: pmId('C'), name, email, subject, message, ip, at: now, status: 'new' });
+    await pmSave('pm_contacts', list.length > 3000 ? list.slice(-3000) : list);
+    if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · contact form: ' + subject, 'New message from the AXESS contact form.\n\nName: ' + name + '\nEmail: ' + email + '\nSubject: ' + subject + '\n\n' + message + '\n\nReply directly to ' + email + '.'); } catch (e) {} }
+    try { await pmSendEmail(email, 'AXESS · we got your message', 'Hi ' + name + ',\n\nThanks for reaching out to AXESS — we\'ve received your message and will get back to you shortly.\n\nYour message:\n"' + message + '"\n\n— The AXESS team'); } catch (e) {}
+    res.json({ ok: true });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
 app.get('/api/pm/admin/requests', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {

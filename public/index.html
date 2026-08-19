@@ -293,7 +293,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
     <div><div class="wm">AXESS</div><div class="sub">A Real Estate Network</div></div>
   </div>
   <div class="sp"></div>
-  <div class="nlinks"><a href="#how">How it works</a><a href="#feed">Deals</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></div>
+  <div class="nlinks"><a href="#how">How it works</a><a href="#feed">Deals</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a onclick="openContact()" style="cursor:pointer">Contact</a></div>
   <div class="soon" title="Expanding soon"><span class="dot"></span>Coming soon · <b id="soonCity">Providence, RI</b></div>
   <button class="btn g" onclick="openSignin()">Sign in</button>
   <button class="btn p" onclick="openReq()">Request access</button>
@@ -428,7 +428,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
     <svg class="ico" viewBox="0 0 100 100" style="width:28px;height:28px" aria-label="AXESS" fill="var(--ink)"><path d="M50 0 100 100H74L50 30 26 100H0Z"/><rect x="22.4" y="56.6" width="30.3" height="14.5"/></svg>
     <div><div class="wm">AXESS</div></div>
   </div>
-  <div class="links"><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a>Terms</a><a>Privacy</a></div>
+  <div class="links"><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a onclick="openContact()" style="cursor:pointer">Contact</a><a>Terms</a><a>Privacy</a></div>
   <div class="mono">© 2026 AXESS — a Citicore Properties Inc network. Not an MLS.</div>
 </div></div>
 
@@ -456,6 +456,47 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
     </div>
   </div>
 </div>
+
+<!-- CONTACT US -->
+<div class="rbg" id="contactBg" onclick="if(event.target===this)closeContact()">
+  <div class="rmodal" style="position:relative;max-width:500px">
+    <button class="rx" onclick="closeContact()" aria-label="Close">×</button>
+    <div class="rhead"><h3>Contact us</h3><p>Questions, issues, or just want to learn more? Send us a note and we'll get back to you by email.</p></div>
+    <div class="rbody" id="contactBody">
+      <div class="rgrid">
+        <div class="rf"><label>Your name <span class="req">*</span></label><input id="cName" autocomplete="name"></div>
+        <div class="rf"><label>Email <span class="req">*</span></label><input id="cEmail" type="email" autocomplete="email"></div>
+      </div>
+      <div class="rf full"><label>Subject</label>
+        <select id="cSubject"><option>General question</option><option>Trouble signing in</option><option>Membership &amp; billing</option><option>Report a bug or issue</option><option>Partnership / press</option><option>Something else</option></select>
+      </div>
+      <div class="rf full"><label>Message <span class="req">*</span></label><textarea id="cMessage" rows="5" placeholder="How can we help?"></textarea></div>
+      <div class="rmsg" id="cMsg"></div>
+      <button class="btn p big" id="cBtn" style="width:100%;justify-content:center" onclick="sendContact()">Send message</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openContact(){document.getElementById('contactBg').classList.add('on');document.body.style.overflow='hidden';setTimeout(function(){var n=document.getElementById('cName');if(n)n.focus();},60);}
+function closeContact(){document.getElementById('contactBg').classList.remove('on');document.body.style.overflow='';}
+function sendContact(){
+  var name=(document.getElementById('cName').value||'').trim();
+  var email=(document.getElementById('cEmail').value||'').trim();
+  var subject=(document.getElementById('cSubject').value||'').trim();
+  var message=(document.getElementById('cMessage').value||'').trim();
+  var msg=document.getElementById('cMsg'), btn=document.getElementById('cBtn');
+  if(!name||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg.textContent='Please enter your name and a valid email.';msg.style.color='#C0492E';return;}
+  if(message.length<3){msg.textContent='Please add a short message.';msg.style.color='#C0492E';return;}
+  msg.textContent='';btn.disabled=true;btn.textContent='Sending…';
+  fetch('/api/pm/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,subject:subject,message:message})})
+    .then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok){document.getElementById('contactBody').innerHTML='<div class="rdone"><div class="big">Message sent ✓</div><p style="color:var(--mut);font-size:14px">Thanks, '+name.replace(/</g,'')+'. We\'ve got your note and will reply to '+email.replace(/</g,'')+' shortly.</p><button class="btn g big" style="margin-top:14px" onclick="closeContact()">Close</button></div>';}
+      else{msg.textContent=(j&&j.message)||'Something went wrong — please try again.';msg.style.color='#C0492E';btn.disabled=false;btn.textContent='Send message';}
+    }).catch(function(){msg.textContent='Network error — please try again.';msg.style.color='#C0492E';btn.disabled=false;btn.textContent='Send message';});
+}
+if(location.hash==='#contact'){openContact();}
+</script>
 
 <script>
 var D=[
