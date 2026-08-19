@@ -1681,8 +1681,13 @@ function saveNotifPrefs(){
 }
 /* ── admin panel (owner) ── */
 function openAdmin(){
-  Promise.all([api('/api/pm/admin/members'),api('/api/pm/feed'),api('/api/pm/admin/requests')]).then(function(r){
-    var mj=r[0]||{},fj=r[1]||{},rj=r[2]||{};var members=(mj&&mj.members)||[];var deals=(fj.listings||[]).map(nL).filter(Boolean);var requests=(rj&&rj.requests)||[];
+  Promise.all([api('/api/pm/admin/members'),api('/api/pm/feed'),api('/api/pm/admin/requests'),api('/api/pm/admin/invites')]).then(function(r){
+    var mj=r[0]||{},fj=r[1]||{},rj=r[2]||{},vj=r[3]||{};var members=(mj&&mj.members)||[];var deals=(fj.listings||[]).map(nL).filter(Boolean);var requests=(rj&&rj.requests)||[];var invites=(vj&&vj.invites)||[];
+    var invRows=invites.length?invites.map(function(v){
+      var st=v.status==='verified'?'<span class="pill appr">Signed up · verified</span>':v.status==='signed_up'?'<span class="pill appr">Signed up</span>':'<span class="pill req">Invite sent</span>';
+      var resend=v.status==='invited'?'<button class="btn ghost sm" onclick="resendInvite(\''+esc(v.email)+'\')">Resend</button>':'';
+      return '<div class="reqrow"><div class="grow"><b>'+esc(v.name||v.email)+'</b> '+st+'<div style="color:var(--mut2);font-size:11.5px;margin-top:3px">'+esc(v.email)+' · invited '+ago(v.at)+'</div></div>'+resend+'</div>';
+    }).join(''):'<div class="empty">No invites sent yet. Use “Invite a member” in your account menu.</div>';
     var reqRows=requests.length?requests.map(function(q){
       var badge=q.status==='approved'?'<span class="pill appr">Approved</span>':q.status==='denied'?'<span class="pill dec">Denied</span>':'<span class="pill req">Pending</span>';
       var act=q.status==='pending'?('<button class="btn acc sm" onclick="adminReq(\''+q.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="adminReq(\''+q.id+'\',\'denied\')">Deny</button>'):'';
@@ -1710,8 +1715,8 @@ function openAdmin(){
       return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+money(d.price)+' · '+esc(d.by||d.byEmail)+'</span>'+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★</span>':'')+(d.expired?' <span class="pill dec">Expired</span>':'')+(d.status==='mls'?' <span class="pill dec">On MLS</span>':'')+'</div><button class="btn '+(d.featured?'ghost':'acc')+' sm" onclick="adminFeature(\''+d.id+'\','+(!d.featured)+')">'+(d.featured?'Unfeature':'Feature')+'</button></div>';
     }).join(''):'<div class="empty">No deals.</div>';
     $('mAdmin').innerHTML='<div class="modal wide"><div class="mhead"><h3>Admin</h3><button class="x" onclick="close_(\'mAdmin\')">×</button></div><div class="mbody">'
-      +'<div class="tabs"><span class="tab on" onclick="admTab(\'r\')" id="admTabR">Requests'+((rj.pending)?(' <span class="pill req">'+rj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'m\')" id="admTabM">Members'+((mj.pending)?(' <span class="pill req">'+mj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'d\')" id="admTabD">Deals</span></div>'
-      +'<div id="admRequests">'+reqRows+'</div><div id="admMembers" style="display:none">'+memRows+'</div><div id="admDeals" style="display:none">'+dealRows+'</div>'
+      +'<div class="tabs"><span class="tab on" onclick="admTab(\'r\')" id="admTabR">Requests'+((rj.pending)?(' <span class="pill req">'+rj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'m\')" id="admTabM">Members'+((mj.pending)?(' <span class="pill req">'+mj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'i\')" id="admTabI">Invites'+(invites.length?(' <span class="pill req">'+invites.length+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'d\')" id="admTabD">Deals</span></div>'
+      +'<div id="admRequests">'+reqRows+'</div><div id="admMembers" style="display:none">'+memRows+'</div><div id="admInvites" style="display:none">'+invRows+'</div><div id="admDeals" style="display:none">'+dealRows+'</div>'
       +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
         +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Smart-match digest</div>'
         +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn ghost sm" onclick="adminDigest(true)">Preview</button><button class="btn acc sm" onclick="adminDigest(false)">Send digest now</button><span id="digMsg" style="font-size:12.5px;color:var(--mut)"></span></div>'
@@ -1726,7 +1731,8 @@ function openAdmin(){
     open_('mAdmin');
   });
 }
-function admTab(t){$('admRequests').style.display=t==='r'?'':'none';$('admMembers').style.display=t==='m'?'':'none';$('admDeals').style.display=t==='d'?'':'none';$('admTabR').classList.toggle('on',t==='r');$('admTabM').classList.toggle('on',t==='m');$('admTabD').classList.toggle('on',t==='d');}
+function admTab(t){$('admRequests').style.display=t==='r'?'':'none';$('admMembers').style.display=t==='m'?'':'none';var ai=$('admInvites');if(ai)ai.style.display=t==='i'?'':'none';$('admDeals').style.display=t==='d'?'':'none';$('admTabR').classList.toggle('on',t==='r');$('admTabM').classList.toggle('on',t==='m');var ti=$('admTabI');if(ti)ti.classList.toggle('on',t==='i');$('admTabD').classList.toggle('on',t==='d');}
+function resendInvite(email){api('/api/pm/admin/invite',{email:email}).then(function(j){openAdmin();});}
 function adminReq(id,decision){api('/api/pm/admin/request/decide',{id:id,decision:decision}).then(function(){openAdmin();loadAdminDot();});}
 function adminApprove(email,status){api('/api/pm/admin/approve',{email:email,status:status}).then(function(){openAdmin();loadAdminDot();});}
 function adminFeature(id,on){api('/api/pm/admin/feature',{id:id,featured:on}).then(function(){openAdmin();loadAll();});}

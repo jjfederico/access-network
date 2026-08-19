@@ -1039,6 +1039,27 @@ app.post('/api/pm/admin/invite', ensureAuth, pmGate, async (req, res) => {
     res.json({ ok: true });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
+// Owner: list invites sent, with whether each person has signed up yet.
+app.get('/api/pm/admin/invites', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const [invs, profs] = await Promise.all([pmLoad('pm_invites'), pmLoad('pm_profiles')]);
+    const profBy = {}; (profs || []).forEach(p => { if (p && p.email) profBy[_lc(p.email)] = p; });
+    // De-dupe by email, keep the most recent invite; attach signup status.
+    const byEmail = {};
+    (invs || []).filter(Boolean).forEach(v => {
+      const e = _lc(v.email); if (!e) return;
+      if (!byEmail[e] || String(v.at) > String(byEmail[e].at)) byEmail[e] = v;
+    });
+    const list = Object.keys(byEmail).map(e => {
+      const v = byEmail[e], p = profBy[e];
+      let status = 'invited';
+      if (p) status = (p.status === 'approved' || p.verified) ? 'verified' : 'signed_up';
+      return { email: v.email, at: v.at, by: v.by || '', status, name: (p && p.name) || '' };
+    }).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    res.json({ ok: true, invites: list, pending: list.filter(i => i.status === 'invited').length });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
 app.get('/api/pm/admin/requests', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
