@@ -94,6 +94,7 @@ function pmReciprocity(email, listings, boxes, profs) {
 // require pmApproved (verified), so pending can look but not post or contact.
 async function pmGate(req, res, next) {
   if (!req.user || !req.user.email) return res.status(403).json({ ok: false, error: 'forbidden' });
+  if (req.user.deactivated && req.user.role !== 'owner') return res.status(403).json({ ok: false, error: 'deactivated' });
   if (req.user.role === 'owner' || req.user.status === 'approved' || req.user.status === 'pending') return next();
   return res.status(403).json({ ok: false, error: 'not_approved' });
 }
@@ -908,7 +909,7 @@ app.get('/api/pm/admin/members', ensureAuth, pmGate, async (req, res) => {
   try {
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
-    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', state: p.state || 'MA', status: p.status || 'pending', verified: !!p.verified, producer: !!p.producer, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', attested: !!(p.attestation && p.attestation.accepted), attestedAt: (p.attestation && p.attestation.at) || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
+    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', state: p.state || 'MA', status: p.status || 'pending', verified: !!p.verified, producer: !!p.producer, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', attested: !!(p.attestation && p.attestation.accepted), attestedAt: (p.attestation && p.attestation.at) || '', deactivated: !!p.deactivated, deactivatedAt: p.deactivatedAt || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.deactivated ? 1 : 0) - (b.deactivated ? 1 : 0) || (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
     res.json({ ok: true, members, pending: members.filter(m => m.status === 'pending').length, pofPending: members.filter(m => m.pof === 'pending').length });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -929,6 +930,26 @@ app.post('/api/pm/admin/approve', ensureAuth, pmGate, async (req, res) => {
     await pmSave('pm_profiles', profs);
     try { await pmSendEmail(email, 'AXESS · your membership was ' + decision, decision === 'approved' ? 'You\'re verified and in. Sign in to AXESS to post deals, request intros, and message members.' : 'Your AXESS application was not approved at this time.'); } catch (e) {}
     res.json({ ok: true, email, status: decision });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
+// Deactivate / reactivate a member. Soft-only: flips a flag, never touches the
+// member's records (profile, listings, payout info, history all preserved). A
+// deactivated member fails pmGate and can no longer reach the app. Reversible.
+app.post('/api/pm/admin/deactivate', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const b = req.body || {};
+  const email = _lc(b.email);
+  const on = b.deactivated !== false; // default = deactivate
+  if (!email) return res.status(400).json({ ok: false, error: 'no_email' });
+  if (email === _lc(ADMIN)) return res.status(400).json({ ok: false, error: 'cant_deactivate_owner' });
+  try {
+    const profs = await pmLoad('pm_profiles');
+    const idx = profs.findIndex(p => p && _lc(p.email) === email);
+    if (idx < 0) return res.status(404).json({ ok: false, error: 'not_found' });
+    profs[idx].deactivated = on;
+    profs[idx].deactivatedAt = on ? new Date().toISOString() : '';
+    await pmSave('pm_profiles', profs);
+    res.json({ ok: true, email, deactivated: on });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.post('/api/pm/admin/verify', ensureAuth, pmGate, async (req, res) => {

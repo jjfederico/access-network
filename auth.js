@@ -75,8 +75,10 @@ async function userFor(email) {
   if (!e) return null;
   const p = await profileFor(e);
   const role = (e === ADMIN) ? 'owner' : 'member';
-  const status = role === 'owner' ? 'approved' : (p && p.status) || 'none';
-  return { email: e, name: (p && p.name) || '', brokerage: (p && p.brokerage) || '', status, role };
+  // Deactivated members keep every record but lose access — the gate reads this flag.
+  const deactivated = role !== 'owner' && !!(p && p.deactivated);
+  const status = role === 'owner' ? 'approved' : (deactivated ? 'deactivated' : (p && p.status) || 'none');
+  return { email: e, name: (p && p.name) || '', brokerage: (p && p.brokerage) || '', status, role, deactivated };
 }
 
 // Create a login token and email the one-tap sign-in link. Used by the signup
