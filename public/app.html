@@ -1,17 +1,17 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ACCESS · Off-Market Investment Network</title>
-<link rel="icon" type="image/svg+xml" href="/brand/favicon/favicon.svg">
-<link rel="icon" href="/brand/favicon/favicon-32.png" sizes="32x32">
-<link rel="apple-touch-icon" href="/brand/favicon/apple-touch-icon-180.png">
+<title>AXESS · Off-Market Real Estate Network</title>
+<link rel="icon" type="image/svg+xml" href="/brand/axess/favicon/favicon.svg">
+<link rel="icon" href="/brand/axess/favicon/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/brand/axess/favicon/apple-touch-icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* ACCESS · cool neutral canvas (not beige) so white cards pop, with tinted tiles */
+  /* AXESS · cool neutral canvas (not beige) so white cards pop, with tinted tiles */
   --bg:#ECEEF2;--bg2:#FFFFFF;--card:#FFFFFF;--card2:#F1F3F7;--line:#E1E4EA;--line2:#CFD4DD;
-  --tx:#1A1C22;--mut:#5F636D;--mut2:#8A8F9A;--acc:#17418A;--acc2:#17418A;--accdim:#E9F0FA;
-  --gold:#B4882E;--bad:#C0492E;--badbg:#FBEAE5;--warn:#8A6A1E;--blue:#17418A;
+  --tx:#1A1C22;--mut:#5F636D;--mut2:#8A8F9A;--acc:#1D5A4A;--acc2:#35A07F;--accdim:#E7F1EC;
+  --gold:#B4882E;--bad:#C0492E;--badbg:#FBEAE5;--warn:#8A6A1E;--blue:#1D5A4A;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -30,18 +30,18 @@ a{color:inherit;text-decoration:none}
 .navMenu .navmsg{display:none}
 @media(max-width:560px){.nav .nlink.hideS{display:none}.navMenu .navmsg{display:flex}}
 .brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:18px;letter-spacing:.02em}
-.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px 2px rgba(16,185,129,.6)}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px 2px rgba(53,160,127,.6)}
 .brand .rb{width:30px;height:30px;border-radius:8px;display:block;flex:none}
 .brand small{font-weight:600;color:var(--mut);font-size:11px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
 .nav .sp{flex:1}
 .nlink{color:var(--mut);font-weight:600;font-size:13.5px;padding:8px 10px;border-radius:8px;cursor:pointer}
 .nlink:hover{color:var(--tx);background:var(--card)}
 .who{font-size:12.5px;color:var(--mut);display:flex;align-items:center;gap:8px}
-.who .av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),#0c7a58);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#04150f}
+.who .av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),#164A3C);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#04150f}
 .btn{border:0;border-radius:11px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;padding:11px 18px;transition:transform .08s,box-shadow .15s,background .15s;white-space:nowrap}
 .btn:active{transform:translateY(1px)}
-.btn.acc{background:linear-gradient(135deg,var(--acc2),var(--acc));color:#04150f;box-shadow:0 6px 20px -6px rgba(16,185,129,.55)}
-.btn.acc:hover{box-shadow:0 10px 28px -6px rgba(16,185,129,.7)}
+.btn.acc{background:linear-gradient(135deg,var(--acc2),var(--acc));color:#04150f;box-shadow:0 6px 20px -6px rgba(53,160,127,.55)}
+.btn.acc:hover{box-shadow:0 10px 28px -6px rgba(53,160,127,.7)}
 .btn.ghost{background:var(--card2);color:var(--tx);border:1px solid var(--line2)}
 .btn.ghost:hover{border-color:#3a4552;background:#1b212a}
 .btn.sm{padding:8px 13px;font-size:12.5px;border-radius:9px}
@@ -49,10 +49,10 @@ a{color:inherit;text-decoration:none}
 /* ── hero ── */
 .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
 .hero::before{content:"";position:absolute;inset:-40% 0 auto 0;height:520px;background:
-  radial-gradient(600px 300px at 22% 20%,rgba(16,185,129,.20),transparent 60%),
+  radial-gradient(600px 300px at 22% 20%,rgba(53,160,127,.20),transparent 60%),
   radial-gradient(700px 320px at 85% 0%,rgba(91,140,255,.14),transparent 60%);pointer-events:none}
 .hero .in{position:relative;padding:24px 0 18px}
-.ey{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2);background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.28);padding:6px 12px;border-radius:100px}
+.ey{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2);background:rgba(53,160,127,.10);border:1px solid rgba(53,160,127,.28);padding:6px 12px;border-radius:100px}
 .hero h1{font-size:clamp(34px,5.4vw,58px);line-height:1.04;font-weight:900;letter-spacing:-.025em;margin:20px 0 0;max-width:14ch}
 .hero h1 .g{background:linear-gradient(120deg,var(--acc2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p.sub{font-size:clamp(15px,2vw,18.5px);color:var(--mut);max-width:56ch;margin:18px 0 0;font-weight:450}
@@ -78,7 +78,7 @@ section{padding:40px 0}
 .filters select,.filters input{background:var(--bg2);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:9px 12px;font:inherit;font-size:13px;font-weight:600;height:38px}
 .filters select{appearance:none;-webkit-appearance:none;padding-right:32px;cursor:pointer;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6A63' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 11px center}
 .filters select:hover,.filters input:hover{border-color:var(--mut2)}
-.filters select:focus,.filters input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(23,65,138,.1)}
+.filters select:focus,.filters input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(29,90,74,.1)}
 .filters .fx{flex:1;min-width:120px}
 .chipset{display:flex;gap:7px;flex-wrap:wrap}
 .chip{border:1px solid var(--line2);background:var(--bg2);color:var(--mut);border-radius:100px;padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer}
@@ -95,12 +95,12 @@ section{padding:40px 0}
 .deal .type{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--acc);padding-top:3px}
 .deal .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .bdg{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px;border-radius:6px;background:var(--card2);border:1px solid var(--line2);color:var(--mut);white-space:nowrap}
-.bdg.broad{color:var(--acc);border-color:rgba(23,65,138,.28)}
+.bdg.broad{color:var(--acc);border-color:rgba(29,90,74,.28)}
 .bdg.private{color:var(--gold);border-color:rgba(180,136,46,.42)}
-.bdg.pocket{color:var(--acc);border-color:rgba(23,65,138,.28)}
+.bdg.pocket{color:var(--acc);border-color:rgba(29,90,74,.28)}
 .bdg.feat{color:#8A6A12;background:rgba(180,136,46,.14);border-color:rgba(180,136,46,.42)}
 html.dark .bdg.feat{color:#E7C374!important;background:rgba(231,195,116,.14)!important;border-color:rgba(231,195,116,.4)!important}
-.bdg.mine{color:var(--acc);border-color:rgba(23,65,138,.28)}
+.bdg.mine{color:var(--acc);border-color:rgba(29,90,74,.28)}
 .bdg.ver{color:#1E7A52;border-color:rgba(30,122,82,.32);background:rgba(30,122,82,.08)}
 .bdg.pof{color:#8A6A12;border-color:rgba(138,106,18,.32);background:rgba(180,136,46,.12)}
 .bdg.prod{color:#7A4FCC;border-color:rgba(122,79,204,.34);background:rgba(122,79,204,.1)}
@@ -117,7 +117,7 @@ html.dark .bdg.pof{color:#E7C374!important;border-color:rgba(231,195,116,.32)!im
 .deal .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .deal .price{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:0;line-height:1;color:var(--tx)}
 .deal .fr{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
-.deal .comm{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--acc);font-weight:600;background:rgba(23,65,138,.07);border:1px solid rgba(23,65,138,.18);padding:4px 8px;border-radius:6px;white-space:nowrap}
+.deal .comm{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--acc);font-weight:600;background:rgba(29,90,74,.07);border:1px solid rgba(29,90,74,.18);padding:4px 8px;border-radius:6px;white-space:nowrap}
 .deal .ago{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--mut2)}
 .empty{grid-column:1/-1;text-align:center;color:var(--mut);padding:60px 20px;border:1px dashed var(--line2);border-radius:16px}
 .emptybig{grid-column:1/-1;text-align:center;padding:48px 24px;border:1px dashed var(--line2);border-radius:16px;background:var(--card2)}
@@ -149,7 +149,7 @@ body.mlock{overflow:hidden}
 /* detail sheet */
 .drow{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
 .drow span{color:var(--mut)}.drow b{font-weight:700}
-.reveal{background:var(--accdim);border:1px solid rgba(16,185,129,.35);border-radius:12px;padding:14px;margin:14px 0;font-size:14px}
+.reveal{background:var(--accdim);border:1px solid rgba(53,160,127,.35);border-radius:12px;padding:14px;margin:14px 0;font-size:14px}
 .reveal b{color:var(--acc2)}
 .pill{display:inline-block;font-size:11px;font-weight:800;padding:4px 10px;border-radius:100px}
 .pill.req{background:#2a2410;color:var(--warn)}.pill.appr{background:var(--accdim);color:var(--acc2)}.pill.dec{background:var(--badbg);color:var(--bad)}
@@ -173,21 +173,23 @@ body.mlock{overflow:hidden}
 @media(max-width:900px){.cta-txt{display:none}}
 @media(max-width:480px){.nav .in{gap:8px}}
 @media(max-width:560px){.fgrid{grid-template-columns:1fr}input,select,textarea{font-size:16px!important}}
-/* ── ACCESS brand skin: Big Shoulders headings + Public Sans body + Plex Mono labels;
-   bone/gold accents on ink. Matches the ACCESS landing. Logo wordmark stays Archivo. ── */
+/* ── AXESS brand skin: Big Shoulders headings + Public Sans body + Plex Mono labels;
+   bone/gold accents on ink. Matches the AXESS landing. Logo wordmark stays Archivo. ── */
 body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
-.brand{font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600}
+.brand{font-family:'Archivo',system-ui,sans-serif;font-weight:900}
+.brand .wm{font-family:'Archivo',system-ui,sans-serif;font-weight:900;letter-spacing:.03em}
+.brand .rb{color:var(--tx)}
 .hero h1,.shead h2,.stats .s .v,.deal .sub,.deal .price,.deal .kpis .v,.modal h3,.mhead h3{font-family:'IBM Plex Sans',system-ui,sans-serif;letter-spacing:.012em}
 .hero h1{font-weight:800;line-height:1.06}
 .ey,.mono,.brand small,.deal .type,.stats .s .k,.deal .kpis .k,.deal .comm,.deal .ago,.trust,.chip,.bdg,.deal .lock,.f label,.kick{font-family:'IBM Plex Mono',monospace}
 /* ── 11R light-mode overrides — neutralize every hardcoded dark value ── */
 .nav{background:rgba(245,244,241,.86)}
-.hero::before{background:radial-gradient(600px 300px at 20% 18%,rgba(23,65,138,.07),transparent 60%),radial-gradient(700px 320px at 85% 0%,rgba(23,65,138,.05),transparent 60%)}
-.ey{color:var(--acc);background:rgba(23,65,138,.07);border-color:rgba(23,65,138,.22)}
+.hero::before{background:radial-gradient(600px 300px at 20% 18%,rgba(29,90,74,.07),transparent 60%),radial-gradient(700px 320px at 85% 0%,rgba(29,90,74,.05),transparent 60%)}
+.ey{color:var(--acc);background:rgba(29,90,74,.07);border-color:rgba(29,90,74,.22)}
 .hero h1 .g{background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--acc)}
 .tick,.deal .type,.deal .comm,.stats .s .v.acc,.btn.link{color:var(--acc)}
-.btn.acc{background:var(--acc);color:#fff;box-shadow:0 6px 18px -6px rgba(23,65,138,.35)}
-.btn.acc:hover{box-shadow:0 10px 26px -8px rgba(23,65,138,.45)}
+.btn.acc{background:var(--acc);color:#fff;box-shadow:0 6px 18px -6px rgba(29,90,74,.35)}
+.btn.acc:hover{box-shadow:0 10px 26px -8px rgba(29,90,74,.45)}
 .btn.ghost{background:var(--card);color:var(--tx);border:1px solid var(--line2)}
 .btn.ghost:hover{border-color:var(--acc);background:var(--card2)}
 .who .av{background:linear-gradient(135deg,var(--acc),#0E2E66);color:#fff}
@@ -200,12 +202,12 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .deal .lock,.bdg{background:rgba(255,255,255,.82);backdrop-filter:blur(6px)}
 .deal .lock{color:var(--mut)}
 .bdg{color:var(--tx);border-color:var(--line2)}
-.bdg.broad{color:var(--acc);border-color:rgba(23,65,138,.35)}
+.bdg.broad{color:var(--acc);border-color:rgba(29,90,74,.35)}
 .bdg.private{color:var(--gold);border-color:rgba(180,136,46,.45)}
-.bdg.pocket{color:var(--acc);border-color:rgba(23,65,138,.30)}
+.bdg.pocket{color:var(--acc);border-color:rgba(29,90,74,.30)}
 .mbg{background:rgba(28,26,22,.42)}
 .modal{box-shadow:0 30px 80px -30px rgba(30,26,18,.30)}
-.reveal{background:var(--accdim);border-color:rgba(23,65,138,.28)}
+.reveal{background:var(--accdim);border-color:rgba(29,90,74,.28)}
 .reveal b{color:var(--acc)}
 .pill.req{background:#FBF2DD;color:var(--warn)}
 .pill.appr{background:var(--accdim);color:var(--acc)}
@@ -262,7 +264,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .hero .stats .s:nth-child(2){background:#FAF3E4}
 .hero .stats .s:nth-child(3){background:#E8F5EF}
 .hero .stats .s:nth-child(4){background:#EFEDFA}
-.hero .stats .s:nth-child(1) .v{color:#17418A}
+.hero .stats .s:nth-child(1) .v{color:#1D5A4A}
 .hero .stats .s:nth-child(2) .v{color:#9A7423}
 .hero .stats .s:nth-child(3) .v{color:#2E7D63}
 .hero .stats .s:nth-child(4) .v{color:#5B54A8}
@@ -281,7 +283,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .mtab .ct{color:var(--mut2);font-size:11px;font-weight:700}
 .mtab.on{background:var(--acc);border-color:var(--acc);color:#fff}
 .mtab.on .ct{color:rgba(255,255,255,.75)}
-.soonpill{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:linear-gradient(100deg,var(--acc),var(--acc2));border:none;border-radius:100px;padding:9px 18px;display:inline-flex;align-items:center;gap:9px;box-shadow:0 6px 20px -6px rgba(23,65,138,.55)}
+.soonpill{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:linear-gradient(100deg,var(--acc),var(--acc2));border:none;border-radius:100px;padding:9px 18px;display:inline-flex;align-items:center;gap:9px;box-shadow:0 6px 20px -6px rgba(29,90,74,.55)}
 .soonpill .lbl{opacity:.85}
 .soonpill b{color:#fff;font-weight:800;letter-spacing:.02em}
 .soonpill .city{display:inline-block;animation:soonfade .5s ease}
@@ -304,7 +306,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .rng input{width:100%;background:var(--card2);border:1px solid var(--line2);border-radius:8px;padding:8px 9px;font:inherit;font-size:13px;color:var(--tx)}
 .rng input:focus{outline:none;border-color:var(--acc)}
 .rail .save{width:100%;margin-top:14px;background:transparent;color:var(--acc);border:1px dashed var(--line2);border-radius:9px;padding:10px;font:inherit;font-weight:600;font-size:12.5px;cursor:pointer}
-.rail .save:hover{border-color:var(--acc);background:rgba(23,65,138,.04)}
+.rail .save:hover{border-color:var(--acc);background:rgba(29,90,74,.04)}
 .sortbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .sortbar .count{font-size:14px;font-weight:600}.sortbar .count b{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:20px;color:var(--acc)}
 .sortbar .r{margin-left:auto;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
@@ -341,7 +343,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 }
 </style>
 <style id="ax-dark-fix">
-/* ACCESS dark palette — redefine the design tokens so the whole app flips, not just patches */
+/* AXESS dark palette — redefine the design tokens so the whole app flips, not just patches */
 html.dark{
   /* lighter, higher-contrast slate — cards pop off the background, muted text stays readable */
   --bg:#1C212B;--bg2:#242A35;--card:#2A313D;--card2:#333B48;--line:#3B4451;--line2:#4D5869;
@@ -350,7 +352,7 @@ html.dark{
   color-scheme:dark;
 }
 html.dark body{background:var(--bg);color:var(--tx)}
-/* ACCESS dark-mode fix — flip hardcoded LIGHT surfaces/text that don't respond to html.dark */
+/* AXESS dark-mode fix — flip hardcoded LIGHT surfaces/text that don't respond to html.dark */
 /* photo placeholder: light gradient -> flat dark tile */
 html.dark .deal .ph{background:#333B48!important;color:#A2ABB8!important}
 /* lock chip + badges: translucent white -> translucent dark */
@@ -384,7 +386,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
 <body>
 
 <div class="nav"><div class="wrap in">
-  <div class="brand" onclick="goHome()" role="button" tabindex="0" title="Back to dashboard — clears filters" style="cursor:pointer"><svg class="rb" viewBox="0 0 64 64" aria-label="ACCESS"><rect x="5" y="15" width="54" height="34" rx="8" fill="#1C1C1A"/><rect x="12" y="22" width="15" height="12" rx="2.6" fill="#B4882E"/><rect x="12" y="40" width="30" height="3.2" rx="1.6" fill="#F5F4F1" opacity=".32"/></svg>access<small>Off-Market</small></div>
+  <div class="brand" onclick="goHome()" role="button" tabindex="0" title="Back to dashboard — clears filters" style="cursor:pointer"><svg class="rb" viewBox="0 0 100 100" aria-label="AXESS" fill="currentColor"><path d="M50 0 100 100H74L50 30 26 100H0Z"/><rect x="22.4" y="56.6" width="30.3" height="14.5"/></svg><span class="wm">AXESS</span><small>A Real Estate Network</small></div>
   <div class="sp"></div>
   <span class="nlink hideM" onclick="scrollTo(0,document.getElementById('feed').offsetTop-70)">Deal feed</span>
   <span class="nlink hideM" onclick="openBuyBox()">Client needs</span>
@@ -512,7 +514,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
 </div></section>
 
 <div class="foot"><div class="wrap in">
-  <div>ACCESS — a Citicore Properties Inc network. Invite-only. Not an MLS.</div>
+  <div>AXESS — a Citicore Properties Inc network. Invite-only. Not an MLS.</div>
   <div>Deals shown are broker/owner submitted. Verify all figures independently.</div>
 </div></div>
 
@@ -547,7 +549,7 @@ html.dark .ggbar{background:#33291180;border-color:#6E571E}
 /* quick-action tiles (TAN-style calm entry) */
 .qa{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .qa-tile{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;cursor:pointer;transition:border-color .14s,transform .12s,box-shadow .2s;box-shadow:0 6px 18px rgba(20,25,40,.04)}
-.qa-tile:hover{border-color:var(--acc);transform:translateY(-1px);box-shadow:0 12px 28px rgba(23,65,138,.12)}
+.qa-tile:hover{border-color:var(--acc);transform:translateY(-1px);box-shadow:0 12px 28px rgba(29,90,74,.12)}
 .qa-tile .qa-ic{font-size:30px;line-height:1;flex:none}
 .qa-tile .qa-tx{flex:1;min-width:0}
 .qa-tile .qa-tx b{display:block;font-size:16.5px;font-weight:800;letter-spacing:-.01em}
@@ -894,7 +896,7 @@ function ggLocked(){return ME.reciprocity&&ME.reciprocity.enforce&&!ME.reciproci
 function welcomeDismissed(){try{return localStorage.getItem('access_welcome')==='done';}catch(e){return false;}}
 function dismissWelcome(){try{localStorage.setItem('access_welcome','done');}catch(e){}var el=$('welcomeCard');if(el)el.style.display='none';}
 function renderClosedStrip(j){var el=$('closedStrip');if(!el)return;var n=(j&&j.totalCount)||0;if(!n){el.style.display='none';return;}
-  el.innerHTML='<span>🎉 <b>'+money(j.totalVolume||0)+'</b> closed through ACCESS across <b>'+n+'</b> deal'+(n===1?'':'s')+'.</span><span class="go">See the leaderboard →</span>';
+  el.innerHTML='<span>🎉 <b>'+money(j.totalVolume||0)+'</b> closed through AXESS across <b>'+n+'</b> deal'+(n===1?'':'s')+'.</span><span class="go">See the leaderboard →</span>';
   el.style.display='';}
 function renderWelcome(){
   var el=$('welcomeCard');if(!el)return;
@@ -903,7 +905,7 @@ function renderWelcome(){
   var show=ME.role!=='owner'&&!welcomeDismissed()&&!contributed&&!ggLocked();
   if(!show){el.style.display='none';return;}
   el.innerHTML='<button class="wx" onclick="dismissWelcome()" aria-label="Dismiss">×</button>'
-    +'<h3>Welcome to ACCESS 👋</h3>'
+    +'<h3>Welcome to AXESS 👋</h3>'
     +'<div class="wsub">An invite-only network where agents move deals to each other before they hit the market. Here\'s the whole idea in three steps:</div>'
     +'<div class="steps">'
       +'<div class="step"><div class="n">1</div><b>Post</b><span>Share a deal or a client need. Contributing is what unlocks the network for you.</span></div>'
@@ -931,7 +933,7 @@ function canSeeAddress(d){return !d.addressHidden;}
 // Trust chips. verified=license; pof can be {amount} (card shorthand, already verified)
 // or {status,amount} (directory/intro/profile). Only renders POF when verified.
 function badgeVer(v){return v?'<span class="bdg ver" title="License verified">✓ Verified</span>':'';}
-function badgeProd(v){return v?'<span class="bdg prod" title="Curated producer — vetted by ACCESS">⭐ Producer</span>':'';}
+function badgeProd(v){return v?'<span class="bdg prod" title="Curated producer — vetted by AXESS">⭐ Producer</span>':'';}
 function badgePof(p){if(!p)return '';var ok=(p.status==='verified')||(p.status===undefined&&(p.amount!==undefined));if(!ok)return '';var amt=p.amount?(' '+esc(String(p.amount))):'';return '<span class="bdg pof" title="Proof of funds verified">💰 POF'+amt+'</span>';}
 function trustBadges(v,p,prod){return badgeProd(prod)+badgeVer(v)+badgePof(p);}
 
@@ -1053,7 +1055,7 @@ function typeColor(t){t=String(t||'').toLowerCase();
   if(t.indexOf('condo')>=0||t.indexOf('conversion')>=0)return '#B5566B';
   if(t.indexOf('industrial')>=0)return '#4E6B8A';
   if(t.indexOf('single')>=0)return '#2C7FA8';
-  return '#17418A';   // multifamily / default — ink-blue
+  return '#1D5A4A';   // multifamily / default — ink-blue
 }
 function addrIcon(open){return open
   ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5-6.5-10a6.5 6.5 0 0 1 13 0C18.5 16 12 21 12 21z"/><circle cx="12" cy="11" r="2.1"/></svg>'
@@ -1157,7 +1159,7 @@ function renderMap(list){
       var pos=dealLatLng(d);if(!pos)return;
       var mk=new google.maps.Marker({position:{lat:pos.lat,lng:pos.lng},map:DEALMAP,title:(d.submarket||'Deal')+' · '+money(d.price)});
       mk.addListener('click',function(){
-        MAP_INFO.setContent('<div style="font-family:Inter,system-ui,sans-serif;min-width:150px"><div style="font-weight:700;font-size:14px">'+esc(d.submarket||'Off-market deal')+'</div><div style="font-size:12px;color:#5F636D;margin:2px 0 6px">'+esc(d.type||'')+' · '+money(d.price)+(pos.exact?'':' · approx. area')+'</div><a href="#" onclick="MAP_INFO.close();openDetail(\''+d.id+'\');return false" style="color:#17418A;font-weight:600;font-size:12.5px;text-decoration:none">View deal →</a></div>');
+        MAP_INFO.setContent('<div style="font-family:Inter,system-ui,sans-serif;min-width:150px"><div style="font-weight:700;font-size:14px">'+esc(d.submarket||'Off-market deal')+'</div><div style="font-size:12px;color:#5F636D;margin:2px 0 6px">'+esc(d.type||'')+' · '+money(d.price)+(pos.exact?'':' · approx. area')+'</div><a href="#" onclick="MAP_INFO.close();openDetail(\''+d.id+'\');return false" style="color:#1D5A4A;font-weight:600;font-size:12.5px;text-decoration:none">View deal →</a></div>');
         MAP_INFO.open(DEALMAP,mk);
       });
       MAP_MARKERS.push(mk);bounds.extend(mk.getPosition());any=true;
@@ -1294,8 +1296,8 @@ function openDetail(id){
   $('detailBody').innerHTML=
     '<div class="mhead"><div><h3>'+esc(d.submarket||'Off-market deal')+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★ Featured</span>':'')+'</h3><div style="color:var(--acc2);font-weight:700;font-size:12.5px;margin-top:3px">'+esc(d.type||'')+' · '+money(d.price)+'</div></div><button class="x" onclick="close_(\'mDetail\')">×</button></div>'
     +'<div class="mbody">'
-      +(d.status==='closed'?'<div class="reveal" style="background:rgba(30,122,82,.08);border-color:#1E7A52"><b style="color:#1E7A52">🎉 Closed through ACCESS'+(d.closedAt?(' · '+new Date(d.closedAt).toLocaleDateString()):'')+(num(d.closePrice)?(' · '+money(d.closePrice)):'')+'.</b> Counted in the network\'s closed-deal proof. Removed from the live feed.</div>':'')
-      +(d.status==='mls'?'<div class="reveal" style="background:var(--card);border-color:var(--gold)"><b style="color:var(--gold)">✓ Moved to the MLS'+(d.mlsAt?(' · '+new Date(d.mlsAt).toLocaleDateString()):'')+'.</b> This deal is now public and has been removed from the ACCESS feed.</div>':'')
+      +(d.status==='closed'?'<div class="reveal" style="background:rgba(30,122,82,.08);border-color:#1E7A52"><b style="color:#1E7A52">🎉 Closed through AXESS'+(d.closedAt?(' · '+new Date(d.closedAt).toLocaleDateString()):'')+(num(d.closePrice)?(' · '+money(d.closePrice)):'')+'.</b> Counted in the network\'s closed-deal proof. Removed from the live feed.</div>':'')
+      +(d.status==='mls'?'<div class="reveal" style="background:var(--card);border-color:var(--gold)"><b style="color:var(--gold)">✓ Moved to the MLS'+(d.mlsAt?(' · '+new Date(d.mlsAt).toLocaleDateString()):'')+'.</b> This deal is now public and has been removed from the AXESS feed.</div>':'')
       +(d.desc?'<p style="color:var(--mut);font-size:14px;margin-bottom:12px">'+esc(d.desc)+'</p>':'')
       +addrBlock
       +albumBlock(d)
@@ -1481,7 +1483,7 @@ function submitDeal(){
   });
 }
 function markMLS(id,on){
-  if(on&&!confirm('Mark this deal as moved to the MLS?\n\nIt will be removed from the ACCESS feed and members can no longer contact you about it here. You can relist it later from “My activity.”'))return;
+  if(on&&!confirm('Mark this deal as moved to the MLS?\n\nIt will be removed from the AXESS feed and members can no longer contact you about it here. You can relist it later from “My activity.”'))return;
   api('/api/pm/listing/mls',{id:id,on:on}).then(function(j){
     if(j&&j.ok){close_('mDetail');loadAll();}
     else alert((j&&j.error)||'Could not update — try again.');
@@ -1491,11 +1493,11 @@ function markClosed(id,on){
   if(!on){ if(!confirm('Reopen this deal to the network? It will no longer count as closed.'))return;
     api('/api/pm/listing/close',{id:id,on:false}).then(function(j){if(j&&j.ok){close_('mDetail');loadAll();}else alert((j&&j.error)||'Could not update — try again.');});return; }
   var d=LISTINGS.find(function(x){return x.id===id;})||{};
-  var pr=prompt('🎉 Closed through ACCESS!\n\nClosing price (optional — leave blank to keep private, or enter to show it in the network\'s closed-deal proof):', d.price?String(d.price):'');
+  var pr=prompt('🎉 Closed through AXESS!\n\nClosing price (optional — leave blank to keep private, or enter to show it in the network\'s closed-deal proof):', d.price?String(d.price):'');
   if(pr===null)return;
   var clean=String(pr).replace(/[^0-9.]/g,'');
   var show=true;
-  if(clean){ show=confirm('Show this closing price ('+money(clean)+') publicly in the ACCESS closed-deal proof & leaderboard?\n\nOK = show it · Cancel = count the deal but keep the price private'); }
+  if(clean){ show=confirm('Show this closing price ('+money(clean)+') publicly in the AXESS closed-deal proof & leaderboard?\n\nOK = show it · Cancel = count the deal but keep the price private'); }
   api('/api/pm/listing/close',{id:id,on:true,closePrice:clean,show:show}).then(function(j){
     if(j&&j.ok){close_('mDetail');loadAll();}
     else alert((j&&j.error)||'Could not update — try again.');
@@ -1744,7 +1746,7 @@ function openDirectory(){
     DIRLIST=(j&&j.members)||[];
     var owner=ME.role==='owner';
     $('mDirectory').innerHTML='<div class="modal wide">'
-      +'<div class="mhead"><div><h3>Member directory <span style="color:var(--mut);font-size:13px;font-weight:600">'+DIRLIST.length+'</span></h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Vetted ACCESS agents — search and reach out directly.</div></div><button class="x" onclick="close_(\'mDirectory\')">×</button></div>'
+      +'<div class="mhead"><div><h3>Member directory <span style="color:var(--mut);font-size:13px;font-weight:600">'+DIRLIST.length+'</span></h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Vetted AXESS agents — search and reach out directly.</div></div><button class="x" onclick="close_(\'mDirectory\')">×</button></div>'
       +'<div class="mbody"><div style="display:flex;gap:8px;margin-bottom:14px"><input id="dirSearch" placeholder="Search name, brokerage, market…" oninput="renderDirList(this.value)" style="flex:1;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:9px 12px;font:inherit;font-size:13.5px">'+(owner?'<button class="btn ghost sm" onclick="exportDirectory()" title="Download member list">⬇ Export CSV</button>':'')+'</div><div id="dirList"></div></div></div>';
     renderDirList(''); open_('mDirectory');
   });
@@ -1887,7 +1889,7 @@ function openMarket(){Promise.all([api('/api/pm/market'),api('/api/pm/closings')
   var lb=(cj.leaderboard||[]);var lbRows=lb.length?lb.map(function(x,i){return '<div class="drow"><span>'+(i<3?['🥇','🥈','🥉'][i]:(i+1)+'.')+' '+esc(x.ownerName||x.email)+'</span><b class="mono">'+x.count+' deal'+(x.count===1?'':'s')+(num(x.volume)?(' · '+money(x.volume)):'')+'</b></div>';}).join(''):'<div style="color:var(--mut);font-size:13px">No closings logged yet — mark a deal “closed” to start the board.</div>';
   var closRecent=(cj.recent||[]);var closRows=closRecent.length?closRecent.map(function(c){return '<div class="drow"><span>🎉 '+esc(c.propType||'Deal')+' in '+esc(c.area||'—')+(c.ownerName?(' <span style="color:var(--mut2)">· '+esc(c.ownerName)+'</span>'):'')+'</span><b class="mono">'+(num(c.price)?money(c.price):'—')+'</b></div>';}).join(''):'';
   var closedBlock='<div style="background:linear-gradient(120deg,rgba(30,122,82,.1),var(--card2));border:1px solid rgba(30,122,82,.3);border-radius:14px;padding:16px 18px;margin-bottom:18px">'
-    +'<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><div style="font-family:\'Big Shoulders Display\',system-ui,sans-serif;font-size:30px;font-weight:800;color:#1E7A52">'+money(cj.totalVolume||0)+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)">closed through ACCESS · '+(cj.totalCount||0)+' deal'+((cj.totalCount||0)===1?'':'s')+'</div></div>'
+    +'<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><div style="font-family:\'Big Shoulders Display\',system-ui,sans-serif;font-size:30px;font-weight:800;color:#1E7A52">'+money(cj.totalVolume||0)+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)">closed through AXESS · '+(cj.totalCount||0)+' deal'+((cj.totalCount||0)===1?'':'s')+'</div></div>'
     +(lb.length?('<div style="margin-top:12px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:4px">Top closers</div>'+lbRows+'</div>'):'')
     +(closRows?('<div style="margin-top:12px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:4px">Recently closed</div>'+closRows+'</div>'):'')
     +'</div>';
@@ -1995,7 +1997,7 @@ function mcFromDeal(price){$('mcPrice').value=Math.round(num(price))||'';close_(
 
 /* ── guided tour ── */
 var TOUR=[
- {title:'Welcome to ACCESS',body:'A private, invite-only network where Massachusetts agents move off-market deals — agent to agent. Here’s a quick tour; replay it anytime from the “?” up top.'},
+ {title:'Welcome to AXESS',body:'A private, invite-only network where Massachusetts agents move off-market deals — agent to agent. Here’s a quick tour; replay it anytime from the “?” up top.'},
  {el:'#regionTabs',title:'Choose your market',body:'Browse deals by region across Massachusetts. New states are coming — you’ll see them queued on the right.',place:'bottom'},
  {el:'#rail',title:'Filter the feed',body:'Narrow by property type, price, cap rate, units, and how the deal is being shared.',place:'right'},
  {el:'.rail .save',title:'Save a search & get alerted',body:'Turn any filter into a saved alert — the moment a matching deal posts, you hear about it first.',place:'right'},
