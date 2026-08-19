@@ -213,11 +213,27 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .kick,.brand .sub,.rf label,.mono,.logos p,.foot .mono,.mini,.ey,.soon,.deal .type,.stats .s .k{font-family:'Inter',system-ui,sans-serif}
 .brand .wm{font-family:'Inter',system-ui,sans-serif;font-weight:700;letter-spacing:.22em;font-size:20px;color:var(--ink)}
 .brand .ico{width:30px;height:30px}
-.brand .sub{letter-spacing:.14em;color:var(--mut2)}
+.brand .sub{letter-spacing:.14em;color:var(--mut2);white-space:nowrap}
+.brand{flex:none}
 /* nav */
 .nav{background:rgba(255,255,255,.9);border-bottom:1px solid var(--line)}
-.nlinks a{font-weight:500}
+.nav .in{gap:14px}
+.nlinks{flex-wrap:nowrap;gap:2px}
+.nlinks a{font-weight:500;white-space:nowrap}
 .nlinks a:hover{color:var(--acc);background:rgba(0,100,229,.06)}
+@media(max-width:1240px){.soon{display:none!important}}
+/* keep Sign in reachable on phones (was hidden) — compact blue link + tighter buttons */
+.lbl-sm{display:none}
+@media(max-width:560px){
+  .nav .in{gap:6px}
+  .brand .sub{display:none}
+  .brand .wm{font-size:18px;letter-spacing:.16em}
+  .brand .ico{width:26px;height:26px}
+  .nav .btn.g{display:inline-flex!important;border:0;background:none;color:var(--acc);padding:9px 6px;font-size:14px;font-weight:600}
+  .nav .btn.p{padding:10px 16px;font-size:14px}
+  .lbl-lg{display:none}
+  .lbl-sm{display:inline}
+}
 /* buttons — squared, bright blue */
 .btn{border-radius:7px}
 .btn.p{background:var(--acc);color:#fff;box-shadow:none}
@@ -239,7 +255,15 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .hero .btn.p{background:var(--acc)!important;color:#fff!important}
 .hero .btn.ghostlight{background:#fff;color:var(--ink);border:1px solid var(--line2)}
 .hero .btn.ghostlight:hover{border-color:var(--acc);color:var(--acc)}
-.hero .mini{color:var(--mut2)}
+.hero .mini{color:var(--mut);font-weight:600}
+@media(max-width:600px){
+  .hero .in{padding:34px 0 220px}          /* tighten top gap; leave room so skyline sits below the text */
+  .hero h1{font-size:clamp(32px,8.5vw,42px)}
+  .hero p.sub{font-size:15px}
+  .hero .mini{margin-top:22px;background:rgba(255,255,255,.75);display:inline-block;padding:6px 10px;border-radius:8px}
+  .hero::before{background-size:auto 200px}   /* skyline as a shorter band along the bottom */
+  .hero::after{background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.65) 55%,rgba(255,255,255,0) 100%)}
+}
 /* stats — clean white cards */
 .statwrap{margin-top:-30px}
 .stats .s{box-shadow:0 14px 44px -30px rgba(11,12,14,.35)}
@@ -293,10 +317,10 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
     <div><div class="wm">AXESS</div><div class="sub">A Real Estate Network</div></div>
   </div>
   <div class="sp"></div>
-  <div class="nlinks"><a href="#how">How it works</a><a href="#feed">Deals</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a onclick="openContact()" style="cursor:pointer">Contact</a></div>
+  <div class="nlinks"><a href="#how">How it works</a><a href="/demo.html">Live demo</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a onclick="openContact()" style="cursor:pointer">Contact</a></div>
   <div class="soon" title="Expanding soon"><span class="dot"></span>Coming soon · <b id="soonCity">Providence, RI</b></div>
   <button class="btn g" onclick="openSignin()">Sign in</button>
-  <button class="btn p" onclick="openReq()">Request access</button>
+  <button class="btn p" onclick="openReq()"><span class="lbl-lg">Request access</span><span class="lbl-sm">Join</span></button>
 </div></div>
 
 <header class="hero">
@@ -306,8 +330,8 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
     <span class="ey">◆ Invite-only · Agent-to-agent · Massachusetts</span>
     <h1>The deals that never <span class="u">hit the market</span>.</h1>
     <p class="sub">An invite-only, <b style="color:var(--bone)">agent-to-agent</b> network for licensed Massachusetts agents — <b style="color:var(--bone)">not a public, open-market platform</b>. Trade off-market property of every kind — <b style="color:var(--bone)">single-family, condos, multifamily, commercial, and land</b> — directly with other vetted agents, post what your clients need, and keep every deal private until you choose to go public.</p>
-    <div class="cta"><button class="btn p big" onclick="openReq()">Request access</button><button class="btn ghostlight big" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">See how it works</button></div>
-    <div class="mini">FOUNDING MEMBERS JOIN FREE · $50/MO AFTER LAUNCH · MASSACHUSETTS</div>
+    <div class="cta"><button class="btn p big" onclick="openReq()">Request access</button><button class="btn ghostlight big" onclick="location.href='/demo.html'">▶ See a live demo</button></div>
+    <div class="mini">FOUNDING MEMBERS JOIN FREE · $50/MO AFTER LAUNCH · MASSACHUSETTS · <a href="/demo.html" style="color:inherit;text-decoration:underline">take the 60-sec demo</a></div>
   </div>
 </header>
 
@@ -496,6 +520,10 @@ function sendContact(){
     }).catch(function(){msg.textContent='Network error — please try again.';msg.style.color='#C0492E';btn.disabled=false;btn.textContent='Send message';});
 }
 if(location.hash==='#contact'){openContact();}
+if(/[?&]join=1/.test(location.search)){
+  try{var em=new URLSearchParams(location.search).get('email');if(em){var qe=document.getElementById('qEmail');if(qe)qe.value=em;}}catch(e){}
+  openReq();
+}
 </script>
 
 <script>

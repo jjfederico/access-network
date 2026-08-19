@@ -1018,6 +1018,27 @@ app.post('/api/pm/contact', async (req, res) => {
     res.json({ ok: true });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
+// ── Owner: invite a member by email only. Sends them a one-click link to the
+//    signup form with their email prefilled — owner never types anyone's info. ──
+app.post('/api/pm/admin/invite', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const email = String((req.body || {}).email || '').toLowerCase().trim();
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_email', message: 'Enter a valid email address.' });
+  try {
+    const base = BASE_URL || ('https://' + (req.headers.host || ''));
+    const link = base + '/?join=1&inv=1&email=' + encodeURIComponent(email);
+    const now = new Date().toISOString();
+    // Log the invite (for a simple record / de-dupe view later).
+    try { const invs = await pmLoad('pm_invites'); invs.push({ email, by: pmEmail(req.user), at: now }); await pmSave('pm_invites', invs.length > 3000 ? invs.slice(-3000) : invs); } catch (e) {}
+    const html = '<div style="font-family:Inter,Arial,sans-serif;max-width:480px">'
+      + '<p style="font-size:16px">You\'re invited to <b>AXESS</b> — a private, invite-only network where licensed agents move off-market real estate deals agent-to-agent.</p>'
+      + '<p><a href="' + link + '" style="display:inline-block;background:#0064E5;color:#fff;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:8px">Accept your invite &amp; sign up →</a></p>'
+      + '<p style="color:#5B6472;font-size:13px">Founding members join free. You\'ll just confirm your license — takes about a minute. If the button doesn\'t work, paste this link:<br>' + link + '</p></div>';
+    const sent = await authMod.sendEmail(email, 'Your invite to AXESS', html);
+    if (sent === false) return res.status(502).json({ ok: false, error: 'send_failed', message: 'Could not send the email — check email settings.' });
+    res.json({ ok: true });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
 app.get('/api/pm/admin/requests', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {

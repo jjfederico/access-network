@@ -183,7 +183,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .hero h1{font-weight:800;line-height:1.06}
 .ey,.mono,.brand small,.deal .type,.stats .s .k,.deal .kpis .k,.deal .comm,.deal .ago,.trust,.chip,.bdg,.deal .lock,.f label,.kick{font-family:'IBM Plex Mono',monospace}
 /* ── 11R light-mode overrides — neutralize every hardcoded dark value ── */
-.nav{background:rgba(245,244,241,.86)}
+.nav{background:rgba(255,255,255,.9)}
 .hero::before{background:radial-gradient(600px 300px at 20% 18%,rgba(0,100,229,.07),transparent 60%),radial-gradient(700px 320px at 85% 0%,rgba(0,100,229,.05),transparent 60%)}
 .ey{color:var(--acc);background:rgba(0,100,229,.07);border-color:rgba(0,100,229,.22)}
 .hero h1 .g{background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--acc)}
@@ -351,6 +351,22 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .btn.acc:hover{background:#0056c9!important}
 .chip.on{background:var(--acc)!important;border-color:var(--acc)!important;color:#fff!important}
 .who .av{background:var(--acc);color:#fff}
+/* top bar: clean white + never let it overflow while resizing */
+.nav{background:rgba(255,255,255,.9)!important;border-bottom:1px solid var(--line)}
+.nav .in{gap:16px;max-width:1400px;margin:0 auto;padding:0 20px;width:100%}
+@media(max-width:1200px){.brand small{display:none}}
+@media(max-width:980px){.nav .in{gap:12px}.msg-txt{display:none}.msg-ico{display:inline;font-size:15px}}
+/* ── deal detail popup: more compact + clean, wrapping action buttons ── */
+.modal{max-height:calc(100vh - 48px);overflow-y:auto}
+#mDetail .modal{max-width:560px}
+#mDetail .mbody{padding:10px 20px 18px}
+#mDetail .specgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;margin:2px 0 4px}
+#mDetail .specgrid .drow{padding:7px 0;font-size:13px}
+#mDetail .reveal{padding:11px 12px;margin:10px 0;font-size:13.5px}
+#mDetail p{font-size:13.5px!important}
+.mact{flex-wrap:wrap;justify-content:flex-start;gap:8px;margin-top:16px!important;padding-top:14px;border-top:1px solid var(--line)}
+.mact .btn{font-size:13px;padding:8px 13px}
+@media(max-width:560px){#mDetail .specgrid{grid-template-columns:1fr}.mact .btn{flex:1 1 auto;justify-content:center}}
 </style>
 <style id="ax-dark-fix">
 /* AXESS dark palette — redefine the design tokens so the whole app flips, not just patches */
@@ -428,6 +444,8 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
       <a onclick="close_acct();openNotifSettings()">Notifications</a>
       <a onclick="close_acct();openReferral()">Refer &amp; earn <span style="color:var(--gold)">◆</span></a>
       <a id="adminLink" style="display:none;color:var(--gold)" onclick="close_acct();openAdmin()">Admin <span id="adminDot" style="display:none"></span></a>
+      <a id="inviteLink" style="display:none;color:var(--acc2)" onclick="close_acct();openInvite()">✉ Invite a member</a>
+      <a id="importLink" style="display:none;color:var(--gold)" onclick="close_acct();openImport()">＋ Import inventory</a>
       <div class="acctSep"></div>
       <a href="/logout">Sign out</a>
     </div>
@@ -860,6 +878,8 @@ function loadAll(){
       var gn=$('heroGreet');if(gn){var fn=String(ME.name||'').trim().split(/\s+/)[0];gn.textContent=fn?('Welcome back, '+fn+'.'):'Welcome back.';}}
     LISTINGS=(feed.listings||[]).map(nL).filter(Boolean);
     $('adminLink').style.display=(ME.role==='owner')?'':'none';
+    var il=$('importLink');if(il)il.style.display=(ME.role==='owner')?'':'none';
+    var vl=$('inviteLink');if(vl)vl.style.display=(ME.role==='owner')?'':'none';
     if(ME.role==='owner')loadAdminDot();
     renderGiveGet();renderWelcome();
     fillFilters();attachMoney(['fMin','fMax']);initDealView();initCat();renderStats();maybeAutoTour();
@@ -1313,7 +1333,7 @@ function openDetail(id){
       +addrBlock
       +albumBlock(d)
       +docsBlock(d)
-      +rows.map(function(r){return '<div class="drow"><span>'+r[0]+'</span><b class="mono">'+r[1]+'</b></div>';}).join('')
+      +'<div class="specgrid">'+rows.map(function(r){return '<div class="drow"><span>'+r[0]+'</span><b class="mono">'+r[1]+'</b></div>';}).join('')+'</div>'
       +analysisBlock(d)
       +expBadge
       +(mine?'<div id="detAnalytics" style="margin-top:14px"></div><div id="detMatch" style="margin-top:12px"></div>':'<div id="detAgent" style="margin-top:14px"></div>')
@@ -2008,13 +2028,14 @@ function mcFromDeal(price){$('mcPrice').value=Math.round(num(price))||'';close_(
 
 /* ── guided tour ── */
 var TOUR=[
- {title:'Welcome to AXESS',body:'A private, invite-only network where Massachusetts agents move off-market deals — agent to agent. Here’s a quick tour; replay it anytime from the “?” up top.'},
+ {title:'Welcome to AXESS',body:'A private, invite-only network where Massachusetts agents move off-market deals — agent to agent. This 60-second tour shows you around; replay it anytime from the “?” in the top bar.'},
  {el:'#regionTabs',title:'Choose your market',body:'Browse deals by region across Massachusetts. New states are coming — you’ll see them queued on the right.',place:'bottom'},
  {el:'#rail',title:'Filter the feed',body:'Narrow by property type, price, cap rate, units, and how the deal is being shared.',place:'right'},
  {el:'.rail .save',title:'Save a search & get alerted',body:'Turn any filter into a saved alert — the moment a matching deal posts, you hear about it first.',place:'right'},
  {el:'.sortbar',title:'Sort & search',body:'Sort by newest, price, or cap rate — or type a keyword to jump straight to it.',place:'bottom'},
- {el:'#grid .deal',title:'Open any deal',body:'Tap a card for the full numbers, the map, documents, and to message the listing agent directly.',place:'top'},
- {el:'.hero .btn.acc',title:'Post your own deal',body:'Add an off-market deal in about 60 seconds. Hide the exact address or show it on a map — your call.',place:'bottom'},
+ {el:'#grid .deal',title:'Open any deal',body:'Tap a card for the full numbers, the map, and documents. The exact address stays private until you request an intro.',place:'top'},
+ {el:'#grid .deal',title:'Request an intro → deal room',body:'Ask the listing agent for an intro. When they approve, the address unlocks and a private “deal room” opens where you two share docs and talk — agent to agent, no lead forms.',place:'top'},
+ {el:'.hero .btn.acc',title:'Post your own deal',body:'Add an off-market deal in about 60 seconds. Hide the exact address or show it on a map — your call. Posting is what unlocks the network for you.',place:'bottom'},
  {el:'.hero .btn.ghost',title:'Post a client need',body:'Tell the network what your clients are hunting for and get matched to new deals automatically.',place:'bottom'},
  {el:'.nlink.ico[title="Alerts"]',title:'Alerts & messages',body:'The bell shows your match alerts. “Messages” is where you talk agent-to-agent about a deal.',place:'bottom'},
  {title:'You’re all set',body:'Post a deal, save a search, and start connecting. Need this again? Hit the “?” in the top bar anytime.'}
@@ -2065,4 +2086,84 @@ loadAll();
 payReturn();
 </script>
 <div class="lbx" id="lbx" onclick="if(event.target===this)albLbClose()"><button class="lx" onclick="albLbClose()">×</button><img id="lbxImg" src="" alt=""><div class="lc" id="lbxCap"></div></div>
+
+<!-- OWNER: invite a member by email only -->
+<div class="mbg" id="mInvite" onclick="if(event.target===this)close_('mInvite')">
+  <div class="modal" style="max-width:440px">
+    <div class="mhead"><div><h3>Invite a member</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Just enter their email — we'll send them a one-click link to sign up. You don't fill in anything else.</div></div><button class="x" onclick="close_('mInvite')">×</button></div>
+    <div style="padding:16px 20px 20px">
+      <label style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)">Agent's email</label>
+      <input id="invEmail" type="email" autocomplete="off" placeholder="agent@brokerage.com" style="width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:12px;font:inherit;font-size:15px" onkeydown="if(event.key==='Enter')sendInvite()">
+      <div id="invMsg" style="font-size:13px;color:var(--mut);min-height:20px;margin:9px 0"></div>
+      <button class="btn acc" id="invBtn" onclick="sendInvite()" style="width:100%;justify-content:center">Send invite</button>
+    </div>
+  </div>
+</div>
+<script>
+function openInvite(){if(!(window.ME&&ME.role==='owner'))return;var i=$('invEmail');if(i)i.value='';$('invMsg').textContent='';var m=$('mInvite');if(m){m.classList.add('on');document.body.classList.add('mlock');}setTimeout(function(){if(i)i.focus();},60);}
+function sendInvite(){
+  var email=($('invEmail').value||'').trim(),msg=$('invMsg'),btn=$('invBtn');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg.style.color='#C0492E';msg.textContent='Enter a valid email address.';return;}
+  btn.disabled=true;msg.style.color='var(--mut)';msg.textContent='Sending invite…';
+  api('/api/pm/admin/invite',{email:email}).then(function(r){
+    if(r&&r.ok){msg.style.color='#1E7A52';msg.textContent='Invite sent to '+email+' ✓';$('invEmail').value='';}
+    else{msg.style.color='#C0492E';msg.textContent=(r&&r.message)||'Could not send — try again.';}
+    btn.disabled=false;
+  });
+}
+</script>
+
+<!-- OWNER: bulk import inventory (appends via the normal post-a-deal endpoint) -->
+<div class="mbg" id="mImport" onclick="if(event.target===this)close_('mImport')">
+  <div class="modal" style="max-width:640px">
+    <div class="mhead"><div><h3>Import inventory</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Owner only. Adds each row to the live feed under your account — it appends, it never overwrites what's already there.</div></div><button class="x" onclick="close_('mImport')">×</button></div>
+    <div style="padding:16px 20px 20px">
+      <div style="font-size:12.5px;color:var(--mut);margin-bottom:8px">One JSON object per listing. Fields: <b>address, city, area, state, zip, price, propType, commissionPct, dist</b> (broad/private/pocket). Edit freely, then Add all.</div>
+      <textarea id="impJson" spellcheck="false" style="width:100%;height:230px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.5;border:1px solid var(--line2);border-radius:10px;padding:12px;background:var(--bg2);color:var(--tx);resize:vertical"></textarea>
+      <div id="impMsg" style="font-size:13px;color:var(--mut);min-height:20px;margin:8px 0"></div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn acc" id="impBtn" onclick="runImport()">Add all to feed</button>
+        <button class="btn ghost" onclick="$('impJson').value=JSON.stringify(INV_SEED,null,2);$('impMsg').textContent='Reloaded the starter inventory.';">Reset to my inventory</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Owner bulk-import: John's real inventory (all Multifamily, 2% BBC). ──
+   Appends through POST /api/pm/listing one at a time, so matching alerts,
+   IDs, and reciprocity all behave exactly like a normal post. */
+var INV_SEED=[
+ {address:"55 W Fifth St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"35000000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"12 Emmons St",city:"Boston",area:"East Boston",state:"MA",zip:"02128",price:"4000000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"68 Phillips St U:6",city:"Boston",area:"Beacon Hill",state:"MA",zip:"02114",price:"649000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"106-112 West 8th St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"3200000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"110 Winn St U:201",city:"Woburn",area:"Woburn",state:"MA",zip:"01801",price:"23",propType:"Multifamily",commissionPct:"2",dist:"broad",notes:"CHECK PRICE — imported as $23 from source (likely a typo)."},
+ {address:"391 Waterman Ave",city:"East Providence",area:"East Providence",state:"RI",zip:"02914",price:"825000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"142 Dorchester St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"4500000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"205 L St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"1800000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"595 E 5th St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"1595000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"291 E St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"6400000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"173 Emerson St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"3500000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"631 E 6th St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"5200000",propType:"Multifamily",commissionPct:"2",dist:"pocket",notes:"Was marked 'Only you' in source — set to pocket (private). Change dist to 'broad' to share it."},
+ {address:"35 Ellingwood St",city:"Boston",area:"Mission Hill",state:"MA",zip:"02120",price:"650000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"246 N Central Ave",city:"Quincy",area:"Quincy",state:"MA",zip:"02170",price:"791500",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"206 L St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"3100000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
+ {address:"Cedar St",city:"Worcester",area:"Worcester",state:"MA",zip:"01609",price:"8000000",propType:"Multifamily",commissionPct:"2",dist:"broad"}
+];
+function openImport(){if(!(window.ME&&ME.role==='owner'))return;var t=$('impJson');if(t&&!t.value.trim())t.value=JSON.stringify(INV_SEED,null,2);$('impMsg').textContent='';var m=$('mImport');if(m){m.classList.add('on');document.body.classList.add('mlock');}}
+function runImport(){
+  var msg=$('impMsg'),btn=$('impBtn');
+  var arr;try{arr=JSON.parse($('impJson').value);}catch(e){msg.style.color='#C0492E';msg.textContent='That JSON is not valid — check for a missing comma or bracket.';return;}
+  if(!Array.isArray(arr)||!arr.length){msg.style.color='#C0492E';msg.textContent='Paste a JSON array with at least one listing.';return;}
+  btn.disabled=true;msg.style.color='var(--mut)';
+  var ok=0,fail=0,i=0;
+  (function next(){
+    if(i>=arr.length){msg.style.color=(fail?'#8A6A1E':'#1E7A52');msg.textContent='Done — added '+ok+' listing'+(ok===1?'':'s')+(fail?(', '+fail+' failed'):'')+'. Refreshing the feed…';btn.disabled=false;setTimeout(function(){close_('mImport');if(typeof loadAll==='function')loadAll();},900);return;}
+    var rec=Object.assign({status:'active',hideAddress:false},arr[i]);
+    msg.textContent='Adding '+(i+1)+' of '+arr.length+' — '+(rec.address||'')+' …';
+    api('/api/pm/listing',rec).then(function(r){if(r&&r.ok)ok++;else fail++;}).catch(function(){fail++;}).then(function(){i++;next();});
+  })();
+}
+</script>
 </body></html>
