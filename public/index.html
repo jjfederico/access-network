@@ -656,4 +656,5 @@ function sendSignin(){
 }
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSignin();});
 </script>
+<script>/*AXESS_ENTRY_FIX*/window.addEventListener('load',function(){try{var s=location.search;if(/[?&]join=1/.test(s)&&typeof openReq==='function'){var m=new URLSearchParams(s).get('email');if(m){var q=document.getElementById('qEmail');if(q){q.value=m;}}openReq();}}catch(e){}});</script>
 </body></html>
