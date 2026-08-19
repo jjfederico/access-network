@@ -874,6 +874,10 @@ function loadAll(){
   // hangs when hit with 5 parallel reads, so we never make the deals wait on them.
   apiT('/api/pm/feed',12000).then(function(feed){
     feed=feed||{};
+    if(feed.error==='deactivated'){
+      document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px;font-family:Inter,system-ui,sans-serif;background:#0B0C0E;color:#fff;text-align:center"><div style="max-width:440px"><div style="font-size:40px;margin-bottom:12px">🔒</div><h1 style="font-size:24px;font-weight:800;margin:0 0 10px">Access deactivated</h1><p style="color:rgba(255,255,255,.72);line-height:1.55;margin:0 0 20px">Your access to AXESS has been turned off. Your records are safe on file. If you think this is a mistake, reach out to the network owner.</p><a href="/" style="display:inline-block;background:#0064E5;color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:9px">Back to home</a></div></div>';
+      return;
+    }
     if(feed.me){ME=Object.assign({},ME,feed.me);var w=$('who');if(ME.name||ME.email)w.innerHTML='<span class="av">'+initials(ME.name||ME.email)+'</span>';
       var gn=$('heroGreet');if(gn){var fn=String(ME.name||'').trim().split(/\s+/)[0];gn.textContent=fn?('Welcome back, '+fn+'.'):'Welcome back.';}}
     LISTINGS=(feed.listings||[]).map(nL).filter(Boolean);
@@ -1707,9 +1711,13 @@ function openAdmin(){
       }
       var att=m.attested?(' <span title="Licensure certification accepted'+(m.attestedAt?(' '+new Date(m.attestedAt).toLocaleString()):'')+'" style="color:#1E7A52;font-size:11px;font-weight:600">✓ certified</span>'):' <span style="color:var(--bad);font-size:11px">no attestation</span>';
       var lookup=m.license?(' <a href="https://elicensing.mass.gov/CitizenAccess/" target="_blank" rel="noopener" title="Look up on the MA license portal, then paste the number" style="color:var(--acc);text-decoration:none;font-weight:600">🔎 verify on Mass.gov ↗</a>'):'';
-      var act=m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+esc(m.email)+'\',\'approved\')">Verify &amp; approve</button><button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\'rejected\')">Reject</button>')
-        :(verBtn+prodBtn+pofBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke':'Approve')+'</button>');
-      return '<div class="reqrow"><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+verBadge+prodBadge+pofBadge+att+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+esc(m.state||'MA')+' Lic <b>'+esc(m.license||'—')+'</b>'+lookup+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+(m.phone?(' · '+esc(m.phone)):'')+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
+      var deactBadge=m.deactivated?(' <span class="pill dec" title="Access revoked '+(m.deactivatedAt?new Date(m.deactivatedAt).toLocaleDateString():'')+' — records kept">Deactivated</span>'):'';
+      var reactBtn='<button class="btn acc sm" onclick="adminDeactivate(\''+esc(m.email)+'\',false)">Reactivate</button>';
+      var deactBtn='<button class="btn ghost sm" style="color:var(--bad)" onclick="adminDeactivate(\''+esc(m.email)+'\',true)">Deactivate</button>';
+      var act=m.deactivated?reactBtn
+        :m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+esc(m.email)+'\',\'approved\')">Verify &amp; approve</button><button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\'rejected\')">Reject</button>'+deactBtn)
+        :(verBtn+prodBtn+pofBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke':'Approve')+'</button>'+deactBtn);
+      return '<div class="reqrow"'+(m.deactivated?' style="opacity:.6"':'')+'><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+deactBadge+verBadge+prodBadge+pofBadge+att+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+esc(m.state||'MA')+' Lic <b>'+esc(m.license||'—')+'</b>'+lookup+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+(m.phone?(' · '+esc(m.phone)):'')+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
     }).join(''):'<div class="empty">No members yet.</div>';
     var dealRows=deals.length?deals.slice(0,40).map(function(d){
       return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+money(d.price)+' · '+esc(d.by||d.byEmail)+'</span>'+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★</span>':'')+(d.expired?' <span class="pill dec">Expired</span>':'')+(d.status==='mls'?' <span class="pill dec">On MLS</span>':'')+'</div><button class="btn '+(d.featured?'ghost':'acc')+' sm" onclick="adminFeature(\''+d.id+'\','+(!d.featured)+')">'+(d.featured?'Unfeature':'Feature')+'</button></div>';
@@ -1741,6 +1749,7 @@ function adminDigest(dry){var m=$('digMsg');if(m)m.textContent=dry?'Previewing�
     if(j&&j.ok){m.textContent=(dry?('Would reach '+j.recipients+' member'+(j.recipients===1?'':'s')):('Sent — '+j.emailsSent+' email'+(j.emailsSent===1?'':'s')+' to '+j.recipients+' member'+(j.recipients===1?'':'s')))+'.';}
     else{m.textContent='Failed — retry.';}});}
 function adminVerify(email,on){api('/api/pm/admin/verify',{email:email,verified:on}).then(function(){openAdmin();});}
+function adminDeactivate(email,on){if(on&&!confirm('Deactivate '+email+'?\n\nThey lose access immediately, but all their records (profile, deals, history) are kept. You can reactivate anytime.'))return;api('/api/pm/admin/deactivate',{email:email,deactivated:on}).then(function(){openAdmin();loadAdminDot();});}
 function adminProducer(email,on){api('/api/pm/admin/producer',{email:email,producer:on}).then(function(){openAdmin();});}
 function adminPof(email,decision,amount){
   if(decision==='verified'){var a=prompt('Verified proof-of-funds amount (e.g. $2M, or leave blank):',amount||'');if(a===null)return;amount=a.trim();}
