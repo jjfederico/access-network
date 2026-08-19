@@ -266,6 +266,24 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .rf input:focus,.rf textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,100,229,.12)}
 .rf label .req{color:var(--acc)}
 .foot .links a:hover{color:var(--acc)}
+/* ── pricing tiers: active Founding + crossed-out Annual / 2-Year ── */
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:1020px;margin:0 auto;align-items:stretch}
+.plans .price{max-width:none;margin:0;width:auto;box-shadow:0 0 0 2px var(--acc),var(--shadow2)}
+.plans .price .btn.p{background:#fff;color:var(--ink)}
+.plan{background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px;display:flex;flex-direction:column;position:relative}
+.plan .lab{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:600}
+.plan .amt{font-size:40px;font-weight:800;letter-spacing:-.02em;color:var(--ink);margin-top:12px;text-decoration:line-through;text-decoration-color:rgba(11,12,14,.4);text-decoration-thickness:3px}
+.plan .amt small{font-size:15px;font-weight:600;color:var(--mut2);text-decoration:none;margin-left:5px}
+.plan .permo{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);font-weight:600;margin-top:8px}
+.plan ul{list-style:none;display:flex;flex-direction:column;gap:10px;margin:20px 0 22px;padding:0}
+.plan li{display:flex;gap:9px;font-size:14px;color:var(--mut)}
+.plan li b{color:var(--acc)}
+.plan .lockbtn{margin-top:auto;width:100%;text-align:center;background:#F3F5F8;color:var(--mut2);border:1px dashed var(--line2);border-radius:7px;padding:13px;font-weight:600;font-size:13.5px}
+.plan .flag{position:absolute;top:18px;right:18px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);background:#F3F5F8;border:1px solid var(--line);border-radius:100px;padding:4px 10px;font-weight:600}
+.plan .flag.best{color:var(--acc);background:rgba(0,100,229,.08);border-color:rgba(0,100,229,.28)}
+.plan .lab{padding-right:96px}
+.price .pbest{display:inline-block;font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:#0B0C0E;background:#fff;border-radius:100px;padding:6px 13px;margin-bottom:16px}
+@media(max-width:820px){.plans{grid-template-columns:1fr;max-width:440px}}
 </style></head>
 <body>
 
@@ -333,19 +351,50 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 
 <section id="pricing" style="padding-top:8px"><div class="wrap">
   <div class="center"><div class="kick">Membership</div><h2>Founding members join free.</h2><p>Get in early while we're building the network. Membership will be $50/month — founding members lock in free access, and you'll be told before anything is ever charged.</p></div>
-  <div class="price">
-    <div class="top"><div class="lab" style="color:#B9C7DE">Founding Membership</div><div class="amt">Free<small style="text-decoration:line-through;color:rgba(241,239,234,.62);margin-left:9px">$50/mo</small></div></div>
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9FBEEE;margin:-6px 0 4px">Free for founding members · $50/month after launch</div>
-    <div id="foundingLine" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:rgba(241,239,234,.72);margin:0 0 15px"></div>
-    <ul>
-      <li><b>✓</b> Browse the full deal feed with all numbers</li>
-      <li><b>✓</b> Post unlimited deals — free, forever</li>
-      <li><b>✓</b> Request &amp; approve introductions</li>
-      <li><b>✓</b> Post your clients' needs &amp; get matched</li>
-      <li><b>✓</b> Vetted-members-only network</li>
-      <li><b>✓</b> Founding rate locked in · cancel anytime</li>
-    </ul>
-    <button class="btn p big" style="width:100%;justify-content:center" onclick="openReq()">Request access — free</button>
+  <div class="plans">
+    <div class="price">
+      <div class="pbest">★ Best value · Free right now</div>
+      <div class="top"><div class="lab" style="color:#9FBEEE">Founding Membership</div><div class="amt">Free<small style="text-decoration:line-through;color:rgba(241,239,234,.62);margin-left:9px">$50/mo</small></div></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9FBEEE;margin:-6px 0 4px">Free for founding members · $50/month after launch</div>
+      <div id="foundingLine" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:rgba(241,239,234,.72);margin:0 0 15px"></div>
+      <ul>
+        <li><b>✓</b> Browse the full deal feed with all numbers</li>
+        <li><b>✓</b> Post unlimited deals — free, forever</li>
+        <li><b>✓</b> Request &amp; approve introductions</li>
+        <li><b>✓</b> Post your clients' needs &amp; get matched</li>
+        <li><b>✓</b> Vetted-members-only network</li>
+        <li><b>✓</b> Founding rate locked in · cancel anytime</li>
+      </ul>
+      <button class="btn p big" style="width:100%;justify-content:center" onclick="openReq()">Request access — free</button>
+    </div>
+
+    <div class="plan">
+      <span class="flag">After launch</span>
+      <div class="lab">Annual</div>
+      <div class="amt">$500<small>/year</small></div>
+      <div class="permo">≈ $42/mo · 2 months free</div>
+      <ul>
+        <li><b>✓</b> Everything in membership</li>
+        <li><b>✓</b> Save vs. paying monthly</li>
+        <li><b>✓</b> Priority support</li>
+        <li><b>✓</b> Locked-in annual rate</li>
+      </ul>
+      <div class="lockbtn">Coming after launch</div>
+    </div>
+
+    <div class="plan">
+      <span class="flag">After launch</span>
+      <div class="lab">2-Year</div>
+      <div class="amt">$840<small>/2 years</small></div>
+      <div class="permo">≈ $35/mo · save 30%</div>
+      <ul>
+        <li><b>✓</b> Everything in membership</li>
+        <li><b>✓</b> Our lowest monthly rate</li>
+        <li><b>✓</b> Priority support</li>
+        <li><b>✓</b> Rate locked for 2 years</li>
+      </ul>
+      <div class="lockbtn">Coming after launch</div>
+    </div>
   </div>
 </div></section>
 
