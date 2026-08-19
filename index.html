@@ -1,0 +1,664 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AXESS — off-market real estate, before the market</title>
+<meta name="description" content="AXESS — an invite-only, agent-to-agent network where Massachusetts agents quietly move off-market property of every kind: single-family, condos, multifamily, commercial, land, and more.">
+<meta property="og:title" content="AXESS — off-market real estate">
+<meta property="og:description" content="An invite-only, agent-to-agent network for off-market real estate across Massachusetts — residential and commercial, single-family to development.">
+<meta property="og:image" content="/brand/axess/social/avatar-1000-blue.png">
+<link rel="icon" type="image/svg+xml" href="/brand/axess/favicon/favicon.svg">
+<link rel="icon" href="/brand/axess/favicon/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/brand/axess/favicon/apple-touch-icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Archivo:wght@700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* AXESS — paper, ink surfaces, deep-green accent, mint for digital */
+  --ink:#0E1013;--ink2:#191C22;--bone:#F7F6F3;--paper:#F7F6F3;
+  --navy:#0E1013;--navy2:#191C22;--acc:#1D5A4A;--acc2:#35A07F;--gold:#B4882E;
+  --mut:#6B6A63;--mut2:#94918899;--line:#E7E3DA;--line2:#D9D4C9;
+  --rad:16px;--radsm:11px;--shadow:0 14px 36px -20px rgba(30,26,18,.20);--shadow2:0 26px 60px -30px rgba(14,16,19,.40);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.55}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.kick{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--mut)}
+/* door mark */
+.ico{width:34px;height:34px;border-radius:8px;display:block;flex:none}
+.btn{border:0;border-radius:var(--radsm);font:inherit;font-weight:600;font-size:14.5px;cursor:pointer;padding:12px 20px;transition:transform .08s,box-shadow .16s,background .16s,color .16s;display:inline-flex;align-items:center;gap:8px}
+.btn:active{transform:translateY(1px)}
+.btn.p{background:var(--ink);color:var(--bone);box-shadow:0 8px 22px -10px rgba(20,20,15,.6)}
+.btn.p:hover{box-shadow:0 14px 30px -10px rgba(20,20,15,.75)}
+.btn.g{background:transparent;color:var(--ink);border:1px solid var(--line2)}
+.btn.g:hover{border-color:var(--ink);background:rgba(20,20,15,.03)}
+.btn.big{padding:15px 26px;font-size:16px}
+.btn.ghostlight{background:rgba(239,236,228,.08);color:var(--bone);border:1px solid rgba(239,236,228,.28)}
+.btn.ghostlight:hover{background:rgba(239,236,228,.16)}
+/* on dark backgrounds the primary button inverts to bone so it stays visible */
+.hero .btn.p{background:var(--bone);color:var(--ink)}
+.hero .btn.p:hover{box-shadow:0 14px 30px -10px rgba(0,0,0,.5)}
+/* nav */
+.nav{position:sticky;top:0;z-index:60;background:rgba(255,253,248,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav .in{display:flex;align-items:center;gap:20px;height:66px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .wm{font-weight:600;font-size:20px;letter-spacing:.02em}
+.brand .sub{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.2em;color:var(--mut2);text-transform:uppercase;margin-top:2px}
+.nav .sp{flex:1}
+.nlinks{display:flex;gap:6px}
+.nlinks a{color:var(--mut);font-weight:500;font-size:14px;padding:8px 12px;border-radius:9px}
+.nlinks a:hover{color:var(--ink);background:rgba(20,20,15,.04)}
+@media(max-width:820px){.nlinks{display:none}}
+/* hero */
+.hero{position:relative;overflow:hidden;color:var(--bone);background:var(--ink)}
+.hero .mesh{position:absolute;inset:0;background:
+  radial-gradient(52% 60% at 16% 18%,rgba(239,236,228,.10),transparent 60%),
+  radial-gradient(48% 56% at 84% 8%,rgba(239,236,228,.06),transparent 60%);animation:drift 20s ease-in-out infinite alternate}
+@keyframes drift{to{transform:scale(1.12) translate(-2%,-1%)}}
+.hero .lines{position:absolute;inset:0;opacity:.05;background-image:repeating-linear-gradient(90deg,var(--bone) 0 1px,transparent 1px 84px)}
+.hero .in{position:relative;padding:78px 0 66px;text-align:center}
+.ey{display:inline-flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--bone);background:rgba(239,236,228,.08);border:1px solid rgba(239,236,228,.2);padding:7px 14px;border-radius:100px}
+.hero h1{font-size:clamp(36px,5.6vw,62px);line-height:1.02;font-weight:700;letter-spacing:-.02em;margin:22px auto 0;max-width:15ch}
+.hero h1 .u{color:var(--bone);border-bottom:3px solid rgba(239,236,228,.4);padding-bottom:2px}
+.hero p.sub{font-size:clamp(15px,2vw,18.5px);color:rgba(239,236,228,.72);max-width:58ch;margin:20px auto 0;font-weight:400}
+.cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:30px}
+.mini{font-family:'IBM Plex Mono',monospace;color:var(--mut2);font-size:12px;margin-top:18px;letter-spacing:.04em}
+/* stats */
+.statwrap{margin-top:-36px;position:relative;z-index:5}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stats .s{background:var(--paper);border:1px solid var(--line);border-radius:var(--rad);padding:18px 20px;box-shadow:var(--shadow)}
+.stats .s .v{font-size:27px;font-weight:700;letter-spacing:-.02em}
+.stats .s .v.a{color:var(--ink)}
+.stats .s .k{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.12em;margin-top:4px}
+@media(max-width:820px){.stats{grid-template-columns:1fr 1fr}.statwrap{margin-top:-20px}}
+/* logos */
+.logos{padding:34px 0 6px;text-align:center}
+.logos p{font-family:'IBM Plex Mono',monospace;color:var(--mut2);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+.logos .row{display:flex;gap:26px;justify-content:center;flex-wrap:wrap;margin-top:16px;color:var(--mut);font-weight:600;font-size:15px;letter-spacing:.02em}
+/* sections */
+section{padding:52px 0}
+.center{text-align:center;max-width:640px;margin:0 auto 34px}
+.center h2{font-size:clamp(26px,3.4vw,36px);font-weight:700;letter-spacing:-.02em;margin-top:8px}
+.center p{color:var(--mut);margin-top:12px;font-size:15.5px}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:820px){.how{grid-template-columns:1fr}}
+.step{background:var(--paper);border:1px solid var(--line);border-radius:var(--rad);padding:24px}
+.step .n{font-family:'IBM Plex Mono',monospace;width:34px;height:34px;border-radius:9px;background:var(--ink);color:var(--bone);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:15px}
+.step h3{margin:16px 0 7px;font-size:18px;font-weight:700}
+.step p{color:var(--mut);font-size:14px}
+.dwrap{background:var(--bone)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.deal{background:var(--paper);border:1px solid var(--line);border-radius:var(--rad);overflow:hidden}
+.deal .ph{height:132px;background:linear-gradient(135deg,#211f18,#14140F);display:flex;align-items:center;justify-content:center;color:#4a4638;font-size:34px;position:relative}
+.deal .lock{position:absolute;bottom:10px;left:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.06em;color:var(--bone);background:rgba(20,20,15,.6);padding:5px 9px;border-radius:7px}
+.deal .bd{padding:15px}
+.deal .t{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.deal .s{font-size:17px;font-weight:700;margin-top:3px}
+.deal .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.deal .pr{font-size:19px;font-weight:800}
+.deal .cm{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mut)}
+.feat{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:820px){.feat{grid-template-columns:1fr}}
+.fc{background:var(--paper);border:1px solid var(--line);border-radius:var(--rad);padding:22px}
+.fc .ic{font-size:22px}
+.fc h4{margin:12px 0 6px;font-size:16px;font-weight:700}
+.fc p{color:var(--mut);font-size:14px}
+/* pricing */
+.price{max-width:440px;margin:0 auto;background:var(--ink);color:var(--bone);border-radius:20px;padding:30px;box-shadow:var(--shadow2)}
+.price .top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(239,236,228,.16);padding-bottom:18px;margin-bottom:18px}
+.price .lab{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut2)}
+.price .amt{font-size:44px;font-weight:800;letter-spacing:-.02em}
+.price .amt small{font-size:15px;font-weight:500;color:var(--mut2)}
+.price ul{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:22px}
+.price li{display:flex;gap:10px;font-size:14.5px;color:rgba(239,236,228,.9)}
+.price li b{color:var(--bone)}
+.price .btn.p{background:var(--bone);color:var(--ink)}
+/* faq */
+.faq{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.q{background:var(--paper);border:1px solid var(--line);border-radius:var(--radsm);padding:4px 16px}
+.q summary{cursor:pointer;padding:14px 0;font-weight:600;font-size:15.5px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.q summary::-webkit-details-marker{display:none}
+.q summary::after{content:"+";color:var(--mut);font-size:20px}
+.q[open] summary::after{content:"–"}
+.q .a{color:var(--mut);font-size:14.5px;padding:0 0 16px}
+/* band */
+.band{position:relative;overflow:hidden;background:var(--ink);color:var(--bone);border-radius:22px;padding:52px 32px;text-align:center}
+.band h2{font-size:clamp(26px,3.4vw,38px);font-weight:700;letter-spacing:-.02em}
+.band p{color:rgba(239,236,228,.72);margin:12px auto 0;max-width:52ch}
+.band .cta{margin-top:26px}
+/* footer */
+.foot{padding:42px 0;color:var(--mut);font-size:13px;border-top:1px solid var(--line)}
+.foot .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+.foot .links{display:flex;gap:18px}.foot .links a:hover{color:var(--ink)}
+.foot .mono{font-size:12px;letter-spacing:.04em}
+/* ── Type: Big Shoulders Display (headings) + Public Sans (body); labels stay Plex Mono.
+   The AXESS logo wordmark stays Archivo per the brand kit — do not restyle it. ── */
+body{font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;letter-spacing:.005em}
+.hero h1,.center h2,.step h3,.deal .s,.deal .pr,.price .amt,.band h2,.stats .s .v{font-family:'IBM Plex Sans',system-ui,sans-serif}
+/* Big Shoulders is condensed — it needs open leading, a touch of tracking, and word-spacing
+   so it doesn't read squished. Wider measure keeps the hero to 3–4 comfortable lines. */
+.hero h1{font-weight:800;letter-spacing:.015em;word-spacing:.05em;line-height:1.07;max-width:22ch}
+.hero h1 .u{border-bottom:0;padding:0;text-decoration:underline;text-decoration-color:rgba(239,236,228,.3);text-underline-offset:9px;text-decoration-thickness:2px}
+.center h2,.band h2{font-weight:700;letter-spacing:.015em;word-spacing:.04em;line-height:1.1}
+.step h3{font-weight:700;letter-spacing:.02em;word-spacing:.03em;font-size:22px;line-height:1.12}
+.deal .s{font-weight:700;letter-spacing:.02em;font-size:21px}
+.price .amt{font-weight:800;letter-spacing:.01em}
+.stats .s .v{letter-spacing:.012em}
+.brand .wm{font-family:'Archivo',system-ui,sans-serif;font-weight:900;letter-spacing:.03em;font-size:21px}   /* logo wordmark — AXESS / Archivo 900 */
+.btn{white-space:nowrap}
+@media(max-width:560px){
+  .nav .in{gap:10px}
+  .nav .btn.g{display:none}                 /* Sign in hidden on phones; Get access → same sign-in */
+  .btn{padding:11px 15px;font-size:14px}
+  .hero .in{padding:54px 0 48px}
+  .mini{font-size:10px;letter-spacing:.02em;padding:0 8px}
+  .speci{gap:16px 22px}
+}
+/* ── 11R overrides: deep ink-navy surfaces + ink-blue accent, gold reserved ── */
+.hero,.price,.band{background:var(--navy)}
+.deal .ph{background:linear-gradient(135deg,#14233C,#0E1A2E);color:#3a4a63}
+.step .n{background:var(--acc);color:#fff}
+.btn.p{background:var(--acc);color:#fff;box-shadow:0 6px 18px -6px rgba(29,90,74,.35)}
+.hero .btn.p,.price .btn.p{background:var(--bone);color:var(--navy)}
+.stats .s .v.a{color:var(--acc)}
+.nlinks a:hover{color:var(--acc);background:rgba(29,90,74,.06)}
+.foot .links a:hover{color:var(--acc)}
+.btn.g:hover{border-color:var(--acc);color:var(--acc);background:rgba(29,90,74,.04)}
+.hero .mini{color:rgba(241,239,234,.84)}
+.price .lab{color:#B9C7DE}
+/* top-bar "coming soon" city teaser */
+.soon{display:inline-flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);background:rgba(29,90,74,.08);border:1px solid rgba(29,90,74,.22);border-radius:100px;padding:7px 13px;white-space:nowrap;margin-right:4px}
+.soon .dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:soonpulse 1.8s infinite}
+.soon b{color:var(--ink);transition:opacity .22s}
+@keyframes soonpulse{0%{box-shadow:0 0 0 0 rgba(29,90,74,.45)}70%{box-shadow:0 0 0 7px rgba(29,90,74,0)}100%{box-shadow:0 0 0 0 rgba(29,90,74,0)}}
+@media(max-width:1000px){.soon{display:none}}
+/* hero video layer (drop /brand/hero.mp4 to activate; animated mesh is the fallback) */
+.hero .herovid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.34}
+.hero .scrim{position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,rgba(14,16,19,.58) 0%,rgba(14,16,19,.72) 55%,rgba(14,16,19,.9) 100%)}
+.hero .mesh,.hero .lines{z-index:0}
+.hero .in{position:relative;z-index:1}
+/* request-access modal */
+.rbg{position:fixed;inset:0;background:rgba(14,16,19,.55);backdrop-filter:blur(5px);display:none;align-items:flex-start;justify-content:center;z-index:200;padding:44px 16px;overflow-y:auto}
+.rbg.on{display:flex}
+.rmodal{background:var(--paper);border:1px solid var(--line);border-radius:20px;width:100%;max-width:520px;box-shadow:0 40px 100px -30px rgba(14,16,19,.5);overflow:hidden}
+.rmodal .rhead{background:var(--navy);color:var(--bone);padding:22px 24px}
+.rmodal .rhead h3{font-family:'IBM Plex Sans',system-ui,sans-serif;font-weight:700;font-size:24px;margin:0}
+.rmodal .rhead p{color:rgba(241,239,234,.72);font-size:13px;margin:5px 0 0}
+.rmodal .rbody{padding:20px 24px 24px}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rf{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.rf.full{grid-column:1/-1}
+.rf label{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.rf label .req{color:var(--acc)}
+.rf input,.rf textarea{background:#fff;border:1px solid var(--line2);color:var(--ink);border-radius:10px;padding:11px 12px;font:inherit;font-size:14px}
+.rf input:focus,.rf textarea:focus{outline:none;border-color:var(--acc)}
+.rmsg{font-size:13px;color:var(--mut);min-height:18px;margin-top:2px}
+.rdone{text-align:center;padding:14px 6px}
+.rdone div.big{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:26px;font-weight:700;color:var(--acc);margin-bottom:8px}
+.rx{position:absolute;top:16px;right:18px;background:rgba(241,239,234,.14);border:none;color:var(--bone);width:32px;height:32px;border-radius:9px;font-size:18px;cursor:pointer}
+@media(max-width:560px){.rgrid{grid-template-columns:1fr}}
+
+/* ============================================================
+   COMPASS SKIN (AXESS) — Science-blue on white, Inter, airy.
+   Appended last so it wins the cascade. ============================================================ */
+:root{
+  --acc:#0064E5;--acc2:#3A86F0;--gold:#0064E5;
+  --ink:#0B0C0E;--ink2:#16181C;--navy:#0B0C0E;--bone:#FFFFFF;--paper:#FFFFFF;
+  --mut:#5B6472;--mut2:#8A93A3;--line:#E8EAEE;--line2:#DFE2E8;
+}
+body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
+.hero h1,.center h2,.step h3,.band h2,.stats .s .v,.deal .s,.price .amt,.rmodal .rhead h3,.rdone div.big,.feat h4{font-family:'Inter',system-ui,sans-serif;letter-spacing:-.02em}
+.kick,.brand .sub,.rf label,.mono,.logos p,.foot .mono,.mini,.ey,.soon,.deal .type,.stats .s .k{font-family:'Inter',system-ui,sans-serif}
+.brand .wm{font-family:'Inter',system-ui,sans-serif;font-weight:700;letter-spacing:.22em;font-size:20px;color:var(--ink)}
+.brand .ico{width:30px;height:30px}
+.brand .sub{letter-spacing:.14em;color:var(--mut2);white-space:nowrap}
+.brand{flex:none}
+/* nav */
+.nav{background:rgba(255,255,255,.9);border-bottom:1px solid var(--line)}
+.nav .in{gap:14px}
+.nlinks{flex-wrap:nowrap;gap:2px}
+.nlinks a{font-weight:500;white-space:nowrap}
+.nlinks a:hover{color:var(--acc);background:rgba(0,100,229,.06)}
+@media(max-width:1240px){.soon{display:none!important}}
+/* keep Sign in reachable on phones (was hidden) — compact blue link + tighter buttons */
+.lbl-sm{display:none}
+@media(max-width:560px){
+  .nav .in{gap:6px}
+  .brand .sub{display:none}
+  .brand .wm{font-size:18px;letter-spacing:.16em}
+  .brand .ico{width:26px;height:26px}
+  .nav .btn.g{display:inline-flex!important;border:0;background:none;color:var(--acc);padding:9px 6px;font-size:14px;font-weight:600}
+  .nav .btn.p{padding:10px 16px;font-size:14px}
+  .lbl-lg{display:none}
+  .lbl-sm{display:inline}
+}
+/* buttons — squared, bright blue */
+.btn{border-radius:7px}
+.btn.p{background:var(--acc);color:#fff;box-shadow:none}
+.btn.p:hover{background:#0056c9;box-shadow:0 10px 26px -12px rgba(0,100,229,.7)}
+.btn.g{border:1px solid var(--line2);color:var(--ink)}
+.btn.g:hover{border-color:var(--acc);color:var(--acc);background:rgba(0,100,229,.04)}
+/* ── HERO: light, with faded architectural backdrop ── */
+.hero{background:#fff;color:var(--ink);overflow:hidden}
+.hero .herovid,.hero .scrim,.hero .mesh,.hero .lines{display:none!important}
+.hero::before{content:"";position:absolute;inset:0;z-index:0;background:url('/brand/axess/hero.png') center bottom/100% auto no-repeat}
+.hero::after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.3) 40%,rgba(255,255,255,0) 78%)}
+.hero .in{position:relative;z-index:2;text-align:center;padding:92px 0 84px}
+.hero .ey{color:var(--acc);background:rgba(0,100,229,.08);border:1px solid rgba(0,100,229,.22)}
+.hero h1{color:var(--ink);font-weight:800;letter-spacing:-.03em}
+.hero h1 .u{color:var(--acc);border-bottom:0;padding:0;text-decoration:none}
+.hero p.sub{color:var(--mut)}
+.hero p.sub b{color:var(--ink)!important}
+.hero .cta{justify-content:center}
+.hero .btn.p{background:var(--acc)!important;color:#fff!important}
+.hero .btn.ghostlight{background:#fff;color:var(--ink);border:1px solid var(--line2)}
+.hero .btn.ghostlight:hover{border-color:var(--acc);color:var(--acc)}
+.hero .mini{color:var(--mut);font-weight:600}
+@media(max-width:600px){
+  .hero .in{padding:34px 0 220px}          /* tighten top gap; leave room so skyline sits below the text */
+  .hero h1{font-size:clamp(32px,8.5vw,42px)}
+  .hero p.sub{font-size:15px}
+  .hero .mini{margin-top:22px;background:rgba(255,255,255,.75);display:inline-block;padding:6px 10px;border-radius:8px}
+  .hero::before{background-size:auto 200px}   /* skyline as a shorter band along the bottom */
+  .hero::after{background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.65) 55%,rgba(255,255,255,0) 100%)}
+}
+/* stats — clean white cards */
+.statwrap{margin-top:-30px}
+.stats .s{box-shadow:0 14px 44px -30px rgba(11,12,14,.35)}
+.stats .s .v{color:var(--ink)}
+.stats .s .v.a{color:var(--acc)}
+/* steps + feature icons */
+.step .n{background:var(--acc);color:#fff}
+.deal .ph{background:linear-gradient(135deg,#EEF2F8,#E3E9F2);color:#9aa6b8}
+.deal .type{color:var(--acc)}
+/* pricing card stays dark (near-black) for contrast; accents to blue */
+.price .amt small{color:rgba(255,255,255,.55)!important}
+/* CTA band → solid science blue */
+.band{background:var(--acc)!important;color:#fff}
+.band h2{color:#fff}
+.band p{color:rgba(255,255,255,.86)}
+.band .btn.p{background:#fff;color:var(--acc)}
+.band .btn.ghostlight{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.4)}
+/* coming-soon pill */
+.soon{color:var(--acc);background:rgba(0,100,229,.08);border-color:rgba(0,100,229,.2)}
+.soon .dot{background:var(--acc)}.soon b{color:var(--ink)}
+@keyframes soonpulse{0%{box-shadow:0 0 0 0 rgba(0,100,229,.45)}70%{box-shadow:0 0 0 7px rgba(0,100,229,0)}100%{box-shadow:0 0 0 0 rgba(0,100,229,0)}}
+/* request-access modal header → blue */
+.rmodal .rhead{background:var(--acc)}
+.rf input:focus,.rf textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,100,229,.12)}
+.rf label .req{color:var(--acc)}
+.foot .links a:hover{color:var(--acc)}
+/* ── pricing tiers: active Founding + crossed-out Annual / 2-Year ── */
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:1020px;margin:0 auto;align-items:stretch}
+.plans .price{max-width:none;margin:0;width:auto;box-shadow:0 0 0 2px var(--acc),var(--shadow2)}
+.plans .price .btn.p{background:#fff;color:var(--ink)}
+.plan{background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px;display:flex;flex-direction:column;position:relative}
+.plan .lab{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:600}
+.plan .amt{font-size:40px;font-weight:800;letter-spacing:-.02em;color:var(--ink);margin-top:12px;text-decoration:line-through;text-decoration-color:rgba(11,12,14,.4);text-decoration-thickness:3px}
+.plan .amt small{font-size:15px;font-weight:600;color:var(--mut2);text-decoration:none;margin-left:5px}
+.plan .permo{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);font-weight:600;margin-top:8px}
+.plan ul{list-style:none;display:flex;flex-direction:column;gap:10px;margin:20px 0 22px;padding:0}
+.plan li{display:flex;gap:9px;font-size:14px;color:var(--mut)}
+.plan li b{color:var(--acc)}
+.plan .lockbtn{margin-top:auto;width:100%;text-align:center;background:#F3F5F8;color:var(--mut2);border:1px dashed var(--line2);border-radius:7px;padding:13px;font-weight:600;font-size:13.5px}
+.plan .flag{position:absolute;top:18px;right:18px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);background:#F3F5F8;border:1px solid var(--line);border-radius:100px;padding:4px 10px;font-weight:600}
+.plan .flag.best{color:var(--acc);background:rgba(0,100,229,.08);border-color:rgba(0,100,229,.28)}
+.plan .lab{padding-right:96px}
+.price .pbest{display:inline-block;font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:#0B0C0E;background:#fff;border-radius:100px;padding:6px 13px;margin-bottom:16px}
+@media(max-width:820px){.plans{grid-template-columns:1fr;max-width:440px}}
+</style></head>
+<body>
+
+<div class="nav"><div class="wrap in">
+  <div class="brand">
+    <svg class="ico" viewBox="0 0 100 100" aria-label="AXESS" fill="var(--ink)"><path d="M50 0 100 100H74L50 30 26 100H0Z"/><rect x="22.4" y="56.6" width="30.3" height="14.5"/></svg>
+    <div><div class="wm">AXESS</div><div class="sub">A Real Estate Network</div></div>
+  </div>
+  <div class="sp"></div>
+  <div class="nlinks"><a href="#how">How it works</a><a href="/demo.html">Live demo</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a onclick="openContact()" style="cursor:pointer">Contact</a></div>
+  <div class="soon" title="Expanding soon"><span class="dot"></span>Coming soon · <b id="soonCity">Providence, RI</b></div>
+  <button class="btn g" onclick="openSignin()">Sign in</button>
+  <button class="btn p" onclick="openReq()"><span class="lbl-lg">Request access</span><span class="lbl-sm">Join</span></button>
+</div></div>
+
+<header class="hero">
+  <video class="herovid" autoplay muted playsinline></video>
+  <div class="scrim"></div><div class="mesh"></div><div class="lines"></div>
+  <div class="wrap in">
+    <span class="ey">◆ Invite-only · Agent-to-agent · Massachusetts</span>
+    <h1>The deals that never <span class="u">hit the market</span>.</h1>
+    <p class="sub">An invite-only, <b style="color:var(--bone)">agent-to-agent</b> network for licensed Massachusetts agents — <b style="color:var(--bone)">not a public, open-market platform</b>. Trade off-market property of every kind — <b style="color:var(--bone)">single-family, condos, multifamily, commercial, and land</b> — directly with other vetted agents, post what your clients need, and keep every deal private until you choose to go public.</p>
+    <div class="cta"><button class="btn p big" onclick="openReq()">Request access</button><button class="btn ghostlight big" onclick="location.href='/demo.html'">▶ See a live demo</button></div>
+    <div class="mini">FOUNDING MEMBERS JOIN FREE · $50/MO AFTER LAUNCH · MASSACHUSETTS · <a href="/demo.html" style="color:inherit;text-decoration:underline">take the 60-sec demo</a></div>
+  </div>
+</header>
+
+<div class="wrap statwrap"><div class="stats" id="stats">
+  <div class="s"><div class="v mono" data-stat="liveDeals" data-fmt="int">—</div><div class="k">Live deals</div></div>
+  <div class="s"><div class="v mono a" data-stat="volume" data-fmt="money">—</div><div class="k">Deal volume on the board</div></div>
+  <div class="s"><div class="v mono a" data-stat="commission" data-fmt="money">—</div><div class="k">Commission available</div></div>
+  <div class="s"><div class="v mono" data-stat="members" data-fmt="int">—</div><div class="k">Members &amp; growing</div></div>
+</div></div>
+
+<div class="logos wrap">
+  <div class="row"><span>Citicore Properties</span><span>Grove Property Group</span><span>Summit Home Buyers</span></div>
+</div>
+
+<section id="how"><div class="wrap">
+  <div class="center"><div class="kick">How it works</div><h2>List quietly. Control access. Close fast.</h2><p>Everything an off-market deal needs — and nothing that exposes it to the open market.</p></div>
+  <div class="how">
+    <div class="step"><div class="n">1</div><h3>Post in 60 seconds</h3><p>Add your deal with the address shown or kept private — your call. Set the asking price and the buyer-broker commission you'll pay.</p></div>
+    <div class="step"><div class="n">2</div><h3>Agents connect directly</h3><p>Vetted members message you the moment your deal fits a client. No gatekeeping, no lead forms — just agent to agent.</p></div>
+    <div class="step"><div class="n">3</div><h3>Close off-market</h3><p>Zero days-on-market exposure. Move the deal to the right buyer without it ever touching the MLS.</p></div>
+  </div>
+</div></section>
+
+<div class="dwrap"><section id="feed"><div class="wrap">
+  <div class="center"><div class="kick">The feed</div><h2>A live look, addresses locked.</h2><p>Members see the full numbers and request an introduction. Non-members see the opportunity — never the address.</p></div>
+  <div class="grid" id="grid"></div>
+  <div style="text-align:center;margin-top:32px"><button class="btn p big" onclick="openReq()">Request access to the full feed →</button></div>
+</div></section></div>
+
+<section><div class="wrap">
+  <div class="center"><div class="kick">Why agents join</div><h2>The off-market network, without the noise.</h2><p>If you've ever gotten a flood of alerts for listings in towns you don't cover, or watched a good deal die on the open market — this is the fix.</p></div>
+  <div class="feat">
+    <div class="fc"><div class="ic">🎯</div><h4>Only the deals you actually work</h4><p>Tune every alert to your property types and your markets. No pings about houses in a town you never touch — only what fits your lane.</p></div>
+    <div class="fc"><div class="ic">🏘️</div><h4>Every type, off-market</h4><p>Single-family to multifamily to commercial and land — pre-market deals you won't find on the MLS, all in one private feed.</p></div>
+    <div class="fc"><div class="ic">⚡</div><h4>It works your deals for you</h4><p>Post what your client needs and get matched the moment a deal fits. Post your own in about 30 seconds. It's a tool, not a bulletin board.</p></div>
+    <div class="fc"><div class="ic">🔒</div><h4>Your deal, your rules</h4><p>Keep the address private until you approve an intro. Set your own commission. Share it broad, private, or pocket — your call.</p></div>
+    <div class="fc"><div class="ic">💵</div><h4>Keep 100% of your commission</h4><p>We never take a cut of your deal. Founding members join free, and you're always told before anything is ever charged.</p></div>
+    <div class="fc"><div class="ic">🛡️</div><h4>Real, licensed agents only</h4><p>Every member is verified by license and brokerage before they're in. Invite-only, high-signal, spam-free — agent to agent.</p></div>
+  </div>
+</div></section>
+
+<section id="pricing" style="padding-top:8px"><div class="wrap">
+  <div class="center"><div class="kick">Membership</div><h2>Founding members join free.</h2><p>Get in early while we're building the network. Membership will be $50/month — founding members lock in free access, and you'll be told before anything is ever charged.</p></div>
+  <div class="plans">
+    <div class="price">
+      <div class="pbest">★ Best value · Free right now</div>
+      <div class="top"><div class="lab" style="color:#9FBEEE">Founding Membership</div><div class="amt">Free<small style="text-decoration:line-through;color:rgba(241,239,234,.62);margin-left:9px">$50/mo</small></div></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9FBEEE;margin:-6px 0 4px">Free for founding members · $50/month after launch</div>
+      <div id="foundingLine" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:rgba(241,239,234,.72);margin:0 0 15px"></div>
+      <ul>
+        <li><b>✓</b> Browse the full deal feed with all numbers</li>
+        <li><b>✓</b> Post unlimited deals — free, forever</li>
+        <li><b>✓</b> Request &amp; approve introductions</li>
+        <li><b>✓</b> Post your clients' needs &amp; get matched</li>
+        <li><b>✓</b> Vetted-members-only network</li>
+        <li><b>✓</b> Founding rate locked in · cancel anytime</li>
+      </ul>
+      <button class="btn p big" style="width:100%;justify-content:center" onclick="openReq()">Request access — free</button>
+    </div>
+
+    <div class="plan">
+      <span class="flag">After launch</span>
+      <div class="lab">Annual</div>
+      <div class="amt">$500<small>/year</small></div>
+      <div class="permo">≈ $42/mo · 2 months free</div>
+      <ul>
+        <li><b>✓</b> Everything in membership</li>
+        <li><b>✓</b> Save vs. paying monthly</li>
+        <li><b>✓</b> Priority support</li>
+        <li><b>✓</b> Locked-in annual rate</li>
+      </ul>
+      <div class="lockbtn">Coming after launch</div>
+    </div>
+
+    <div class="plan">
+      <span class="flag">After launch</span>
+      <div class="lab">2-Year</div>
+      <div class="amt">$840<small>/2 years</small></div>
+      <div class="permo">≈ $35/mo · save 30%</div>
+      <ul>
+        <li><b>✓</b> Everything in membership</li>
+        <li><b>✓</b> Our lowest monthly rate</li>
+        <li><b>✓</b> Priority support</li>
+        <li><b>✓</b> Rate locked for 2 years</li>
+      </ul>
+      <div class="lockbtn">Coming after launch</div>
+    </div>
+  </div>
+</div></section>
+
+<section id="faq"><div class="wrap">
+  <div class="center"><div class="kick">FAQ</div><h2>Questions, answered.</h2></div>
+  <div class="faq">
+    <details class="q"><summary>Is my property address really private?</summary><div class="a">Yes. The address is stored on our servers and never sent to a buyer's browser until you approve that specific introduction. Everyone else sees the submarket, the numbers, and your description — never the address.</div></details>
+    <details class="q"><summary>Who can join?</summary><div class="a">Licensed Massachusetts real estate agents. Every member is reviewed and approved by hand — we verify your license and brokerage before you're in. That's what keeps the network high-signal and spam-free.</div></details>
+    <details class="q"><summary>What does it cost, and are there deal fees?</summary><div class="a">Right now it's free — founding members join at no cost while we build out the network. Membership will be $50/month afterward, and we'll always tell you before anything is charged. Posting deals is free and unlimited, and commissions are set by the seller on each deal — we never take a cut of your commission.</div></details>
+    <details class="q"><summary>Is this an MLS or an open marketplace?</summary><div class="a">Neither. AXESS is a private, invite-only, agent-to-agent network for off-market opportunities — the exact opposite of a public, open-market platform. Deals move directly between vetted agents and never appear publicly unless you choose to take them public elsewhere.</div></details>
+    <details class="q"><summary>How fast can I list a deal?</summary><div class="a">About 60 seconds. Add the address (kept private), a submarket, price, commission, and a short description — you're live.</div></details>
+  </div>
+</div></section>
+
+<section id="expansion" style="padding-top:8px"><div class="wrap">
+  <div class="center"><div class="kick">What's coming</div><h2>Starting in Massachusetts. Your state is next.</h2>
+    <p>AXESS is launching statewide across Massachusetts first, then expanding across New England and into <b>New York</b>. Working in another market? <a onclick="openReq()" style="color:var(--acc);cursor:pointer;font-weight:600;text-decoration:underline">Request access</a> and we'll let you know the moment your market goes live.</p></div>
+</div></section>
+
+<section><div class="wrap"><div class="band">
+  <div class="mesh" style="position:absolute;inset:0;opacity:.5;background:radial-gradient(50% 70% at 20% 10%,rgba(239,236,228,.08),transparent 60%)"></div>
+  <div style="position:relative">
+    <h2>The next Boston deal moves here first.</h2>
+    <p>Join the brokers and investors trading off-market — quietly, and on their terms.</p>
+    <div class="cta" style="justify-content:center"><button class="btn p big" style="background:var(--bone);color:var(--navy)" onclick="openReq()">Request access</button><button class="btn ghostlight big" onclick="document.getElementById('feed').scrollIntoView({behavior:'smooth'})">Browse the feed</button></div>
+  </div>
+</div></div></section>
+
+<div class="foot"><div class="wrap in">
+  <div class="brand">
+    <svg class="ico" viewBox="0 0 100 100" style="width:28px;height:28px" aria-label="AXESS" fill="var(--ink)"><path d="M50 0 100 100H74L50 30 26 100H0Z"/><rect x="22.4" y="56.6" width="30.3" height="14.5"/></svg>
+    <div><div class="wm">AXESS</div></div>
+  </div>
+  <div class="links"><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a onclick="openContact()" style="cursor:pointer">Contact</a><a>Terms</a><a>Privacy</a></div>
+  <div class="mono">© 2026 AXESS — a Citicore Properties Inc network. Not an MLS.</div>
+</div></div>
+
+<!-- REQUEST AXESS -->
+<div class="rbg" id="reqBg" onclick="if(event.target===this)closeReq()">
+  <div class="rmodal" style="position:relative">
+    <button class="rx" onclick="closeReq()" aria-label="Close">×</button>
+    <div class="rhead"><h3>Join AXESS</h3><p>Free for founding members ($50/mo after launch). For licensed Massachusetts agents. Create your account now — you can browse right away, and posting &amp; messaging unlock the moment we verify your license.</p><div id="refNote" style="display:none;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)">◆ Referred by a member</div></div>
+    <div class="rbody" id="reqBody">
+      <div class="rgrid">
+        <div class="rf"><label>Full legal name <span class="req">*</span> <span style="color:var(--mut2);font-weight:400">(as on license)</span></label><input id="qName" autocomplete="name"></div>
+        <div class="rf"><label>Email <span class="req">*</span></label><input id="qEmail" type="email" autocomplete="email"></div>
+        <div class="rf"><label>Phone <span class="req">*</span></label><input id="qPhone" type="tel" autocomplete="tel"></div>
+        <div class="rf"><label>MA license # <span class="req">*</span></label><input id="qLicense"></div>
+        <div class="rf"><label>Brokerage <span class="req">*</span></label><input id="qBrokerage"></div>
+        <div class="rf"><label>Markets you cover</label><input id="qMarkets" placeholder="e.g. South Boston, Quincy"></div>
+        <div class="rf"><label>What do you mostly do?</label><select id="qFocus"><option value="">— choose —</option><option value="residential">Residential</option><option value="commercial">Commercial &amp; investment</option><option value="both">Both</option></select></div>
+      </div>
+      <div class="rmsg" id="qMsg"></div>
+      <div id="cfBox" style="margin:4px 0 10px;display:none"></div>
+      <label class="attn" style="display:flex;gap:9px;align-items:flex-start;background:rgba(180,136,46,.08);border:1px solid rgba(180,136,46,.3);border-radius:10px;padding:11px 13px;margin:4px 0 10px;cursor:pointer"><input type="checkbox" id="qAttest" style="margin-top:3px;flex:none;width:16px;height:16px;accent-color:var(--gold)"><span style="font-size:11.5px;line-height:1.45;color:var(--mut)">I certify that I am a currently licensed real estate agent in good standing, that my name, license number, brokerage, and all information I've provided are true and accurate, and that I am not misrepresenting my identity or licensure. I understand AXESS verifies licenses and that any false statement is grounds for immediate termination without refund. <span class="req">*</span></span></label>
+      <p style="font-size:11.5px;line-height:1.5;color:var(--mut);margin:2px 0 10px">By requesting access you confirm you are a <b>licensed real estate agent in good standing</b> and you agree to our Terms and Privacy Policy, and consent to receive emails from AXESS — including sign-in links, deal alerts, and periodic updates and announcements. You can unsubscribe from marketing emails at any time.</p>
+      <p style="font-size:11px;line-height:1.5;color:var(--mut2);margin:0 0 10px">AXESS is a private, invite-only networking platform for licensed agents — it is <b>not a broker, MLS, or listing service</b> and does not market properties to the public. You are solely responsible for your own compliance with all applicable laws, license and brokerage obligations, fair-housing requirements, MLS rules, and NAR's Clear Cooperation Policy — including timely submission of a listing to the MLS where required, and obtaining any client/seller consent needed to market a property off-market or pre-market. You will only post deals you are authorized to share. Deal details and figures are member-submitted and not verified by AXESS; the built-in analysis is an estimate. Nothing here is legal advice.</p>
+      <button class="btn p big" id="qBtn" style="width:100%;justify-content:center" onclick="sendReq()">Create account</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT US -->
+<div class="rbg" id="contactBg" onclick="if(event.target===this)closeContact()">
+  <div class="rmodal" style="position:relative;max-width:500px">
+    <button class="rx" onclick="closeContact()" aria-label="Close">×</button>
+    <div class="rhead"><h3>Contact us</h3><p>Questions, issues, or just want to learn more? Send us a note and we'll get back to you by email.</p></div>
+    <div class="rbody" id="contactBody">
+      <div class="rgrid">
+        <div class="rf"><label>Your name <span class="req">*</span></label><input id="cName" autocomplete="name"></div>
+        <div class="rf"><label>Email <span class="req">*</span></label><input id="cEmail" type="email" autocomplete="email"></div>
+      </div>
+      <div class="rf full"><label>Subject</label>
+        <select id="cSubject"><option>General question</option><option>Trouble signing in</option><option>Membership &amp; billing</option><option>Report a bug or issue</option><option>Partnership / press</option><option>Something else</option></select>
+      </div>
+      <div class="rf full"><label>Message <span class="req">*</span></label><textarea id="cMessage" rows="5" placeholder="How can we help?"></textarea></div>
+      <div class="rmsg" id="cMsg"></div>
+      <button class="btn p big" id="cBtn" style="width:100%;justify-content:center" onclick="sendContact()">Send message</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openContact(){document.getElementById('contactBg').classList.add('on');document.body.style.overflow='hidden';setTimeout(function(){var n=document.getElementById('cName');if(n)n.focus();},60);}
+function closeContact(){document.getElementById('contactBg').classList.remove('on');document.body.style.overflow='';}
+function sendContact(){
+  var name=(document.getElementById('cName').value||'').trim();
+  var email=(document.getElementById('cEmail').value||'').trim();
+  var subject=(document.getElementById('cSubject').value||'').trim();
+  var message=(document.getElementById('cMessage').value||'').trim();
+  var msg=document.getElementById('cMsg'), btn=document.getElementById('cBtn');
+  if(!name||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg.textContent='Please enter your name and a valid email.';msg.style.color='#C0492E';return;}
+  if(message.length<3){msg.textContent='Please add a short message.';msg.style.color='#C0492E';return;}
+  msg.textContent='';btn.disabled=true;btn.textContent='Sending…';
+  fetch('/api/pm/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,subject:subject,message:message})})
+    .then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok){document.getElementById('contactBody').innerHTML='<div class="rdone"><div class="big">Message sent ✓</div><p style="color:var(--mut);font-size:14px">Thanks, '+name.replace(/</g,'')+'. We\'ve got your note and will reply to '+email.replace(/</g,'')+' shortly.</p><button class="btn g big" style="margin-top:14px" onclick="closeContact()">Close</button></div>';}
+      else{msg.textContent=(j&&j.message)||'Something went wrong — please try again.';msg.style.color='#C0492E';btn.disabled=false;btn.textContent='Send message';}
+    }).catch(function(){msg.textContent='Network error — please try again.';msg.style.color='#C0492E';btn.disabled=false;btn.textContent='Send message';});
+}
+/* Run entry triggers after the whole page (and openReq/openContact) is ready. */
+window.addEventListener('load',function(){
+  try{
+    if(location.hash==='#contact'&&typeof openContact==='function'){openContact();return;}
+    if(/[?&]join=1/.test(location.search)&&typeof openReq==='function'){
+      try{var em=new URLSearchParams(location.search).get('email');if(em){var qe=document.getElementById('qEmail');if(qe)qe.value=em;}}catch(e){}
+      openReq();
+    }
+  }catch(e){}
+});
+</script>
+
+<script>
+var D=[
+  {t:'Single-family',s:'West Roxbury',pr:'$785K',cm:'2.5% BBC'},
+  {t:'Condo',s:'South Boston',pr:'$1.65M',cm:'2.5% BBC'},
+  {t:'Multifamily',s:'Dorchester',pr:'$2.95M',cm:'2.0% BBC'},
+  {t:'Mixed-use',s:'Cambridge',pr:'$3.40M',cm:'3.0% BBC'}
+];
+document.getElementById('grid').innerHTML=D.map(function(d){return '<div class="deal"><div class="ph">▦<div class="lock">🔒 ADDRESS HIDDEN</div></div><div class="bd"><div class="t">'+d.t+'</div><div class="s">'+d.s+'</div><div class="foot"><div class="pr mono">'+d.pr+'</div><div class="cm">'+d.cm+'</div></div></div></div>';}).join('');
+/* hero video playlist — plays hero.mp4, hero2.mp4, hero3.mp4 … in a loop.
+   Drop more files (hero2.mp4, hero3.mp4, up to hero8.mp4) in the repo root to add them.
+   Missing numbers 404 and are skipped; with one video it just loops that one. */
+(function(){
+  var v=document.querySelector('.herovid'); if(!v) return;
+  var list=['/brand/hero.mp4','/brand/hero2.mp4','/brand/hero3.mp4','/brand/hero4.mp4','/brand/hero5.mp4','/brand/hero6.mp4','/brand/hero7.mp4','/brand/hero8.mp4'];
+  var i=0, dead={}, tries=0;
+  function play(idx){ i=idx; v.src=list[i]; try{v.load();}catch(e){} v.play().catch(function(){}); }
+  function next(){
+    if(Object.keys(dead).length>=list.length) return;   // nothing playable — animated fallback shows
+    tries=0;
+    do{ i=(i+1)%list.length; tries++; } while(dead[i] && tries<=list.length);
+    play(i);
+  }
+  v.addEventListener('ended', next);
+  v.addEventListener('error', function(){ dead[i]=1; if(Object.keys(dead).length<list.length) next(); });
+  play(0);
+})();
+/* ── live stats ticker — real aggregate counts from the database, animated ── */
+(function(){
+  function fmtMoney(n){n=Math.round(n)||0;if(n>=1e6)return '$'+(n/1e6).toFixed(n>=1e7?0:1).replace(/\.0$/,'')+'M';if(n>=1e3)return '$'+Math.round(n/1e3)+'K';return '$'+n.toLocaleString('en-US');}
+  function fmtInt(n){return (Math.round(n)||0).toLocaleString('en-US');}
+  var LAST={};
+  function animate(el,from,to,fmt){
+    var dur=900,t0=null;
+    function step(ts){ if(!t0)t0=ts; var p=Math.min(1,(ts-t0)/dur); var e=1-Math.pow(1-p,3); var val=from+(to-from)*e;
+      el.textContent=(fmt==='money'?fmtMoney(val):fmtInt(val)); if(p<1){requestAnimationFrame(step);} else {el.textContent=(fmt==='money'?fmtMoney(to):fmtInt(to));} }
+    requestAnimationFrame(step);
+  }
+  function paint(s){
+    // Brand-new empty network: leave the elegant dashes rather than a wall of zeros.
+    if(!s.liveDeals && !s.members && !s.dealsPosted) return;
+    document.querySelectorAll('#stats [data-stat]').forEach(function(el){
+      var key=el.getAttribute('data-stat'),fmt=el.getAttribute('data-fmt');
+      var to=Number(s[key]||0), from=(LAST[key]==null?0:Number(LAST[key]));
+      animate(el,from,to,fmt); LAST[key]=to;
+    });
+  }
+  function foundingBanner(s){
+    var el=document.getElementById('foundingLine'); if(!el) return;
+    if(s.foundingFull){ el.innerHTML='★ Founding spots are full — new members join at $50/month'; el.style.color='var(--gold)'; }
+    else if(s.foundingLeft!=null){ el.innerHTML='★ Only <b style="color:#fff">'+s.foundingLeft+'</b> of '+s.foundingCap+' founding spots left'; el.style.color='rgba(241,239,234,.72)'; }
+  }
+  function load(){ fetch('/api/pm/stats',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){ if(j&&j.ok&&j.stats){paint(j.stats);foundingBanner(j.stats);} }).catch(function(){}); }
+  load(); setInterval(load, 30000);
+})();
+/* top-bar "coming soon" — rotate a few teased markets */
+(function(){
+  var el=document.getElementById('soonCity'); if(!el) return;
+  var cities=['Providence, RI','Manchester, NH','Hartford, CT','Portland, ME','Nashua, NH','New York, NY'];
+  var i=0;
+  setInterval(function(){ i=(i+1)%cities.length; el.style.opacity=0;
+    setTimeout(function(){ el.textContent=cities[i]; el.style.opacity=1; },220); }, 2600);
+})();
+var CF_TOKEN='',CF_WIDGET=null;
+function loadTurnstile(cb){if(window.turnstile){cb();return;}if(!window.__cfCbs)window.__cfCbs=[];window.__cfCbs.push(cb);if(window.__cfLoading)return;window.__cfLoading=1;window.__cfReady=function(){(window.__cfCbs||[]).forEach(function(f){f();});window.__cfCbs=[];};var s=document.createElement('script');s.src='https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__cfReady&render=explicit';s.async=true;s.defer=true;document.head.appendChild(s);}
+function renderCaptcha(){var site=window.__TURNSTILE_SITE__||'';var box=document.getElementById('cfBox');if(!box)return;if(!site){box.style.display='none';return;}box.style.display='block';loadTurnstile(function(){if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}CF_TOKEN='';return;}try{CF_WIDGET=turnstile.render('#cfBox',{sitekey:site,callback:function(t){CF_TOKEN=t;},'expired-callback':function(){CF_TOKEN='';},'error-callback':function(){CF_TOKEN='';}});}catch(e){}});}
+function openReq(){document.getElementById('reqBg').classList.add('on');document.body.style.overflow='hidden';renderCaptcha();setTimeout(function(){var n=document.getElementById('qName');if(n)n.focus();},60);}
+function closeReq(){document.getElementById('reqBg').classList.remove('on');document.body.style.overflow='';}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeReq();});
+(function(){ if((new URLSearchParams(location.search).get('ref')||'').trim()){ var n=document.getElementById('refNote'); if(n) n.style.display='block'; } })();
+function sendReq(){
+  var g=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
+  var attest=!!(document.getElementById('qAttest')&&document.getElementById('qAttest').checked);
+  var body={name:g('qName'),email:g('qEmail'),license:g('qLicense'),brokerage:g('qBrokerage'),phone:g('qPhone'),markets:g('qMarkets'),focus:g('qFocus'),note:g('qNote'),attest:attest,ref:(new URLSearchParams(location.search).get('ref')||'').toUpperCase()};
+  var msg=document.getElementById('qMsg');
+  if(!body.name||!body.email){msg.style.color='var(--bad)';msg.textContent='Full legal name and email are required.';return;}
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email)){msg.style.color='var(--bad)';msg.textContent='Enter a valid email.';return;}
+  if(!body.phone||!body.license||!body.brokerage){msg.style.color='var(--bad)';msg.textContent='Phone, MA license #, and brokerage are all required.';return;}
+  if(!attest){msg.style.color='var(--bad)';msg.textContent='Please check the licensure certification to continue.';return;}
+  if((window.__TURNSTILE_SITE__||'')&&!CF_TOKEN){msg.style.color='var(--bad)';msg.textContent='Please complete the verification below.';return;}
+  body.captcha=CF_TOKEN;
+  var btn=document.getElementById('qBtn');btn.disabled=true;btn.textContent='Creating…';msg.style.color='var(--mut)';msg.textContent='';
+  fetch('/api/pm/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json().catch(function(){return {ok:false};});})
+    .then(function(j){
+      if(j&&j.ok){
+        document.getElementById('reqBody').innerHTML='<div class="rdone"><div class="big">Account created ✓</div><p style="color:var(--mut);font-size:14px;line-height:1.5">Welcome, '+ (body.name.split(' ')[0]||'') +'. We just emailed a one-tap sign-in link to <b>'+body.email.replace(/</g,'')+'</b> — tap it to log in and set up your profile. You can browse right away; <b>posting &amp; messaging unlock as soon as we verify your license</b> (usually within a day).</p><p style="color:var(--mut2);font-size:12px;margin-top:8px">No link in a minute? Check spam, or use “Sign in” with this email.</p><button class="btn p big" style="margin-top:16px;justify-content:center" onclick="closeReq()">Done</button></div>';
+      } else { btn.disabled=false;btn.textContent='Create account';msg.style.color='var(--bad)';msg.textContent=(j&&j.message)||'Something went wrong — try again.';CF_TOKEN='';if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}} }
+    })
+    .catch(function(){btn.disabled=false;btn.textContent='Create account';msg.style.color='var(--bad)';msg.textContent='Network error — try again.';CF_TOKEN='';if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}}});
+}
+</script>
+<div class="rbg" id="siBg" onclick="if(event.target===this)closeSignin()">
+  <div class="rmodal" style="position:relative;max-width:430px">
+    <button class="rx" onclick="closeSignin()" aria-label="Close">×</button>
+    <div class="rhead"><h3>Sign in</h3><p>Members only. Enter your email and we&rsquo;ll send you a one-tap sign-in link.</p></div>
+    <div class="rbody" id="siBody">
+      <div class="rf full"><label>Email</label><input id="siEmail" type="email" autocomplete="email" placeholder="you@brokerage.com"></div>
+      <div class="rmsg" id="siMsg"></div>
+      <button class="btn p big" id="siBtn" style="width:100%;justify-content:center" onclick="sendSignin()">Send sign-in link</button>
+      <p style="margin-top:12px;font-size:13px;color:var(--mut);text-align:center">Not a member yet? <a href="#" onclick="closeSignin();openReq();return false" style="color:var(--gold);text-decoration:none">Request access</a></p>
+    </div>
+  </div>
+</div>
+<script>
+function openSignin(){document.getElementById('siBg').classList.add('on');document.body.style.overflow='hidden';setTimeout(function(){var n=document.getElementById('siEmail');if(n)n.focus();},60);}
+function closeSignin(){document.getElementById('siBg').classList.remove('on');document.body.style.overflow='';}
+var LAST_SIGNIN_EMAIL='';
+function resendSignin(){
+  if(!LAST_SIGNIN_EMAIL)return;
+  var m=document.getElementById('siResendMsg');if(m){m.style.color='var(--mut)';m.textContent='Resending…';}
+  fetch('/auth/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:LAST_SIGNIN_EMAIL})})
+    .then(function(r){return r.json().catch(function(){return{ok:false};});})
+    .then(function(j){if(!m)return;if(j&&j.ok){m.style.color='var(--acc)';m.textContent='Link resent ✓ — check spam/promotions too.';}else{m.style.color='var(--bad)';m.textContent='Couldn’t resend — try again in a moment.';}})
+    .catch(function(){if(m){m.style.color='var(--bad)';m.textContent='Network error — try again.';}});
+}
+function sendSignin(){
+  var el=document.getElementById('siEmail');var email=el?el.value.trim():'';
+  var msg=document.getElementById('siMsg');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg.style.color='var(--bad)';msg.textContent='Enter a valid email.';return;}
+  var btn=document.getElementById('siBtn');btn.disabled=true;btn.textContent='Sending…';msg.style.color='var(--mut)';msg.textContent='';
+  fetch('/auth/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})})
+    .then(function(r){return r.json().catch(function(){return{ok:false};});})
+    .then(function(j){
+      if(j&&j.ok){LAST_SIGNIN_EMAIL=email;document.getElementById('siBody').innerHTML='<div class="rdone"><div class="big">Check your email ✓</div><p style="color:var(--mut);font-size:14px;line-height:1.5">We sent a sign-in link to <b>'+email.replace(/</g,'')+'</b>. Tap it to sign in — it expires in 30 minutes.</p><p style="margin-top:9px;font-size:12.5px;color:var(--mut2);line-height:1.5">Didn’t get it? Check your <b>spam</b> and <b>promotions</b> folders. Still nothing? <a href="#" onclick="resendSignin();return false" style="color:var(--acc);text-decoration:underline">Resend the link</a>.</p><div class="rmsg" id="siResendMsg" style="text-align:center"></div><button class="btn p big" style="margin-top:14px;justify-content:center" onclick="closeSignin()">Done</button></div>';}
+      else{btn.disabled=false;btn.textContent='Send sign-in link';msg.style.color='var(--bad)';msg.textContent=(j&&j.message)||'Something went wrong — try again.';}
+    })
+    .catch(function(){btn.disabled=false;btn.textContent='Send sign-in link';msg.style.color='var(--bad)';msg.textContent='Network error — try again.';});
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSignin();});
+</script>
+</body></html>
