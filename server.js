@@ -1,4 +1,4 @@
-// ── ACCESS — standalone server ──────────────────────────────────────────────
+// ── AXESS — standalone server ──────────────────────────────────────────────
 // Invite-only, agent-to-agent, off-market investment deal network.
 // Own repo · own Render service · own Postgres. Data layer: db.js
 // (pmLoad/pmSave over Postgres). Auth: auth.js (email magic-link).
@@ -55,7 +55,7 @@ const PM_KEYS = { listings: 'pm_listings', intros: 'pm_intros', buyboxes: 'pm_bu
 
 // Canonical licensure attestation — the exact text a member must accept at signup.
 // Stored verbatim on their profile with a timestamp + IP so acceptance is provable.
-const ATTEST_TEXT = "I certify that I am a currently licensed real estate agent in good standing, that my name, license number, brokerage, and all information I've provided are true and accurate, and that I am not misrepresenting my identity or licensure. I understand ACCESS verifies licenses and that any false statement is grounds for immediate termination without refund.";
+const ATTEST_TEXT = "I certify that I am a currently licensed real estate agent in good standing, that my name, license number, brokerage, and all information I've provided are true and accurate, and that I am not misrepresenting my identity or licensure. I understand AXESS verifies licenses and that any false statement is grounds for immediate termination without refund.";
 
 // ── give-to-get reciprocity ─────────────────────────────────────────────────
 // The network only works if members contribute. A member keeps FULL access
@@ -335,7 +335,7 @@ app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
           if (pmWantsEmail(prof, 'deals')) hits.push({ to: _lc(bx.owner), txt });
         });
         await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns);
-        for (const h of hits) await pmSendEmail(h.to, 'ACCESS · new deal matches your buy box', h.txt + '\n\nOpen ACCESS to view the deal and message the listing agent.');
+        for (const h of hits) await pmSendEmail(h.to, 'AXESS · new deal matches your buy box', h.txt + '\n\nOpen AXESS to view the deal and message the listing agent.');
       } catch (e) { /* best-effort */ }
     }
     res.json({ ok: true, listing: pmPublicView(rec, req.user.role === 'owner' || _lc(rec.owner) === pmEmail(req.user)), id: rec.id });
@@ -372,7 +372,7 @@ app.post('/api/pm/listing/mls', ensureAuth, pmGate, async (req, res) => {
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
-// Mark a deal closed through ACCESS (social proof). Owner of the deal or admin.
+// Mark a deal closed through AXESS (social proof). Owner of the deal or admin.
 // closePrice is optional; showClose controls whether it appears in public proof.
 app.post('/api/pm/listing/close', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
@@ -445,7 +445,7 @@ app.post('/api/pm/intro', ensureAuth, pmGate, async (req, res) => {
     try {
       const sProf = allProfs.find(p => p && _lc(p.email) === _lc(l.owner)) || {};
       const cred = pmCredLine(buyerProf);
-      if (pmWantsEmail(sProf, 'intros')) await pmSendEmail(l.owner, 'ACCESS · new intro request', (rec.buyerName || rec.buyer) + ' requested an intro on your ' + (l.area || l.city || 'deal') + ' listing.' + (cred ? ('\n\n' + cred) : '') + '\n\nOpen ACCESS to approve or decline.');
+      if (pmWantsEmail(sProf, 'intros')) await pmSendEmail(l.owner, 'AXESS · new intro request', (rec.buyerName || rec.buyer) + ' requested an intro on your ' + (l.area || l.city || 'deal') + ' listing.' + (cred ? ('\n\n' + cred) : '') + '\n\nOpen AXESS to approve or decline.');
     } catch (e) {}
     res.json({ ok: true, intro: rec });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -482,7 +482,7 @@ app.post('/api/pm/intro/decide', ensureAuth, pmGate, async (req, res) => {
     it.status = decision; it.decidedAt = new Date().toISOString();
     intros[idx] = it;
     await pmSave(PM_KEYS.intros, intros);
-    try { await pmSendEmail(it.buyer, 'ACCESS · your intro was ' + decision, decision === 'approved' ? 'The listing agent approved your intro. Open ACCESS to see the address and message them.' : 'The listing agent declined your intro this time.'); } catch (e) {}
+    try { await pmSendEmail(it.buyer, 'AXESS · your intro was ' + decision, decision === 'approved' ? 'The listing agent approved your intro. Open AXESS to see the address and message them.' : 'The listing agent declined your intro this time.'); } catch (e) {}
     res.json({ ok: true, intro: it });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -540,7 +540,7 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
           }
         });
         await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns);
-        for (const s of Object.keys(sellers)) await pmSendEmail(s, 'ACCESS · a buyer is hunting deals like yours', 'A new buyer just posted a buy box that matches ' + sellers[s].length + ' of your live deal(s).\n\nOpen ACCESS to see the buyer and start a conversation.');
+        for (const s of Object.keys(sellers)) await pmSendEmail(s, 'AXESS · a buyer is hunting deals like yours', 'A new buyer just posted a buy box that matches ' + sellers[s].length + ' of your live deal(s).\n\nOpen AXESS to see the buyer and start a conversation.');
       } catch (e) { /* best-effort */ }
     }
     res.json({ ok: true, buybox: rec });
@@ -739,7 +739,7 @@ app.post('/api/pm/profile', ensureAuth, pmGate, async (req, res) => {
     if (idx >= 0) { rec = Object.assign({}, profs[idx], fields, { updatedAt: now }); profs[idx] = rec; }
     else { const status = req.user.role === 'owner' ? 'approved' : 'pending'; rec = Object.assign({ email: req.user.email, status, createdAt: now, updatedAt: now }, fields); profs.push(rec); isNew = true; }
     await pmSave('pm_profiles', profs);
-    if (isNew && rec.status === 'pending' && ADMIN) { try { await pmSendEmail(ADMIN, 'ACCESS · new member awaiting approval', (rec.name || rec.email) + ' signed up.\nLicense: ' + (rec.license || '—') + '\nBrokerage: ' + (rec.brokerage || '—') + '\n\nApprove them in the ACCESS admin panel.'); } catch (e) {} }
+    if (isNew && rec.status === 'pending' && ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member awaiting approval', (rec.name || rec.email) + ' signed up.\nLicense: ' + (rec.license || '—') + '\nBrokerage: ' + (rec.brokerage || '—') + '\n\nApprove them in the AXESS admin panel.'); } catch (e) {} }
     res.json({ ok: true, profile: rec, approved: await pmApproved(req.user) });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -814,10 +814,10 @@ app.post('/api/pm/digest/run', async (req, res) => {
         ns.push({ id: pmId('N'), to: _lc(prof.email), type: 'digest', text: matches.length + ' new deal' + (matches.length === 1 ? '' : 's') + ' match your criteria', at: now, read: false });
         notifs++;
         if (pmWantsEmail(prof, 'deals')) {
-          const body = matches.length + ' new off-market deal' + (matches.length === 1 ? '' : 's') + ' match your criteria on ACCESS:\n\n' +
+          const body = matches.length + ' new off-market deal' + (matches.length === 1 ? '' : 's') + ' match your criteria on AXESS:\n\n' +
             top.map(pmDigestLine).join('\n') + (matches.length > top.length ? ('\n…and ' + (matches.length - top.length) + ' more') : '') +
-            '\n\nSee them and request intros: ' + PM_BASE + '/app.html\n\nToo many or too few? Tune your buy box and alert settings in ACCESS → Notifications.';
-          try { await pmSendEmail(prof.email, 'ACCESS · ' + matches.length + ' new deal' + (matches.length === 1 ? '' : 's') + ' match you', body); sent++; } catch (e) {}
+            '\n\nSee them and request intros: ' + PM_BASE + '/app.html\n\nToo many or too few? Tune your buy box and alert settings in AXESS → Notifications.';
+          try { await pmSendEmail(prof.email, 'AXESS · ' + matches.length + ' new deal' + (matches.length === 1 ? '' : 's') + ' match you', body); sent++; } catch (e) {}
         }
         prof.lastDigestAt = now;
       }
@@ -840,7 +840,7 @@ app.post('/api/pm/pof/request', ensureAuth, pmGate, async (req, res) => {
     const doc = String(b.doc || '').slice(0, 900);
     profs[idx].pof = { status: 'pending', amount, doc, requestedAt: new Date().toISOString() };
     await pmSave('pm_profiles', profs);
-    if (ADMIN) { try { await pmSendEmail(ADMIN, 'ACCESS · proof-of-funds review', (profs[idx].name || email) + ' requested a Proof-of-Funds badge' + (amount ? (' (' + amount + ')') : '') + '.\n\nReview it in the ACCESS admin panel.'); } catch (e) {} }
+    if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · proof-of-funds review', (profs[idx].name || email) + ' requested a Proof-of-Funds badge' + (amount ? (' (' + amount + ')') : '') + '.\n\nReview it in the AXESS admin panel.'); } catch (e) {} }
     res.json({ ok: true, pof: pmPofPublic(profs[idx]) });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -859,7 +859,7 @@ app.post('/api/pm/admin/pof', ensureAuth, pmGate, async (req, res) => {
     if (decision === 'none') profs[idx].pof = { status: 'none', amount: '', doc: '' };
     else profs[idx].pof = { status: decision, amount: (b.amount != null ? String(b.amount).slice(0, 40) : (cur.amount || '')), doc: cur.doc || '', requestedAt: cur.requestedAt || '', verifiedAt: decision === 'verified' ? new Date().toISOString() : '' };
     await pmSave('pm_profiles', profs);
-    try { await pmSendEmail(email, 'ACCESS · proof-of-funds ' + decision, decision === 'verified' ? ('Your Proof-of-Funds badge is verified' + (profs[idx].pof.amount ? (' (up to ' + profs[idx].pof.amount + ')') : '') + '. Sellers will now see you as a credible buyer.') : 'Your Proof-of-Funds request was not approved this time.'); } catch (e) {}
+    try { await pmSendEmail(email, 'AXESS · proof-of-funds ' + decision, decision === 'verified' ? ('Your Proof-of-Funds badge is verified' + (profs[idx].pof.amount ? (' (up to ' + profs[idx].pof.amount + ')') : '') + '. Sellers will now see you as a credible buyer.') : 'Your Proof-of-Funds request was not approved this time.'); } catch (e) {}
     res.json({ ok: true, email, pof: pmPofPublic(profs[idx]) });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -927,7 +927,7 @@ app.post('/api/pm/admin/approve', ensureAuth, pmGate, async (req, res) => {
       profs[idx].verified = true; profs[idx].verifiedAt = profs[idx].verifiedAt || profs[idx].decidedAt; // license checked → Verified badge
     }
     await pmSave('pm_profiles', profs);
-    try { await pmSendEmail(email, 'ACCESS · your membership was ' + decision, decision === 'approved' ? 'You\'re verified and in. Sign in to ACCESS to post deals, request intros, and message members.' : 'Your ACCESS application was not approved at this time.'); } catch (e) {}
+    try { await pmSendEmail(email, 'AXESS · your membership was ' + decision, decision === 'approved' ? 'You\'re verified and in. Sign in to AXESS to post deals, request intros, and message members.' : 'Your AXESS application was not approved at this time.'); } catch (e) {}
     res.json({ ok: true, email, status: decision });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -994,7 +994,7 @@ app.post('/api/pm/request', async (req, res) => {
     // 3) Send the sign-in link now so they can log in as a pending member.
     let linkSent = false;
     try { linkSent = await authMod.sendMagicLink(email, BASE_URL || ('https://' + (req.headers.host || ''))); } catch (e) {}
-    if (ADMIN) { try { await pmSendEmail(ADMIN, 'ACCESS · new member to verify', name + ' signed up and is pending license verification.\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nVerify their license and approve them in the ACCESS admin panel (Members tab).'); } catch (e) {} }
+    if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member to verify', name + ' signed up and is pending license verification.\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nVerify their license and approve them in the AXESS admin panel (Members tab).'); } catch (e) {} }
     res.json({ ok: true, linkSent });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -1029,15 +1029,15 @@ app.post('/api/pm/admin/request/decide', ensureAuth, pmGate, async (req, res) =>
             ref.referredEmails = Array.isArray(ref.referredEmails) ? ref.referredEmails : [];
             if (!ref.referredEmails.some(e => _lc(e) === _lc(r.email))) {
               ref.referredEmails.push(r.email); ref.referrals = (ref.referrals || 0) + 1; ref.referralCredits = (ref.referralCredits || 0) + 1;
-              try { await pmSendEmail(ref.email, 'ACCESS · your referral was approved', (r.name || r.email) + ' just joined ACCESS through your invite. You\'ve earned 1 free month, credited when membership billing begins. That\'s ' + ref.referralCredits + ' free month(s) so far — thanks for growing the network.'); } catch (e) {}
+              try { await pmSendEmail(ref.email, 'AXESS · your referral was approved', (r.name || r.email) + ' just joined AXESS through your invite. You\'ve earned 1 free month, credited when membership billing begins. That\'s ' + ref.referralCredits + ' free month(s) so far — thanks for growing the network.'); } catch (e) {}
             }
           }
         }
         await pmSave('pm_profiles', profs);
       } catch (e) {}
-      try { await pmSendEmail(r.email, 'ACCESS · you\'re approved to join', 'Good news — you\'re approved as a founding member of ACCESS.\n\nYour access is free while we build out the network. Membership will be $50/month afterward, and we\'ll always give you notice before anything is ever charged.\n\nSign in at ' + PM_BASE + '/app.html to start posting deals and connecting with members.'); } catch (e) {}
+      try { await pmSendEmail(r.email, 'AXESS · you\'re approved to join', 'Good news — you\'re approved as a founding member of AXESS.\n\nYour access is free while we build out the network. Membership will be $50/month afterward, and we\'ll always give you notice before anything is ever charged.\n\nSign in at ' + PM_BASE + '/app.html to start posting deals and connecting with members.'); } catch (e) {}
     } else {
-      try { await pmSendEmail(r.email, 'ACCESS · membership request', 'Thanks for your interest in ACCESS. We\'re not able to approve your request at this time.'); } catch (e) {}
+      try { await pmSendEmail(r.email, 'AXESS · membership request', 'Thanks for your interest in AXESS. We\'re not able to approve your request at this time.'); } catch (e) {}
     }
     res.json({ ok: true, id, status: decision });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -1108,7 +1108,7 @@ app.post('/api/pm/checkout', ensureAuth, pmGate, async (req, res) => {
       if (!l) return res.status(404).json({ ok: false, error: 'not_found' });
       if (_lc(l.owner) !== pmEmail(req.user) && req.user.role !== 'owner') return res.status(403).json({ ok: false, error: 'not_your_listing' });
       const amount = PM_PRICE[kind];
-      const label = kind === 'renew' ? 'ACCESS — renew deal (30 days)' : 'ACCESS — feature deal';
+      const label = kind === 'renew' ? 'AXESS — renew deal (30 days)' : 'AXESS — feature deal';
       const session = await stripe.checkout.sessions.create({ mode: 'payment', payment_method_types: ['card'], line_items: [{ price_data: { currency: 'usd', unit_amount: amount, product_data: { name: label } }, quantity: 1 }], metadata: { kind, listingId: id, email: pmEmail(req.user) }, success_url: PM_BASE + '/app.html?paid={CHECKOUT_SESSION_ID}', cancel_url: PM_BASE + '/app.html' });
       return res.json({ ok: true, url: session.url });
     }
@@ -1208,11 +1208,11 @@ async function pmRunRenewals() {
   for (const l of listings) {
     if (!l || !l.expiresAt || (l.status || 'active') === 'off') continue;
     const days = (new Date(l.expiresAt) - now) / 864e5;
-    const link = 'Open ACCESS and hit Renew to extend this deal another 30 days.';
+    const link = 'Open AXESS and hit Renew to extend this deal another 30 days.';
     const label = (l.area || l.city || 'your deal') + (l.price ? (' · ' + pmMoneyShort(l.price)) : '');
     if (days <= 0) { l.status = 'off'; l.expiredAt = now.toISOString(); changed = true; sent.expired++; continue; }
-    if (days <= 5 && days > 1 && !l.renew5Sent) { await pmSendEmail(l.owner, 'ACCESS · your deal expires in 5 days', label + ' expires in 5 days.\n\n' + link); l.renew5Sent = true; changed = true; sent.r5++; }
-    if (days <= 1 && !l.renew1Sent) { await pmSendEmail(l.owner, 'ACCESS · your deal expires tomorrow', label + ' expires in 1 day.\n\n' + link); l.renew1Sent = true; changed = true; sent.r1++; }
+    if (days <= 5 && days > 1 && !l.renew5Sent) { await pmSendEmail(l.owner, 'AXESS · your deal expires in 5 days', label + ' expires in 5 days.\n\n' + link); l.renew5Sent = true; changed = true; sent.r5++; }
+    if (days <= 1 && !l.renew1Sent) { await pmSendEmail(l.owner, 'AXESS · your deal expires tomorrow', label + ' expires in 1 day.\n\n' + link); l.renew1Sent = true; changed = true; sent.r1++; }
   }
   if (changed) await pmSave(PM_KEYS.listings, listings);
   return sent;
@@ -1264,4 +1264,4 @@ const PORT = process.env.PORT || 3000;
 db.ensureSchema()
   .then(ok => console.log(ok ? 'Postgres ready' : 'No DATABASE_URL — set it in Render to enable storage'))
   .catch(e => console.error('schema init failed', e))
-  .finally(() => app.listen(PORT, () => console.log('ACCESS listening on ' + PORT)));
+  .finally(() => app.listen(PORT, () => console.log('AXESS listening on ' + PORT)));
