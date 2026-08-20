@@ -13,7 +13,7 @@ const crypto = require('crypto');
 const { pmLoad, pmSave } = require('./db');
 
 const ADMIN = String(process.env.ACCESS_ADMIN || '').toLowerCase().trim();
-const FROM = process.env.ACCESS_FROM || 'ACCESS <login@access.example>';
+const FROM = process.env.ACCESS_FROM || 'AXESS <login@access.example>';
 const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 min
 
 const lc = s => String(s || '').toLowerCase().trim();
@@ -89,8 +89,8 @@ async function sendMagicLink(email, baseUrl) {
   const token = crypto.randomBytes(24).toString('hex');
   await putToken(token, e);
   const link = (baseUrl || 'https://access-network.onrender.com') + '/auth/verify?token=' + token;
-  const sent = await sendEmail(e, 'Your ACCESS sign-in link',
-    `<p>Welcome to ACCESS — tap to sign in:</p><p><a href="${link}">Sign in</a></p><p>This link expires in 30 minutes.</p>`);
+  const sent = await sendEmail(e, 'Your AXESS sign-in link',
+    `<p>Welcome to AXESS — tap to sign in:</p><p><a href="${link}">Sign in</a></p><p>This link expires in 30 minutes.</p>`);
   if (!sent) console.error('[ACCESS] signup sign-in email FAILED for', e);
   return sent !== false;
 }
@@ -104,8 +104,8 @@ function mount(app, baseUrl) {
     const token = crypto.randomBytes(24).toString('hex');
     await putToken(token, email);
     const link = (baseUrl || ('https://' + (req.headers.host || ''))) + '/auth/verify?token=' + token;
-    const sent = await sendEmail(email, 'Your ACCESS sign-in link',
-      `<p>Tap to sign in to ACCESS:</p><p><a href="${link}">Sign in</a></p><p>This link expires in 30 minutes.</p>`);
+    const sent = await sendEmail(email, 'Your AXESS sign-in link',
+      `<p>Tap to sign in to AXESS:</p><p><a href="${link}">Sign in</a></p><p>This link expires in 30 minutes.</p>`);
     // Don't leak whether an address exists, but DO record a real send failure so
     // a silent delivery problem is diagnosable instead of looking like success.
     if (!sent) console.error('[ACCESS] sign-in email send FAILED for', email, '(check RESEND_API_KEY / verified domain / rate limits)');
