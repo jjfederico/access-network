@@ -8,9 +8,17 @@ const express = require('express');
 const cookieSession = require('cookie-session');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
 const db = require('./db');
 const authMod = require('./auth');
 const { pmLoad, pmSave } = db;
+
+// Tiny HTTPS GET → JSON (used to verify Google sign-in tokens; no extra deps).
+function httpsGetJson(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, r => { let d = ''; r.on('data', c => d += c); r.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { reject(e); } }); }).on('error', reject);
+  });
+}
 
 const app = express();
 app.set('trust proxy', 1);
@@ -1315,7 +1323,7 @@ setInterval(() => { pmRunRenewals().catch(() => {}); }, 12 * 3600 * 1000);
 function serveWithIdentity(res, file, user) {
   let html = fs.readFileSync(path.join(__dirname, 'public', file), 'utf8');
   const mapsKey = process.env.GOOGLE_MAPS_KEY || process.env.MAPS_API_KEY || '';
-  const inject = `<script>window.__ROLE__=${JSON.stringify(user.role)};window.__USER__=${JSON.stringify(user.name || '')};window.__EMAIL__=${JSON.stringify(user.email)};window.__ACCT__="access";window.__STATUS__=${JSON.stringify(user.status)};window.__MAPS_KEY__=${JSON.stringify(mapsKey)};</script>`;
+  const inject = `<script>window.__ROLE__=${JSON.stringify(user.role)};window.__USER__=${JSON.stringify(user.name || '')};window.__EMAIL__=${JSON.stringify(user.email)};window.__ACCT__="access";window.__STATUS__=${JSON.stringify(user.status)};window.__MAPS_KEY__=${JSON.stringify(mapsKey)};window.__GOOGLE_CLIENT_ID__=${JSON.stringify(process.env.GOOGLE_CLIENT_ID || '')};</script>`;
   html = html.includes('</head>') ? html.replace('</head>', inject + '</head>') : inject + html;
   res.type('html').send(html);
 }
@@ -1335,12 +1343,32 @@ app.get('/premarket-hub.html', ensureAuth, (req, res) => {
 function serveLanding(req, res) {
   try {
     let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
-    const inject = `<script>window.__TURNSTILE_SITE__=${JSON.stringify(TURNSTILE_SITE)};</script>`;
+    const inject = `<script>window.__TURNSTILE_SITE__=${JSON.stringify(TURNSTILE_SITE)};window.__GOOGLE_CLIENT_ID__=${JSON.stringify(process.env.GOOGLE_CLIENT_ID || '')};</script>`;
     html = html.includes('</head>') ? html.replace('</head>', inject + '</head>') : inject + html;
     res.type('html').send(html);
   } catch (e) { res.sendFile(path.join(__dirname, 'public', 'index.html')); }
 }
 app.get(['/', '/index.html'], serveLanding);
+
+// Google Sign-In: the client sends the Google ID token (JWT). We verify it with
+// Google's tokeninfo endpoint, confirm the audience is our OAuth client and the
+// email is verified, then start the same session the magic link would. Existing
+// members sign in instantly; anyone without a profile still passes the gate as a
+// signed-in guest and is routed to Request access. No password stored, ever.
+app.post('/auth/google', async (req, res) => {
+  const cred = String((req.body || {}).credential || '');
+  const CID = process.env.GOOGLE_CLIENT_ID || '';
+  if (!cred) return res.status(400).json({ ok: false, error: 'no_credential' });
+  if (!CID) return res.status(500).json({ ok: false, error: 'not_configured' });
+  try {
+    const info = await httpsGetJson('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(cred));
+    if (!info || info.aud !== CID) return res.status(401).json({ ok: false, error: 'bad_audience' });
+    if (String(info.email_verified) !== 'true' || !info.email) return res.status(401).json({ ok: false, error: 'unverified' });
+    req.session.email = String(info.email).toLowerCase().trim();
+    res.json({ ok: true, email: req.session.email });
+  } catch (e) { res.status(502).json({ ok: false, error: 'verify_failed' }); }
+});
+
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 const PORT = process.env.PORT || 3000;
