@@ -818,6 +818,8 @@ function initials(n){n=String(n||'').trim();if(!n)return '?';var p=n.split(/\s+/
 
 /* ── dollar inputs: live comma formatting (1,250,000) ── */
 function fmtMoneyInput(el){if(!el)return;var raw=(el.value||'').replace(/[^0-9]/g,'');el.value=raw?Number(raw).toLocaleString('en-US'):'';}
+// Format a raw money value (number or string) into a display string, e.g. 1250000 -> "1,250,000".
+function fmtMoneyStr(v){var raw=String(v==null?'':v).replace(/[^0-9]/g,'');return raw?Number(raw).toLocaleString('en-US'):'';}
 function attachMoney(ids){ids.forEach(function(id){var el=$(id);if(el&&!el._money){el._money=1;el.addEventListener('input',function(){fmtMoneyInput(el);});}});}
 function noComma(id){return (($(id)&&$(id).value)||'').replace(/,/g,'').trim();}
 
@@ -1229,7 +1231,7 @@ function render(){
     if(capmin&&num(d.cap)&&num(d.cap)<capmin)return false;
     if(umin&&num(d.units)&&num(d.units)<umin)return false;
     if(umax&&num(d.units)&&num(d.units)>umax)return false;
-    if(shown&&!canSeeAddress(d))return false;
+    if(shown&&d.hideAddress)return false; // "Address shown only" = exclude deals whose lister hid the address (independent of viewer)
     if(q&&(d.type+' '+d.submarket+' '+d.desc+' '+(d.addr||'')).toLowerCase().indexOf(q)<0)return false;
     return true;
   });
@@ -1275,8 +1277,13 @@ function analysisBlock(d){
     +'</div>';
 }
 function docsBlock(d){
-  if(!d.docs||!d.docs.length)return '';
-  return '<div style="margin:12px 0"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:6px">Documents</div>'
+  var hdr='<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:6px">Documents</div>';
+  if(!d.docs||!d.docs.length){
+    // Docs are withheld until the agent grants access (they can contain the address & full details).
+    if(d.docCount>0)return '<div style="margin:12px 0">'+hdr+'<div style="color:var(--gold);font-size:12.5px">🔒 '+d.docCount+' document'+(d.docCount>1?'s':'')+' — available once the agent grants you access.</div></div>';
+    return '';
+  }
+  return '<div style="margin:12px 0">'+hdr
     +d.docs.map(function(x){return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener" style="display:block;color:var(--acc2);font-size:13.5px;padding:3px 0;text-decoration:none">📎 '+esc(x.name||'Document')+'</a>';}).join('')+'</div>';
 }
 var SVG_LI='<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0zM.5 8h4V24h-4V8zM8 8h3.8v2.2h.05c.53-1 1.83-2.2 3.77-2.2 4.03 0 4.78 2.65 4.78 6.1V24h-4v-6.9c0-1.64-.03-3.75-2.29-3.75-2.3 0-2.65 1.79-2.65 3.63V24H8V8z"/></svg>';
@@ -1601,6 +1608,7 @@ function openProfile(){
     +'</div>'
     +'<div class="f full"><label>Website</label><input id="pWebsite" value="'+esc(p.website||'')+'" placeholder="yourbrokerage.com"></div>'
     +pofSection(p)
+    +(ME.role!=='owner'?'<div style="border-top:1px solid var(--line);margin-top:20px;padding-top:14px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:8px">Account</div><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div style="color:var(--mut);font-size:12.5px;max-width:430px;line-height:1.5">Cancel your account and end access. We keep your records, so you can rejoin anytime.</div><button class="btn ghost" style="color:#b00020;border-color:#e6b8bf" onclick="cancelAccount()">Cancel my account</button></div></div>':'')
     +'<div class="mact"><span class="msg" id="pMsg"></span><button class="btn ghost" onclick="close_(\'mProfile\')">Cancel</button><button class="btn acc" onclick="saveProfile()">Save profile</button></div></div></div>';
   open_('mProfile');
 }
@@ -1629,6 +1637,18 @@ function saveProfile(){
   api('/api/pm/profile',body).then(function(j){
     if(j&&j.ok){PROFILE=j.profile;APPROVED=(j.approved!==false);ME.focus=body.focus||ME.focus;if(body.focus){try{localStorage.removeItem('access_cat');}catch(e){}setCat(body.focus==='commercial'?'commercial':body.focus==='residential'?'residential':'all');}$('pMsg').textContent='Saved ✓';renderGate();setTimeout(function(){close_('mProfile');},700);}
     else{$('pMsg').textContent='Failed — retry';}
+  });
+}
+
+/* ── self-serve: member cancels their own account (records kept, access ends) ── */
+function cancelAccount(){
+  if(ME.role==='owner'){alert('The owner account can\'t be cancelled here.');return;}
+  if(!confirm('Cancel your AXESS account?\n\nYour access ends right away. We keep your records, so you can rejoin anytime by requesting access again.'))return;
+  if(!confirm('Just to confirm — this signs you out and ends your access now. Continue?'))return;
+  var m=$('pMsg');if(m)m.textContent='Cancelling…';
+  api('/api/pm/cancel',{}).then(function(j){
+    if(j&&j.ok){alert('Your account has been cancelled. Thanks for being part of AXESS — you can rejoin anytime.');location.href='/';}
+    else{if(m)m.textContent=(j&&j.message)||'Could not cancel — please try again.';}
   });
 }
 
@@ -1991,9 +2011,9 @@ function openEdit(id){
   fillFilters();
   var set=function(elId,v){var el=$(elId);if(el)el.value=(v==null?'':v);};
   set('sAddr',d.addr);set('sSub',d.submarket||d.area);set('sType',d.type||'');
-  set('sPrice',d.price?fmtMoneyInput(String(d.price)):'');set('sComm',d.commission);
-  set('sUnits',d.units);set('sCap',d.cap);set('sNoi',d.noi?fmtMoneyInput(String(d.noi)):'');
-  set('sSf',d.sf?fmtMoneyInput(String(d.sf)):'');set('sBeds',d.beds);set('sBaths',d.baths);set('sYb',d.yb);
+  set('sPrice',fmtMoneyStr(d.price));set('sComm',d.commission);
+  set('sUnits',d.units);set('sCap',d.cap);set('sNoi',fmtMoneyStr(d.noi));
+  set('sSf',fmtMoneyStr(d.sf));set('sBeds',d.beds);set('sBaths',d.baths);set('sYb',d.yb);
   set('sDesc',d.desc);if($('sDist'))$('sDist').value=(d.dist||'broad');
   if($('sHideAddr'))$('sHideAddr').checked=!!d.hideAddress;
   SUBMIT_DOCS=Array.isArray(d.docs)?d.docs.slice():[];
