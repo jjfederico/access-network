@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Roster & Access — Grove</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0B1020;--ink:#0A0A0B;--mut:#71717A;--line:#E4E4E7;--sand:#F4F4F6;--good:#17418A;--bad:#C0492E;--card:#fff;--grove:#17418A;--summit:var(--blue);--citi:var(--blue)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,-apple-system,sans-serif;padding-bottom:60px}
+header{background:var(--navy);color:#fff;padding:16px 20px}
+header .wrap{max-width:980px;margin:0 auto}
+.hublogo{font-weight:700;font-size:20px;letter-spacing:.5px}
+.tsub{font-size:13px;color:#c7cff0;margin-top:3px}
+main.wrap{max-width:980px;margin:0 auto;padding:16px 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 10px;box-shadow:0 1px 3px rgba(20,30,60,.06)}
+h2{font-size:15px;letter-spacing:.5px;color:var(--navy);margin:0 0 12px}
+.muted{color:var(--mut);font-size:13px}
+.hint{font-size:12px;color:#9aa0b4;margin-top:8px;line-height:1.5}
+.counts{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.cnt{background:var(--sand);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600}
+.cnt b{font-size:16px}
+.cnt.g b{color:var(--grove)}.cnt.s b{color:var(--summit)}.cnt.c b{color:var(--citi)}
+.thead,.rrow{display:grid;grid-template-columns:minmax(150px,2fr) 1fr 1fr 1fr 168px;gap:8px;align-items:center}
+.thead{font-size:10px;letter-spacing:.7px;color:var(--mut);font-weight:700;padding:0 4px 8px;border-bottom:1px solid var(--line)}
+.rrow{padding:10px 4px;border-bottom:1px solid var(--line)}
+.rrow:last-child{border-bottom:none}
+.who b{display:block;font-size:14px;color:var(--navy)}
+.who .em{display:block;font-size:11.5px;color:var(--mut);word-break:break-all}
+.who .ti{display:inline-block;font-size:10px;font-weight:700;background:var(--bluebg);color:var(--blue);border-radius:20px;padding:1px 8px;margin-top:3px}
+.who .ti.x{background:var(--bluebg);color:var(--blue)}
+.ck{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:700;border:1.5px solid var(--line);border-radius:9px;padding:8px 4px;cursor:pointer;color:var(--mut);background:var(--card);user-select:none;transition:all .1s}
+.ck input{width:auto;margin:0;accent-color:currentColor}
+.ck.on.g{border-color:var(--grove);color:var(--grove);background:var(--bluebg)}
+.ck.on.s{border-color:var(--summit);color:var(--blue);background:var(--bluebg)}
+.ck.on.c{border-color:var(--citi);color:var(--citi);background:var(--bluebg)}
+.xbtn{background:none;border:1px solid var(--line);border-radius:8px;color:var(--mut);font-size:12px;font-weight:600;cursor:pointer;padding:7px 9px;line-height:1;white-space:nowrap}
+.xbtn:hover{color:var(--bad);border-color:#e7c4c0}
+.xbtn.on{color:var(--grove);border-color:var(--grove)}
+.xbtn.on:hover{color:var(--grove);border-color:var(--grove);background:var(--bluebg)}
+.xbtn.rm{color:var(--mut);padding:7px 8px;font-size:13px}
+.acts{display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.xbtn.view{color:var(--blue);border-color:#c7d6f0}
+.xbtn.view:hover{color:#fff;background:var(--blue);border-color:var(--blue)}
+.rrow.dead{opacity:.6}
+.rrow.dead .ck{opacity:.7}
+.who .ti.dz{background:var(--badbg,#FDE8EA);color:var(--bad,#E11D2E);margin-left:6px}
+.addrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:flex-end}
+.addrow>div{flex:1;min-width:160px}
+label.f{display:block;font-size:10px;letter-spacing:.6px;color:var(--mut);font-weight:600;margin-bottom:4px}
+input.f{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:inherit}
+.btn{background:var(--navy);color:#fff;border:0;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+#rMsg{font-size:13px;margin-top:10px;min-height:18px;color:var(--good);font-weight:600}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line2);border-top-color:var(--navy);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:5px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:2px}
+.legend span{font-size:12px;font-weight:700}
+.legend .lg{color:var(--grove)}.legend .ls{color:var(--blue)}.legend .lc{color:var(--citi)}
+@media (max-width:640px){.thead{display:none}.rrow{grid-template-columns:1fr 1fr 1fr;grid-template-areas:"who who who" "g s c" "x x x"}.rrow .who{grid-area:who}.rrow .acts{grid-area:x;justify-self:end;margin-top:4px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="hublogo">👥 Agent Roster & Access</div><div class="tsub">Your master list — check off which companies each person can see. Only you can open or change this page.</div></div></header>
+<main class="wrap">
+
+  <div id="loading" class="card"><span class="spin"></span><span class="muted">Loading…</span></div>
+
+  <div id="gate" class="card" style="display:none">
+    <h2>Owner only</h2>
+    <div class="muted">This page is for John. Nothing here is visible to agents.</div>
+  </div>
+
+  <div id="main" style="display:none">
+    <div class="card">
+      <h2>How this works</h2>
+      <div class="muted" style="line-height:1.6">
+        <b style="color:var(--blue)">Summit</b> boxes are <b>live now</b> — they control who can see &amp; build Summit posts in the Social Media Studio.
+        <b style="color:var(--grove)">Grove</b> boxes are <b>live now</b> too — unchecking Grove hides the Grove menu on that person's hub the next time they load it.
+        <b style="color:var(--citi)">Citicore</b> is still the master record: it's saved and published, but <i>granting</i> a Grove agent access to Citicore pages needs the server updated first.
+        Who can <i>log in at all</i> is still set on the server — this page controls what they see once they're in. Owners (you + Lauren) always see everything.
+      </div>
+      <div class="counts" id="counts"></div>
+    </div>
+
+    <div class="card">
+      <h2>Team</h2>
+      <div class="thead"><div>Person</div><div style="text-align:center">Grove</div><div style="text-align:center">Summit</div><div style="text-align:center">Citicore</div><div></div></div>
+      <div id="rows"></div>
+      <div class="addrow">
+        <div><label class="f">Name</label><input class="f" id="npName" placeholder="e.g. Sam Jones"></div>
+        <div><label class="f">Email (their hub login)</label><input class="f" id="npEmail" placeholder="sam@gpgboston.com"></div>
+        <div style="flex:0 0 auto"><button class="btn" onclick="addPerson()">+ Add person</button></div>
+      </div>
+      <div id="rMsg"></div>
+      <div class="hint">This page controls what people <i>see</i>. It is a menu, not a lock — the server is what actually decides who can open a page or pull data. Unchecking Summit removes them from Summit posts instantly (they may need a refresh). Removing a person (✕) only works on people you added here — the built-in team comes from the hub's login list.</div>
+    </div>
+  </div>
+</main>
+
+<script>/*BKPILL*/
+(function(){
+if(window.__BKPILL__)return;window.__BKPILL__=1;
+var BK=(typeof SHEET_URL!=='undefined'&&SHEET_URL)?SHEET_URL:'https://script.google.com/macros/s/AKfycbxLpHZlNw9yNa68Hu1EngEB0v8TwxgiwCBMTzvIy-zmw7C0ARSHmcucQKQlqIaakY93hA/exec';
+var TOK=(typeof SHEET_TOKEN!=='undefined'&&SHEET_TOKEN)?SHEET_TOKEN:'grove-sheet-2026';
+var css=document.createElement('style');
+css.textContent='#bkMain,#bkMainLabel,#syncPill,#hqBackup,#sync,#syncDot,#syncTxt,.bklight{display:none !important}#hq-bar .hqwrap{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:1180px;margin:0 auto;padding:8px 16px}#hq-bar a{text-decoration:none;font-weight:600;font-size:13px}#bkpill{position:fixed;bottom:12px;right:12px;z-index:2147483000;display:flex;align-items:center;gap:6px;font:600 12px system-ui,-apple-system,Segoe UI,sans-serif;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:5px 11px;box-shadow:0 1px 5px rgba(0,0,0,.14)}#bkpill.clk{cursor:pointer}#bkpill .bkdot{width:9px;height:9px;border-radius:50%;background:#17418A;flex:0 0 auto}#bkpill.saving .bkdot{background:#17418A;animation:bkpulse 1s infinite}#bkpill.fail .bkdot{background:var(--bad)}#bkpill .bktxt{color:#334155;white-space:nowrap}@keyframes bkpulse{50%{opacity:.35}}';
+(document.head||document.documentElement).appendChild(css);
+var pill=document.createElement('div');pill.id='bkpill';pill.innerHTML='<span class="bkdot"></span><span class="bktxt">Checking</span>';
+function mount(){if(document.body&&!document.getElementById('bkpill'))document.body.appendChild(pill);}
+if(document.body)mount();else document.addEventListener('DOMContentLoaded',mount);
+function T(){return pill.querySelector('.bktxt');}
+function set(s,m){pill.className=(s==='ok'?'':s)+(queue().length?' clk':'');var t=T();if(t)t.textContent=m;}
+function queue(){try{var q=JSON.parse(localStorage.getItem('bk_failq')||'[]');var cut=Date.now()-7*24*3600*1000;var f=q.filter(function(it){return !it.ts||it.ts>cut;});if(f.length!==q.length)setQ(f);return f;}catch(e){return[];}}
+function setQ(a){try{localStorage.setItem('bk_failq',JSON.stringify(a));}catch(e){}}
+function refresh(){var q=queue();if(q.length){set('fail',q.length+' unsaved  tap to retry');}else{set('ok','Backed up');}}
+function isBk(url){return /script\.google\.com\/macros|\/api\/grove|\/api\/deals|\/api\/notes/.test(url)||(BK&&url.indexOf(BK)===0);}
+var _f=window.fetch;
+window.fetch=function(u,opt){
+  var url=(typeof u==='string')?u:((u&&u.url)||'');
+  var m=(opt&&opt.method)||(u&&u.method)||'GET';
+  var write=/post|put|patch/i.test(m);
+  var bk=isBk(url);
+  if(bk&&write)set('saving','Saving');
+  var p;try{p=_f.apply(this,arguments);}catch(e){p=Promise.reject(e);}
+  return p.then(function(r){
+    if(bk&&write){ if(r&&(r.ok||r.status===0)){setTimeout(refresh,250);} else { stash(url,opt,m); } }
+    else if(bk){ if(!queue().length&&r&&r.ok)set('ok','Backed up'); }
+    return r;
+  }).catch(function(e){ if(bk&&write){stash(url,opt,m);} throw e; });
+};
+function stash(url,opt,m){try{var q=queue();var body=(opt&&typeof opt.body==='string')?opt.body:null;q.push({url:url,body:body,method:m,ts:Date.now()});if(q.length>50)q=q.slice(-50);setQ(q);}catch(e){}refresh();}
+function retry(){var q=queue();if(!q.length)return;set('saving','Retrying');var left=[];var done=0;var i=0;(function next(){if(i>=q.length){setQ(left);setTimeout(refresh,300);return;}var it=q[i++];_f(it.url,{method:it.method||'POST',headers:{'Content-Type':'application/json'},body:it.body||undefined}).then(function(r){if(!(r&&r.ok)&&!(r&&r.status>=400&&r.status<500))left.push(it);}).catch(function(){left.push(it);}).then(next);})();}
+pill.addEventListener('click',function(){if(queue().length)retry();});
+function ping(){var sep=BK.indexOf('?')<0?'?':'&';_f(BK+sep+'action=notes&notekey=todos_personal&token='+encodeURIComponent(TOK)).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(){if(!queue().length)set('ok','Backed up');}).catch(function(){if(!queue().length)set('fail','Offline  not synced');});}
+refresh();ping();setInterval(ping,60000);if(queue().length)setTimeout(retry,4000);
+})();
+
+</script>
+
+<script>
+function el(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function lc(s){return String(s||'').trim().toLowerCase();}
+
+/* Built-in team (from the hub's login roster). guest=Citicore-side person. */
+var BUILTIN=[
+ {email:'ryan@gpgboston.com',   name:'Ryan Quinn',      title:'Managing Partner'},
+ {email:'harry@gpgboston.com',  name:'Harry Verenis',   title:'Director'},
+ {email:'tyler@gpgboston.com',  name:'Tyler Bates',     title:'Multifamily Agent'},
+ {email:'joe@gpgboston.com',    name:'Joe Vecchione',   title:'Multifamily Agent'},
+ {email:'guy@gcdinc.us',        name:'Guy Manganiello', title:'Sales & Development'},
+ {email:'melissa@gpgboston.com',name:'Melissa McColgan'},
+ {email:'michelle@gpgboston.com',name:'Michelle Talbot'},
+ {email:'eleni@gpgboston.com',  name:'Eleni Kotsiopoulos'},
+ {email:'matt@gpgboston.com',   name:'Matt Chase'},
+ {email:'marc@gpgboston.com',   name:'Marc Waterfall'},
+ {email:'rburke@gpgboston.com', name:'Ryan Burke'},
+ {email:'herbert.shaughnessy@gmail.com',name:'AJ Shaughnessy'},
+ {email:'michaelkrug443@gmail.com',name:'Michael Krug', title:'Citicore', guest:true},
+ /* Summit partners — outside the brokerage. summit:true means they start with
+    Grove and Citicore OFF; the Summit box gets ticked for them once (see seedSummit). */
+ {email:'nik@shbuyers.com',     name:'Nik Ventura',  title:'Summit partner', summit:true},
+ {email:'je@deproserv.com',     name:'Jose Estrada', title:'Summit partner', summit:true}
+];
+
+var ROSTER={flags:{},custom:[],deactivated:{}};   // note owner_roster  (owner read+write ONLY — server enforced)
+var ACCESS={summit:[]};            // note social_brand_access (read by Social Studio)
+var ROLE='',MY_EMAIL='';
+// Deactivation = reversible lock-out. ROSTER.deactivated maps email → when (ISO). It
+// NEVER removes the person from custom/flags, so all their data stays put; flipping it
+// back restores them exactly. Owners can't be deactivated (server-enforced too).
+function isDeact(email){var e=lc(email);return !!(ROSTER.deactivated&&ROSTER.deactivated[e]);}
+function isOwnerRow(p){return lc(p&&p.email)===MY_EMAIL || !!(p&&p.owner);}
+function deactivatePerson(email){
+  var em=lc(email),p=people().filter(function(x){return lc(x.email)===em;})[0];
+  if(!p)return;
+  if(isOwnerRow(p)){flash(false,'You can’t deactivate an owner account.');return;}
+  if(!confirm('Deactivate '+(p.name||em)+'?\n\nThey’ll be locked out immediately, but all their payout info and history stay on file. You can reactivate them anytime.'))return;
+  ROSTER.deactivated=ROSTER.deactivated||{};
+  ROSTER.deactivated[em]=new Date().toISOString();
+  render();saveRoster();
+}
+function reactivatePerson(email){
+  var em=lc(email);
+  if(ROSTER.deactivated)delete ROSTER.deactivated[em];
+  render();saveRoster();
+}
+// Preview the hub exactly as this person sees it (owner-only, server-enforced). Opens
+// the whole window as them; a red "Previewing as…" bar with an Exit button rides the top.
+function viewAsPerson(email,name){
+  fetch('/api/viewas?email='+encodeURIComponent(lc(email))+'&name='+encodeURIComponent(name||''),{credentials:'include'})
+    .then(function(r){return r.json();})
+    .then(function(j){ if(j&&j.ok){ (window.top||window).location.href='/'; } else { flash(false,(j&&j.error)||'Can’t preview this login.'); } })
+    .catch(function(){ flash(false,'Couldn’t start preview.'); });
+}
+
+function defFlag(p,k){ if(k==='g')return !p.guest&&!p.summit&&!p.summitOnly&&!p.custom; if(k==='c')return !!p.guest; return false; }
+function getFlag(p,k){ var f=ROSTER.flags[p.email]; if(f&&typeof f[k]!=='undefined')return !!f[k]; return defFlag(p,k); }
+function setFlag(p,k,on){ var f=ROSTER.flags[p.email]||(ROSTER.flags[p.email]={g:defFlag(p,'g')?1:0,c:defFlag(p,'c')?1:0}); f[k]=on?1:0; }
+function inSummit(email){ return (ACCESS.summit||[]).indexOf(lc(email))>=0; }
+
+function people(){
+  var seen={},out=[];
+  BUILTIN.forEach(function(p){ seen[p.email]=1; out.push(p); });
+  (ROSTER.custom||[]).forEach(function(p){ if(!p||!p.email||seen[p.email])return; seen[p.email]=1; out.push({email:p.email,name:p.name||p.email.split('@')[0],custom:true}); });
+  (ACCESS.summit||[]).forEach(function(em){ em=lc(em); if(!em||seen[em])return; seen[em]=1; out.push({email:em,name:em.split('@')[0],summitOnly:true}); });
+  return out;
+}
+
+function fetchNote(key){
+  return fetch('/api/grove?action=notes&notekey='+encodeURIComponent(key)+'&_='+Date.now())
+    .then(function(r){return r.json();})
+    .then(function(j){var v=(j&&(j.value!=null?j.value:j.notes)); if(typeof v==='string'&&v){try{return JSON.parse(v);}catch(e){}} return null;})
+    .catch(function(){return null;});
+}
+function saveNote(key,obj,cb){
+  fetch('/api/grove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'notes',notekey:key,value:JSON.stringify(obj)})})
+    .then(function(r){return r.json();}).then(function(j){if(cb)cb(!!(j&&j.ok!==false));}).catch(function(){if(cb)cb(false);});
+}
+function flash(ok,txt){ var m=el('rMsg'); m.style.color=ok?'var(--good)':'var(--bad)'; m.textContent=txt||(ok?'Saved ✓':'Sync issue — try again'); setTimeout(function(){m.textContent='';},2400); }
+/* ── Publishing the columns so the rest of the hub can use them ───────────────
+   The roster itself (note 'owner_roster') is locked to the owner on the server,
+   so no other page is allowed to read it. Every time something changes here we
+   ALSO write a plain, non-sensitive copy to the note 'hub_access' — just names
+   of columns and email addresses, nothing private — which any signed-in person
+   may read. The hub home page reads that copy to decide which menu to show.
+
+   Two rules keep this safe:
+     1. `people` lists everyone this roster knows about. If someone is NOT in
+        that list the hub ignores this note entirely and behaves exactly like it
+        did before — so publishing can never lock anybody out by accident.
+     2. It only ever HIDES tools, never adds them. What a person is actually
+        allowed to open is still decided by the server.                       */
+function buildAccess(){
+  var ps=people(), out={v:1,people:[],grove:[],citicore:[],summit:(ACCESS.summit||[]).map(lc)};
+  ps.forEach(function(p){
+    var e=lc(p.email); if(!e)return;
+    out.people.push(e);
+    if(getFlag(p,'g'))out.grove.push(e);
+    if(getFlag(p,'c'))out.citicore.push(e);
+  });
+  return out;
+}
+function saveMirror(){ saveNote('hub_access',buildAccess(),function(){}); }
+function saveRoster(){ saveNote('owner_roster',ROSTER,function(ok){flash(ok);}); saveMirror(); }
+function saveSummit(){ ACCESS.summit=(ACCESS.summit||[]).map(lc).filter(Boolean); saveNote('social_brand_access',ACCESS,function(ok){flash(ok,ok?'Saved ✓ — Summit access updated':'Sync issue — try again');}); saveMirror(); }
+
+/* A Summit partner added to the list above gets their Summit box ticked for us
+   the first time this page sees them — otherwise John would have to remember to
+   do it by hand every time someone new is added. We write their email into
+   ROSTER.seeded so it only ever happens once: if John unchecks them afterwards,
+   they stay unchecked. */
+function seedSummit(){
+  ROSTER.seeded=ROSTER.seeded||[];
+  var newSeed=false,newSummit=false;
+  BUILTIN.forEach(function(p){
+    if(!p.summit)return;
+    var e=lc(p.email);
+    if(ROSTER.seeded.indexOf(e)>=0)return;
+    ROSTER.seeded.push(e); newSeed=true;
+    if(!inSummit(e)){ ACCESS.summit=(ACCESS.summit||[]).concat([e]); newSummit=true; }
+  });
+  if(newSummit)saveSummit();
+  else if(newSeed)saveRoster();
+  return newSeed;
+}
+
+function toggle(email,k,on){
+  var p=people().filter(function(x){return x.email===email;})[0]; if(!p)return;
+  if(k==='s'){
+    var arr=(ACCESS.summit||[]).map(lc).filter(function(e){return e!==lc(email);});
+    if(on)arr.push(lc(email));
+    ACCESS.summit=arr; render(); saveSummit();
+  }else{
+    setFlag(p,k,on); render(); saveRoster();
+  }
+}
+function addPerson(){
+  var n=(el('npName').value||'').trim(), em=lc(el('npEmail').value);
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){ flash(false,'Enter a valid email.'); return; }
+  if(people().some(function(p){return p.email===em;})){ flash(false,'Already on the list.'); return; }
+  ROSTER.custom=ROSTER.custom||[]; ROSTER.custom.push({email:em,name:n||em.split('@')[0]});
+  ROSTER.flags[em]={g:0,c:0};
+  el('npName').value='';el('npEmail').value='';
+  render(); saveRoster();
+}
+function removePerson(email){
+  var em=lc(email);
+  var wasCustom=(ROSTER.custom||[]).some(function(p){return p&&lc(p.email)===em;});
+  ROSTER.custom=(ROSTER.custom||[]).filter(function(p){return p&&lc(p.email)!==em;});
+  delete ROSTER.flags[em];
+  var wasSummit=inSummit(em);
+  ACCESS.summit=(ACCESS.summit||[]).map(lc).filter(function(e){return e!==em;});
+  render();
+  if(wasCustom)saveRoster();
+  if(wasSummit)saveSummit();
+}
+
+function ckBox(p,k,on,color){
+  return '<label class="ck '+color+(on?' on':'')+'"><input type="checkbox" '+(on?'checked':'')+' onchange="toggle(\''+p.email+'\',\''+k+'\',this.checked)"> '+(on?'Yes':'—')+'</label>';
+}
+function render(){
+  var ps=people().slice().sort(function(a,b){   // deactivated people sink to the bottom
+    var da=isDeact(a.email)?1:0, db=isDeact(b.email)?1:0; return da-db;
+  }),h='';
+  ps.forEach(function(p){
+    var g=getFlag(p,'g'), s=inSummit(p.email), c=getFlag(p,'c'), dead=isDeact(p.email), owner=isOwnerRow(p);
+    var rmBtn=((p.custom||p.summitOnly)&&!dead)?'<button class="xbtn rm" title="Remove from roster" onclick="removePerson(\''+p.email+'\')">✕</button>':'';
+    var viewBtn=(!dead&&!owner)?'<button class="xbtn view" title="Preview the hub as this person" onclick="viewAsPerson(\''+p.email+'\',\''+esc(p.name||'').replace(/\x27/g,'')+'\')">👁 View as</button>':'';
+    var actBtn = dead
+      ? '<button class="xbtn on" title="Reactivate" onclick="reactivatePerson(\''+p.email+'\')">Reactivate</button>'
+      : (owner ? '' : '<button class="xbtn" title="Deactivate — lock out, keep all data" onclick="deactivatePerson(\''+p.email+'\')">Deactivate</button>');
+    h+='<div class="rrow'+(dead?' dead':'')+'">'
+      +'<div class="who"><b>'+esc(p.name)+(dead?' <span class="ti dz">Deactivated</span>':'')+'</b><span class="em">'+esc(p.email)+'</span>'
+      +(p.title?'<span class="ti">'+esc(p.title)+'</span>':'')
+      +(p.custom?'<span class="ti x">added by you</span>':'')
+      +(p.summitOnly?'<span class="ti x">from Summit list</span>':'')
+      +'</div>'
+      +ckBox(p,'g',g,'g')+ckBox(p,'s',s,'s')+ckBox(p,'c',c,'c')
+      +'<span class="acts">'+viewBtn+actBtn+rmBtn+'</span>'
+      +'</div>';
+  });
+  el('rows').innerHTML=h;
+  var ng=0,ns=0,nc=0;
+  ps.forEach(function(p){ if(getFlag(p,'g'))ng++; if(inSummit(p.email))ns++; if(getFlag(p,'c'))nc++; });
+  el('counts').innerHTML='<span class="cnt">👥 <b>'+ps.length+'</b> people</span>'
+    +'<span class="cnt g">Grove <b>'+ng+'</b></span>'
+    +'<span class="cnt s">Summit <b>'+ns+'</b></span>'
+    +'<span class="cnt c">Citicore <b>'+nc+'</b></span>';
+}
+
+fetch('/api/me').then(function(r){return r.json();}).then(function(j){
+  ROLE=(j&&j.role)||''; MY_EMAIL=lc(j&&j.email);
+  if(ROLE!=='owner'){ el('loading').style.display='none'; el('gate').style.display=''; return; }
+  Promise.all([fetchNote('owner_roster'),fetchNote('social_brand_access')]).then(function(res){
+    if(res[0]&&res[0].flags){ ROSTER=res[0]; ROSTER.flags=ROSTER.flags||{}; ROSTER.custom=ROSTER.custom||[]; ROSTER.deactivated=ROSTER.deactivated||{}; }
+    if(res[1]&&Array.isArray(res[1].summit)){ ACCESS=res[1]; }
+    el('loading').style.display='none'; el('main').style.display='';
+    seedSummit();
+    render(); saveMirror();
+  });
+}).catch(function(){ el('loading').style.display='none'; el('gate').style.display=''; });
+</script>
+</body>
+</html>
