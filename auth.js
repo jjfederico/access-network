@@ -126,6 +126,8 @@ function mount(app, baseUrl) {
   });
 
   app.get('/auth/logout', (req, res) => { req.session = null; res.redirect('/'); });
+  // Alias: the app's "Sign out" link points here — clear the session and go home.
+  app.get('/logout', (req, res) => { req.session = null; res.redirect('/'); });
 
   app.get('/api/me', async (req, res) => {
     const u = req.user;
