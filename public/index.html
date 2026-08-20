@@ -666,6 +666,10 @@ function sendReq(){
     <button class="rx" onclick="closeSignin()" aria-label="Close">×</button>
     <div class="rhead"><h3>Sign in</h3><p>Members only. Enter your email and we&rsquo;ll send you a one-tap sign-in link.</p></div>
     <div class="rbody" id="siBody">
+      <div id="gsiWrap" style="display:none">
+        <div id="gsiBtn" style="display:flex;justify-content:center;min-height:40px"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin:16px 0 4px;color:var(--mut2);font-size:12px;font-weight:600"><span style="flex:1;height:1px;background:var(--line)"></span>OR<span style="flex:1;height:1px;background:var(--line)"></span></div>
+      </div>
       <div class="rf full"><label>Email</label><input id="siEmail" type="email" autocomplete="email" placeholder="you@brokerage.com"></div>
       <div class="rmsg" id="siMsg"></div>
       <button class="btn p big" id="siBtn" style="width:100%;justify-content:center" onclick="sendSignin()">Send sign-in link</button>
@@ -674,7 +678,31 @@ function sendReq(){
   </div>
 </div>
 <script>
-function openSignin(){document.getElementById('siBg').classList.add('on');document.body.style.overflow='hidden';setTimeout(function(){var n=document.getElementById('siEmail');if(n)n.focus();},60);}
+function openSignin(){document.getElementById('siBg').classList.add('on');document.body.style.overflow='hidden';initGsi();setTimeout(function(){var n=document.getElementById('siEmail');if(n)n.focus();},60);}
+/* Google Sign-In — renders a "Continue with Google" button when a client ID is
+   configured; otherwise stays hidden and the email link is the only option. */
+var GSI_READY=false;
+function onGoogleCred(resp){
+  fetch('/auth/google',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credential:(resp&&resp.credential)||''})})
+    .then(function(r){return r.json().catch(function(){return{ok:false};});})
+    .then(function(j){if(j&&j.ok){location.href='/app.html';}else{var m=document.getElementById('siMsg');if(m){m.style.color='var(--bad)';m.textContent='Google sign-in failed — try the email link below.';}}})
+    .catch(function(){var m=document.getElementById('siMsg');if(m){m.style.color='var(--bad)';m.textContent='Network error — try the email link.';}});
+}
+function initGsi(){
+  var cid=window.__GOOGLE_CLIENT_ID__||'';
+  if(!cid)return;                       // not configured yet → keep it hidden
+  var wrap=document.getElementById('gsiWrap');
+  function render(){
+    if(!(window.google&&google.accounts&&google.accounts.id))return;
+    if(!GSI_READY){google.accounts.id.initialize({client_id:cid,callback:onGoogleCred});GSI_READY=true;}
+    var btn=document.getElementById('gsiBtn');if(btn){btn.innerHTML='';google.accounts.id.renderButton(btn,{theme:'outline',size:'large',width:360,text:'continue_with'});}
+    if(wrap)wrap.style.display='';
+  }
+  if(window.google&&google.accounts){render();return;}
+  var s=document.getElementById('gsiScript');
+  if(!s){s=document.createElement('script');s.id='gsiScript';s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=render;document.head.appendChild(s);}
+  else{s.addEventListener('load',render);}
+}
 function closeSignin(){document.getElementById('siBg').classList.remove('on');document.body.style.overflow='';}
 var LAST_SIGNIN_EMAIL='';
 function resendSignin(){
