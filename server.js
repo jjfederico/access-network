@@ -136,7 +136,7 @@ function pmPublicView(l, full, gated) {
     price: l.price || '', noi: l.noi || '', capRate: l.capRate || '',
     grossIncome: l.grossIncome || '', expenses: l.expenses || '',
     commissionPct: l.commissionPct || '', commissionNotes: l.commissionNotes || '',
-    notes: l.notes || '', docs: Array.isArray(l.docs) ? l.docs : [], views: l.views || 0,
+    notes: l.notes || '', docCount: Array.isArray(l.docs) ? l.docs.length : 0, views: l.views || 0,
     photoCount: Array.isArray(l.photos) ? l.photos.length : 0,
     hideAddress: !!l.hideAddress, addressHidden: !showAddr,
     closedAt: l.closedAt || '', closePrice: l.closePrice || ''
@@ -144,6 +144,8 @@ function pmPublicView(l, full, gated) {
   if (showAddr) {
     out.address = l.address || ''; out.zip = zip;
     out.photos = Array.isArray(l.photos) ? l.photos : [];
+    // Documents (OMs, financials) contain the address & full details — only entitled viewers get them.
+    out.docs = Array.isArray(l.docs) ? l.docs : [];
     if (l.lat && l.lng) { out.lat = l.lat; out.lng = l.lng; } // exact pin only for entitled viewers
   }
   return out;
@@ -1210,6 +1212,30 @@ app.get('/api/pm/stats', async (req, res) => {
     const foundingCap = Number(process.env.PM_FOUNDING_CAP || 100);
     res.json({ ok: true, stats: { liveDeals: active.length, volume: Math.round(volume), commission: Math.round(commission), members, clientNeeds: boxes.filter(Boolean).length, dealsPosted: listings.length, foundingCap, foundingLeft: Math.max(0, foundingCap - members), foundingFull: members >= foundingCap } });
   } catch (e) { res.json({ ok: false }); }
+});
+
+// ── public teaser cards for the landing page (no auth) ───────────────────────
+// Returns ONLY safe basics — asset type, general submarket/town, rounded price,
+// and buyer-broker commission — pulled from real, actively-listed, BROADLY
+// distributed deals. Never exposes address, owner, docs, photos, exact geo, or
+// notes. Pocket/private-distribution listings are excluded. Shuffled per request
+// so the cards rotate.
+app.get('/api/pm/teaser', async (req, res) => {
+  try {
+    const listings = await pmLoad(PM_KEYS.listings);
+    const now = new Date();
+    const items = listings
+      .filter(l => l && (l.status || 'active') === 'active' && (l.dist || 'broad') === 'broad' && !(l.expiresAt && new Date(l.expiresAt) < now))
+      .map(l => ({
+        type: l.propType || '',
+        area: l.area || l.city || '',
+        price: pmNum(l.price) ? pmMoneyShort(l.price) : '',
+        commission: pmNum(l.commissionPct) ? (Number(pmNum(l.commissionPct).toFixed(1)) + '% BBC') : ''
+      }))
+      .filter(x => x.type && x.area && x.price);
+    for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = items[i]; items[i] = items[j]; items[j] = t; }
+    res.json({ ok: true, deals: items.slice(0, 6) });
+  } catch (e) { res.json({ ok: true, deals: [] }); }
 });
 
 // ── document upload (small files stored inline until object storage is added) ─
