@@ -1225,7 +1225,10 @@ app.get('/api/pm/teaser', async (req, res) => {
     const listings = await pmLoad(PM_KEYS.listings);
     const now = new Date();
     const items = listings
-      .filter(l => l && (l.status || 'active') === 'active' && (l.dist || 'broad') === 'broad' && !(l.expiresAt && new Date(l.expiresAt) < now))
+      // Active, non-expired deals. Show the owner's own inventory as marketing teasers
+      // regardless of in-network distribution; from other members, only broadly-
+      // distributed deals (never expose a member's private/pocket deal publicly).
+      .filter(l => l && (l.status || 'active') === 'active' && !(l.expiresAt && new Date(l.expiresAt) < now) && ((l.dist || 'broad') === 'broad' || ADMINS.includes(_lc(l.owner))))
       .map(l => ({
         type: l.propType || '',
         area: l.area || l.city || '',
