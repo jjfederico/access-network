@@ -1037,11 +1037,18 @@ app.post('/api/pm/request', async (req, res) => {
     //    from the Members tab (and reserves that right in the Terms).
     const profs = await pmLoad('pm_profiles');
     const pIdx = profs.findIndex(p => p && _lc(p.email) === email);
+    // Founding-member lock-in: the first PM_FOUNDING_CAP (100) approved members
+    // are stamped foundingRate=true — they'll get the $25/mo lifetime rate when
+    // billing is switched on. Everyone after pays the standard rate. memberNo is
+    // their join order. (Separate from the give-get `founder` exemption flag.)
+    const foundingCap = Number(process.env.PM_FOUNDING_CAP || 100);
+    const priorMembers = profs.filter(p => p && !p.sample && _lc(p.email) !== email).length;
+    const isFounder = priorMembers < foundingCap;
     if (pIdx >= 0) {
       const cur = profs[pIdx];
       profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: cur.state || 'MA', attestation, updatedAt: now, status: 'approved', deactivated: false });
     } else {
-      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'approved', attestation, createdAt: now, updatedAt: now });
+      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'approved', attestation, foundingRate: isFounder, memberNo: priorMembers + 1, createdAt: now, updatedAt: now });
     }
     // Credit the referrer (if any), now that the member is in.
     try {
@@ -1230,8 +1237,43 @@ if (process.env.STRIPE_SECRET_KEY) {
   catch (e) { console.log('[stripe] load failed — payments disabled:', e && e.message); }
 }
 const PM_PRICE = { renew: Number(process.env.PM_PRICE_RENEW || 1000), feature: Number(process.env.PM_PRICE_FEATURE || 2500) };
+// Membership pricing. Founding members (first 100) pay the founding rate for life;
+// everyone after pays the standard rate. Set the two Stripe recurring Price IDs
+// (STRIPE_PRICE_FOUNDING / STRIPE_PRICE_STANDARD) when you're ready to charge.
+// STRIPE_PRICE_MEMBERSHIP is a legacy single-price fallback.
 const STRIPE_PRICE_MEMBERSHIP = process.env.STRIPE_PRICE_MEMBERSHIP || '';
-app.get('/api/pm/pay/status', ensureAuth, pmGate, (req, res) => res.json({ ok: true, enabled: !!stripe, membership: !!(stripe && STRIPE_PRICE_MEMBERSHIP), prices: { renew: PM_PRICE.renew / 100, feature: PM_PRICE.feature / 100 } }));
+const STRIPE_PRICE_FOUNDING = process.env.STRIPE_PRICE_FOUNDING || '';
+const STRIPE_PRICE_STANDARD = process.env.STRIPE_PRICE_STANDARD || '';
+const MEMBERSHIP_FOUNDING = Number(process.env.PM_PRICE_FOUNDING || 25); // dollars/mo
+const MEMBERSHIP_STANDARD = Number(process.env.PM_PRICE_STANDARD || 50); // dollars/mo
+// Billing is OFF until the owner switches it on — nobody is charged during the
+// free launch period. The flag lives in pm_settings so the owner can toggle it
+// from the admin panel without a redeploy.
+async function pmSettings() { const l = await pmLoad('pm_settings'); return (l && l[0]) || {}; }
+async function pmSaveSettings(s) { await pmSave('pm_settings', [s]); }
+function priceIdForMember(me) { return (me && me.foundingRate ? STRIPE_PRICE_FOUNDING : STRIPE_PRICE_STANDARD) || STRIPE_PRICE_MEMBERSHIP; }
+app.get('/api/pm/pay/status', ensureAuth, pmGate, async (req, res) => {
+  try {
+    const settings = await pmSettings();
+    const profs = await pmLoad('pm_profiles');
+    const me = profs.find(p => p && _lc(p.email) === pmEmail(req.user)) || {};
+    const founder = !!me.foundingRate;
+    const monthly = founder ? MEMBERSHIP_FOUNDING : MEMBERSHIP_STANDARD;
+    const membershipConfigured = !!(stripe && priceIdForMember(me));
+    res.json({ ok: true, enabled: !!stripe, membership: membershipConfigured, billingOn: !!settings.billingOn, founder, monthly, memberNo: me.memberNo || null, paid: !!me.paid, prices: { renew: PM_PRICE.renew / 100, feature: PM_PRICE.feature / 100, founding: MEMBERSHIP_FOUNDING, standard: MEMBERSHIP_STANDARD } });
+  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+});
+// Owner: switch membership billing on/off. Off = nobody charged (free launch).
+app.post('/api/pm/admin/billing', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const on = (req.body || {}).on === true;
+  try {
+    const s = await pmSettings();
+    s.billingOn = on; s.billingUpdatedAt = new Date().toISOString();
+    await pmSaveSettings(s);
+    res.json({ ok: true, billingOn: on });
+  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+});
 app.post('/api/pm/checkout', ensureAuth, pmGate, async (req, res) => {
   if (!stripe) return res.status(503).json({ ok: false, error: 'not_configured' });
   const b = req.body || {}, kind = String(b.kind || '');
@@ -1247,8 +1289,15 @@ app.post('/api/pm/checkout', ensureAuth, pmGate, async (req, res) => {
       return res.json({ ok: true, url: session.url });
     }
     if (kind === 'membership') {
-      if (!STRIPE_PRICE_MEMBERSHIP) return res.status(503).json({ ok: false, error: 'no_membership_price' });
-      const session = await stripe.checkout.sessions.create({ mode: 'subscription', payment_method_types: ['card'], line_items: [{ price: STRIPE_PRICE_MEMBERSHIP, quantity: 1 }], customer_email: pmEmail(req.user), metadata: { kind: 'membership', email: pmEmail(req.user) }, success_url: PM_BASE + '/app.html?paid={CHECKOUT_SESSION_ID}', cancel_url: PM_BASE + '/app.html' });
+      // Free launch period: no charging until the owner switches billing on.
+      const settings = await pmSettings();
+      if (!settings.billingOn) return res.status(409).json({ ok: false, error: 'billing_off', message: 'Membership is free during our launch — billing hasn\'t started yet.' });
+      const profs = await pmLoad('pm_profiles');
+      const me = profs.find(p => p && _lc(p.email) === pmEmail(req.user)) || {};
+      const priceId = priceIdForMember(me);
+      if (!priceId) return res.status(503).json({ ok: false, error: 'no_membership_price' });
+      const tier = me.foundingRate ? 'founding' : 'standard';
+      const session = await stripe.checkout.sessions.create({ mode: 'subscription', payment_method_types: ['card'], line_items: [{ price: priceId, quantity: 1 }], customer_email: pmEmail(req.user), metadata: { kind: 'membership', email: pmEmail(req.user), tier }, success_url: PM_BASE + '/app.html?paid={CHECKOUT_SESSION_ID}', cancel_url: PM_BASE + '/app.html' });
       return res.json({ ok: true, url: session.url });
     }
     res.status(400).json({ ok: false, error: 'bad_kind' });
