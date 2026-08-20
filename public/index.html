@@ -549,12 +549,38 @@ function sendContact(){
     }).catch(function(){msg.textContent='Network error — please try again.';msg.style.color='#C0492E';btn.disabled=false;btn.textContent='Send message';});
 }
 /* Run entry triggers after the whole page (and openReq/openContact) is ready. */
+function showPendingModal(title,msg,pending){
+  var wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(9,12,18,.72);backdrop-filter:blur(4px)';
+  var actions=pending
+    ? '<button class="btn ghostlight big" style="border:1px solid var(--line2);color:var(--ink)" onclick="location.href=\'/auth/logout\'">Use a different account</button>'
+    : '<button class="btn p big" onclick="this.closest(\'div[style]\').remove();openReq()">Request access</button><button class="btn ghostlight big" style="border:1px solid var(--line2);color:var(--ink)" onclick="location.href=\'/auth/logout\'">Use a different account</button>';
+  wrap.innerHTML='<div style="background:#fff;border-radius:18px;max-width:460px;width:100%;overflow:hidden;box-shadow:0 40px 100px -30px rgba(0,0,0,.5)">'
+    +'<div style="background:var(--ink);color:#fff;padding:22px 24px"><div style="font-size:34px;margin-bottom:6px">'+(pending?'⏳':'🔒')+'</div><h3 style="margin:0;font-size:22px;font-weight:800">'+title+'</h3></div>'
+    +'<div style="padding:20px 24px 24px"><p style="color:var(--mut);font-size:14.5px;line-height:1.55;margin:0 0 18px">'+msg+'</p>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'+actions+'</div></div></div>';
+  wrap.addEventListener('click',function(e){if(e.target===wrap)wrap.remove();});
+  document.body.appendChild(wrap);
+}
 window.addEventListener('load',function(){
   try{
     if(location.hash==='#contact'&&typeof openContact==='function'){openContact();return;}
     if(/[?&]join=1/.test(location.search)&&typeof openReq==='function'){
       try{var em=new URLSearchParams(location.search).get('email');if(em){var qe=document.getElementById('qEmail');if(qe)qe.value=em;}}catch(e){}
       openReq();
+    }
+    // Signed in but bounced by the gate (not owner / not approved) — explain instead of a silent redirect.
+    if(/[?&]pending=1/.test(location.search)){
+      fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).then(function(me){
+        me=me||{}; if(!me.email)return;
+        var email=String(me.email).replace(/[<>]/g,'');
+        var pending=(me.status==='pending');
+        if(pending){
+          showPendingModal('Your membership is pending','You’re signed in as <b>'+email+'</b>. Your application is under review — we’ll email you the moment you’re approved. Feel free to look around the public site in the meantime.',true);
+        }else{
+          showPendingModal('You’re not a member yet','You’re signed in as <b>'+email+'</b>, but this account isn’t an AXESS member. Request access with this email, or use the account you originally joined under.',false);
+        }
+      }).catch(function(){});
     }
   }catch(e){}
 });
