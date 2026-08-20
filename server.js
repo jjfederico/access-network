@@ -38,6 +38,7 @@ const PM_BASE = BASE_URL || 'http://localhost:' + (process.env.PORT || 3000);
 app.use(authMod.attachUser());
 const ensureAuth = authMod.ensureAuth;
 const ADMIN = authMod.ADMIN;
+const ADMINS = authMod.ADMINS || (ADMIN ? [ADMIN] : []);
 
 // ── Cloudflare Turnstile (captcha on the public join form) ──────────────────
 const TURNSTILE_SITE = process.env.TURNSTILE_SITE_KEY || '';
@@ -949,7 +950,7 @@ app.post('/api/pm/admin/deactivate', ensureAuth, pmGate, async (req, res) => {
   const email = _lc(b.email);
   const on = b.deactivated !== false; // default = deactivate
   if (!email) return res.status(400).json({ ok: false, error: 'no_email' });
-  if (email === _lc(ADMIN)) return res.status(400).json({ ok: false, error: 'cant_deactivate_owner' });
+  if (ADMINS.includes(email)) return res.status(400).json({ ok: false, error: 'cant_deactivate_owner' });
   try {
     const profs = await pmLoad('pm_profiles');
     const idx = profs.findIndex(p => p && _lc(p.email) === email);

@@ -12,7 +12,11 @@
 const crypto = require('crypto');
 const { pmLoad, pmSave } = require('./db');
 
-const ADMIN = String(process.env.ACCESS_ADMIN || '').toLowerCase().trim();
+// ACCESS_ADMIN may hold one email or several (comma-separated) — every listed
+// address is a full owner. ADMIN is the primary (first), used as the "to" for
+// admin notification emails.
+const ADMINS = String(process.env.ACCESS_ADMIN || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+const ADMIN = ADMINS[0] || '';
 const FROM = process.env.ACCESS_FROM || 'AXESS <login@access.example>';
 const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 min
 
@@ -74,7 +78,7 @@ async function userFor(email) {
   const e = lc(email);
   if (!e) return null;
   const p = await profileFor(e);
-  const role = (e === ADMIN) ? 'owner' : 'member';
+  const role = ADMINS.includes(e) ? 'owner' : 'member';
   // Deactivated members keep every record but lose access — the gate reads this flag.
   const deactivated = role !== 'owner' && !!(p && p.deactivated);
   const status = role === 'owner' ? 'approved' : (deactivated ? 'deactivated' : (p && p.status) || 'none');
@@ -145,4 +149,4 @@ function ensureAuth(req, res, next) {
   return res.status(401).json({ ok: false, error: 'auth' });
 }
 
-module.exports = { mount, attachUser, ensureAuth, userFor, profileFor, sendEmail, sendMagicLink, ADMIN, lc };
+module.exports = { mount, attachUser, ensureAuth, userFor, profileFor, sendEmail, sendMagicLink, ADMIN, ADMINS, lc };
