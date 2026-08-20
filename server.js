@@ -960,6 +960,32 @@ app.post('/api/pm/admin/deactivate', ensureAuth, pmGate, async (req, res) => {
     res.json({ ok: true, email, deactivated: on });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
+// ── Self-serve: a member cancels their own account. Access ends immediately,
+//    but every record is kept (payout/referral history, past deals). The owner
+//    can restore access later from the admin panel. ──────────────────────────
+app.post('/api/pm/cancel', ensureAuth, pmGate, async (req, res) => {
+  // Owner can't self-cancel — that would lock the whole network's admin out.
+  if (req.user.role === 'owner') return res.status(400).json({ ok: false, error: 'owner_cant_cancel', message: 'The owner account cannot be cancelled here.' });
+  const email = pmEmail(req.user);
+  try {
+    const profs = await pmLoad('pm_profiles');
+    const idx = profs.findIndex(p => p && _lc(p.email) === email);
+    const now = new Date().toISOString();
+    if (idx >= 0) {
+      profs[idx].deactivated = true;
+      profs[idx].deactivatedAt = now;
+      profs[idx].cancelledAt = now;
+      profs[idx].cancelledSelf = true;
+      await pmSave('pm_profiles', profs);
+    }
+    // Confirm to the member, and let the owner know someone left.
+    try { await pmSendEmail(email, 'AXESS · your account is cancelled', 'Your AXESS account has been cancelled and your access has ended. We\'ve kept your records on file. If you\'d like to come back, just reply to this email or request access again at ' + PM_BASE + ' and we\'ll reactivate you.\n\nThanks for being part of AXESS.'); } catch (e) {}
+    if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · a member cancelled', (req.user.name || email) + ' cancelled their AXESS account.\n\nEmail: ' + email + '\n\nTheir records are retained. You can restore access from the Members tab if they return.'); } catch (e) {} }
+    // End their session so access stops right away.
+    req.session = null;
+    res.json({ ok: true });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
 app.post('/api/pm/admin/verify', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   const b = req.body || {};
@@ -1004,26 +1030,42 @@ app.post('/api/pm/request', async (req, res) => {
   try {
     const now = new Date().toISOString();
     const attestation = { text: ATTEST_TEXT, accepted: true, at: now, ip };
-    // 1) Create/refresh the pending PROFILE so the member can sign in immediately.
+    const refCode = S(b.ref, 12).toUpperCase().replace(/[^A-Z0-9]/g, '') || '';
+    // 1) Create/refresh the PROFILE — auto-approved on licensure attestation so the
+    //    member gets full access right away. The owner can remove anyone at any time
+    //    from the Members tab (and reserves that right in the Terms).
     const profs = await pmLoad('pm_profiles');
     const pIdx = profs.findIndex(p => p && _lc(p.email) === email);
     if (pIdx >= 0) {
       const cur = profs[pIdx];
-      profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: cur.state || 'MA', attestation, updatedAt: now, status: (cur.status === 'approved' ? 'approved' : 'pending') });
+      profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: cur.state || 'MA', attestation, updatedAt: now, status: 'approved', deactivated: false });
     } else {
-      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'pending', attestation, createdAt: now, updatedAt: now });
+      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'approved', attestation, createdAt: now, updatedAt: now });
     }
+    // Credit the referrer (if any), now that the member is in.
+    try {
+      if (refCode) {
+        const ref = profs.find(x => x && x.email && pmRefCode(x.email) === refCode);
+        if (ref) {
+          ref.referredEmails = Array.isArray(ref.referredEmails) ? ref.referredEmails : [];
+          if (!ref.referredEmails.some(e => _lc(e) === email)) {
+            ref.referredEmails.push(email); ref.referrals = (ref.referrals || 0) + 1; ref.referralCredits = (ref.referralCredits || 0) + 1;
+            try { await pmSendEmail(ref.email, 'AXESS · your referral joined', (name || email) + ' just joined AXESS through your invite. You\'ve earned 1 free month, credited when membership billing begins. That\'s ' + ref.referralCredits + ' free month(s) so far — thanks for growing the network.'); } catch (e) {}
+          }
+        }
+      }
+    } catch (e) {}
     await pmSave('pm_profiles', profs);
-    // 2) Keep a request record (referral credit + admin notify + Requests queue).
+    // 2) Keep a request record for the audit log (already auto-approved).
     const reqs = await pmLoad('pm_requests');
     if (!reqs.some(r => r && _lc(r.email) === email && r.status !== 'denied')) {
-      reqs.push({ id: pmId('R'), email, name, license, brokerage, phone, markets: S(b.markets, 200), focus: pmFocus(b.focus), note: S(b.note, 1000), referredBy: S(b.ref, 12).toUpperCase().replace(/[^A-Z0-9]/g, '') || '', status: 'pending', at: now });
+      reqs.push({ id: pmId('R'), email, name, license, brokerage, phone, markets: S(b.markets, 200), focus: pmFocus(b.focus), note: S(b.note, 1000), referredBy: refCode, status: 'approved', auto: true, at: now, decidedAt: now });
       await pmSave('pm_requests', reqs.length > 2000 ? reqs.slice(-2000) : reqs);
     }
-    // 3) Send the sign-in link now so they can log in as a pending member.
+    // 3) Send the sign-in link now so they can log in right away.
     let linkSent = false;
     try { linkSent = await authMod.sendMagicLink(email, BASE_URL || ('https://' + (req.headers.host || ''))); } catch (e) {}
-    if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member to verify', name + ' signed up and is pending license verification.\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nVerify their license and approve them in the AXESS admin panel (Members tab).'); } catch (e) {} }
+    if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member joined', name + ' joined AXESS (auto-approved on licensure attestation).\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nManage members — including removing anyone — in the AXESS admin panel (Members tab).'); } catch (e) {} }
     res.json({ ok: true, linkSent });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
