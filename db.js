@@ -59,6 +59,32 @@ async function pmSave(key, arr) {
   return { ok: true };
 }
 
+// Atomic read-modify-write on one named list. Serializes concurrent writers to the
+// same key with a row lock, so two requests can't clobber each other's changes
+// (the load-mutate-save race). fn(arr) receives the current array (locked), may
+// mutate it or return a replacement, and returns { save?, result? } — `save`
+// defaults to the (mutated) array, and `result` is returned to the caller.
+async function pmMutate(key, fn) {
+  if (!pool) throw new Error('no_database');
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`INSERT INTO pm_store (k, v) VALUES ($1, '[]'::jsonb) ON CONFLICT (k) DO NOTHING`, [String(key)]);
+    const r = await client.query('SELECT v FROM pm_store WHERE k=$1 FOR UPDATE', [String(key)]);
+    const cur = Array.isArray(r.rows[0] && r.rows[0].v) ? r.rows[0].v : [];
+    const out = (await fn(cur)) || {};
+    const save = out.save !== undefined ? out.save : cur;
+    await client.query('UPDATE pm_store SET v=$2::jsonb, updated_at=now() WHERE k=$1', [String(key), JSON.stringify(Array.isArray(save) ? save : [])]);
+    await client.query('COMMIT');
+    return out.result;
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch (_) {}
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 // One-time importer: hand it a { key: array } map (pulled from the old sheet)
 // and it writes every list into Postgres in a single transaction.
 async function importAll(map) {
@@ -92,4 +118,4 @@ async function health() {
   catch (e) { return { ok: false, error: String(e && e.message || e) }; }
 }
 
-module.exports = { pool, ensureSchema, pmLoad, pmSave, importAll, health, hasDb: !!pool };
+module.exports = { pool, ensureSchema, pmLoad, pmSave, pmMutate, importAll, health, hasDb: !!pool };

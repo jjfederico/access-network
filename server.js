@@ -11,7 +11,7 @@ const fs = require('fs');
 const https = require('https');
 const db = require('./db');
 const authMod = require('./auth');
-const { pmLoad, pmSave } = db;
+const { pmLoad, pmSave, pmMutate } = db;
 
 // Tiny HTTPS GET → JSON (used to verify Google sign-in tokens; no extra deps).
 function httpsGetJson(url) {
@@ -26,11 +26,30 @@ app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // ── Basic security headers on every response ────────────────────────────────
+// Hardening CSP. 'unsafe-inline' stays (the app's UI is built on inline scripts +
+// handlers), so this doesn't stop inline execution — but it locks down where data
+// can be sent (connect-src), blocks <object>/base-tag/framing, and allowlists only
+// the real third parties, shrinking the blast radius of any XSS. Report-Only for
+// now (CSP_ENFORCE=1 flips it to enforcing) so it can never break a live flow.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://maps.googleapis.com https://challenges.cloudflare.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "img-src 'self' data: https:",
+  "connect-src 'self' https://accounts.google.com https://apis.google.com https://maps.googleapis.com https://challenges.cloudflare.com",
+  "frame-src 'self' https://accounts.google.com https://challenges.cloudflare.com https://www.google.com https://maps.google.com",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'"
+].join('; ');
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  res.setHeader(process.env.CSP_ENFORCE ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only', CSP);
   next();
 });
 
@@ -508,8 +527,7 @@ app.post('/api/pm/intro', rateLimit('intro', 30, 60 * 1000), ensureAuth, pmGate,
       buyerName: String(b.buyerName || req.user.name || '').slice(0, 80), message: String(b.message || '').slice(0, 1000),
       buyerVerified: !!buyerProf.verified, buyerProducer: !!buyerProf.producer, buyerPof,
       status: 'pending', createdAt: new Date().toISOString(), decidedAt: '' };
-    intros.push(rec);
-    await pmSave(PM_KEYS.intros, intros);
+    await pmMutate(PM_KEYS.intros, arr => { arr.push(rec); return { save: arr }; });
     // In-app bell notification to the seller — reliable regardless of email prefs.
     try {
       const ns = await pmLoad('pm_notifs');
@@ -548,14 +566,17 @@ app.post('/api/pm/intro/decide', ensureAuth, pmGate, async (req, res) => {
   const decision = b.decision === 'approved' ? 'approved' : b.decision === 'declined' ? 'declined' : '';
   if (!introId || !decision) return res.status(400).json({ ok: false, error: 'bad_request' });
   try {
-    const intros = await pmLoad(PM_KEYS.intros);
-    const idx = intros.findIndex(i => i && i.id === introId);
-    if (idx < 0) return res.status(404).json({ ok: false, error: 'not_found' });
-    const it = intros[idx];
-    if (req.user.role !== 'owner' && _lc(it.seller) !== pmEmail(req.user)) return res.status(403).json({ ok: false, error: 'not_your_listing' });
-    it.status = decision; it.decidedAt = new Date().toISOString();
-    intros[idx] = it;
-    await pmSave(PM_KEYS.intros, intros);
+    const it = await pmMutate(PM_KEYS.intros, arr => {
+      const idx = arr.findIndex(i => i && i.id === introId);
+      if (idx < 0) return { save: arr, result: null };
+      const rec = arr[idx];
+      if (req.user.role !== 'owner' && _lc(rec.seller) !== pmEmail(req.user)) return { save: arr, result: '__forbidden__' };
+      rec.status = decision; rec.decidedAt = new Date().toISOString();
+      arr[idx] = rec;
+      return { save: arr, result: rec };
+    });
+    if (it === null) return res.status(404).json({ ok: false, error: 'not_found' });
+    if (it === '__forbidden__') return res.status(403).json({ ok: false, error: 'not_your_listing' });
     // In-app bell notification to the buyer (mirrors the request-side notif).
     try {
       const ns = await pmLoad('pm_notifs');
@@ -607,11 +628,14 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
     // A buy box needs at least one real criterion, or it matches (and spams) every deal.
     if (!fields.markets && !fields.propType && !pmNum(fields.minPrice) && !pmNum(fields.maxPrice) && !pmNum(fields.minUnits) && !pmNum(fields.maxUnits) && !pmNum(fields.minCap))
       return res.status(400).json({ ok: false, error: 'empty_box', message: 'Add at least a price range, property type, or market.' });
-    const idx = boxes.findIndex(x => x && _lc(x.owner) === email);
-    let rec, isNew = false;
-    if (idx >= 0) { rec = Object.assign({}, boxes[idx], fields, { updatedAt: now }); boxes[idx] = rec; }
-    else { rec = Object.assign({ owner: req.user.email, ownerName: String(req.user.name || '').slice(0, 80), createdAt: now, updatedAt: now }, fields); boxes.push(rec); isNew = true; }
-    await pmSave(PM_KEYS.buyboxes, boxes);
+    const upd = await pmMutate(PM_KEYS.buyboxes, arr => {
+      const idx = arr.findIndex(x => x && _lc(x.owner) === email);
+      let rec, isNew = false;
+      if (idx >= 0) { rec = Object.assign({}, arr[idx], fields, { updatedAt: now }); arr[idx] = rec; }
+      else { rec = Object.assign({ owner: req.user.email, ownerName: String(req.user.name || '').slice(0, 80), createdAt: now, updatedAt: now }, fields); arr.push(rec); isNew = true; }
+      return { save: arr, result: { rec, isNew } };
+    });
+    const rec = upd.rec, isNew = upd.isNew;
     if (isNew) {
       try {
         const listings = await pmLoad(PM_KEYS.listings), ns = await pmLoad('pm_notifs');
@@ -657,10 +681,8 @@ app.post('/api/pm/message', rateLimit('message', 40, 60 * 1000), ensureAuth, pmG
   if (to === pmEmail(req.user)) return res.status(400).json({ ok: false, error: 'cannot_message_self' });
   try {
     if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
-    const msgs = await pmLoad('pm_messages');
     const rec = { id: pmId('M'), key: pmThreadKey(req.user.email, to, listingId), from: req.user.email, fromName: String(req.user.name || '').slice(0, 80), to, listingId, body, att, at: new Date().toISOString(), readBy: [pmEmail(req.user)] };
-    msgs.push(rec);
-    await pmSave('pm_messages', msgs);
+    await pmMutate('pm_messages', arr => { arr.push(rec); return { save: arr }; });
     res.json({ ok: true, message: rec });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -709,9 +731,8 @@ app.get('/api/pm/notifs', ensureAuth, pmGate, async (req, res) => {
 });
 app.post('/api/pm/notifs/read', ensureAuth, pmGate, async (req, res) => {
   try {
-    const ns = await pmLoad('pm_notifs'), email = pmEmail(req.user); let ch = false;
-    ns.forEach(n => { if (n && _lc(n.to) === email && !n.read) { n.read = true; ch = true; } });
-    if (ch) await pmSave('pm_notifs', ns);
+    const email = pmEmail(req.user);
+    await pmMutate('pm_notifs', arr => { arr.forEach(n => { if (n && _lc(n.to) === email && !n.read) n.read = true; }); return { save: arr }; });
     res.json({ ok: true });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -758,16 +779,19 @@ app.post('/api/pm/broadcast', rateLimit('broadcast', 12, 10 * 60 * 1000), ensure
 // ── views / analytics / renew ───────────────────────────────────────────────
 app.post('/api/pm/view/:id', ensureAuth, pmGate, async (req, res) => {
   try {
-    const listings = await pmLoad(PM_KEYS.listings);
-    const idx = listings.findIndex(x => x && x.id === String(req.params.id));
-    if (idx < 0) return res.status(404).json({ ok: false, error: 'not_found' });
-    if (_lc(listings[idx].owner) !== pmEmail(req.user)) {
-      listings[idx].views = (Number(listings[idx].views) || 0) + 1;
-      const vb = listings[idx].viewers = Array.isArray(listings[idx].viewers) ? listings[idx].viewers : [];
-      const me = pmEmail(req.user); if (!vb.includes(me)) vb.push(me);
-      await pmSave(PM_KEYS.listings, listings);
-    }
-    res.json({ ok: true, views: listings[idx].views || 0 });
+    const me = pmEmail(req.user), id = String(req.params.id);
+    const views = await pmMutate(PM_KEYS.listings, arr => {
+      const idx = arr.findIndex(x => x && x.id === id);
+      if (idx < 0) return { save: arr, result: null };
+      if (_lc(arr[idx].owner) !== me) {
+        arr[idx].views = (Number(arr[idx].views) || 0) + 1;
+        const vb = arr[idx].viewers = Array.isArray(arr[idx].viewers) ? arr[idx].viewers : [];
+        if (!vb.includes(me)) vb.push(me);
+      }
+      return { save: arr, result: (arr[idx].views || 0) };
+    });
+    if (views === null) return res.status(404).json({ ok: false, error: 'not_found' });
+    res.json({ ok: true, views: views });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.get('/api/pm/analytics/:id', ensureAuth, pmGate, async (req, res) => {
