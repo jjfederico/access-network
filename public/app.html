@@ -20,7 +20,7 @@ a{color:inherit;text-decoration:none}
 .wrap{max-width:1200px;margin:0 auto;padding:0 clamp(18px,3.5vw,40px)}
 .mono{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 /* ── nav ── */
-.nav{position:sticky;top:0;z-index:60;background:rgba(10,12,16,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav{position:sticky;top:0;z-index:60;background:rgba(10,12,16,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .nav .in{display:flex;align-items:center;gap:20px;height:62px;max-width:1440px}
 .navmore{position:relative;display:none}
 .navMenu{display:none;position:absolute;top:calc(100% + 10px);right:0;min-width:180px;background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:6px;box-shadow:0 18px 50px rgba(30,26,18,.20);z-index:70}
@@ -126,7 +126,7 @@ html.dark .bdg.pof{color:#E7C374!important;border-color:rgba(231,195,116,.32)!im
 .emptybig p{color:var(--mut);font-size:14px;line-height:1.5;max-width:44ch;margin:0 auto 18px}
 .emptybig .eb-act{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
 /* ── modal ── */
-.mbg{position:fixed;inset:0;background:rgba(5,7,10,.72);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:28px 16px;overflow-y:auto}
+.mbg{position:fixed;inset:0;background:rgba(5,7,10,.72);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:28px 16px;overflow-y:auto}
 .mbg.on{display:flex}
 body.mlock{overflow:hidden}
 .modal{background:var(--bg2);border:1px solid var(--line2);border-radius:18px;width:100%;max-width:540px;box-shadow:0 40px 100px -30px rgba(0,0,0,.9)}
@@ -199,7 +199,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .filters select:focus,.filters input:focus,.f input:focus,.f select:focus,.f textarea:focus,.mcRow input:focus{border-color:var(--acc)}
 .deal:hover{box-shadow:0 16px 38px -22px rgba(30,26,18,.35)}
 .deal .ph{background:linear-gradient(135deg,#EEEBE4,#F7F5F1);color:#C7C1B4}
-.deal .lock,.bdg{background:rgba(255,255,255,.82);backdrop-filter:blur(6px)}
+.deal .lock,.bdg{background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .deal .lock{color:var(--mut)}
 .bdg{color:var(--tx);border-color:var(--line2)}
 .bdg.broad{color:var(--acc);border-color:rgba(0,100,229,.35)}
@@ -375,6 +375,20 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 @media(max-width:560px){#mDetail .specgrid{grid-template-columns:1fr}.mact .btn{flex:1 1 auto;justify-content:center}}
 /* wrap long unbroken strings (emails/URLs) instead of clipping them on narrow screens */
 .reqrow,.drow,.grow,.msg{overflow-wrap:anywhere;word-break:break-word}
+/* Post-a-client-need: collapsible, optional target-markets section */
+.buydetails{margin:12px 0 4px}
+.buydetails>summary{cursor:pointer;list-style:none;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;padding:10px 0;border-top:1px solid var(--line)}
+.buydetails>summary::-webkit-details-marker{display:none}
+.buydetails>summary::before{content:'▸';color:var(--acc);margin-right:7px}
+.buydetails[open]>summary::before{content:'▾'}
+.buydetails .hint{font-weight:400;color:var(--mut)}
+/* Bigger tap targets on mobile */
+@media(max-width:640px){
+  .nlink.ico{min-width:42px;min-height:42px;display:inline-flex;align-items:center;justify-content:center}
+  .viewseg button{min-height:38px;padding:8px 11px}
+  .catseg button{min-height:36px}
+  .railx{width:40px;height:40px}
+}
 /* Mobile home: tighten spacing, drop the duplicate quick-action cards, and make the
    region chips a single scrollable row — so deals surface without a long scroll. */
 @media(max-width:640px){
@@ -743,11 +757,11 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
     <div class="fgrid">
       <div class="f"><label>Your name</label><input id="bName" placeholder="Name"></div>
       <div class="f"><label>Firm</label><input id="bFirm" placeholder="Company"></div>
-      <div class="f"><label>Min price ($)</label><input id="bMin" inputmode="decimal" placeholder="0"></div>
-      <div class="f"><label>Max price ($)</label><input id="bMax" inputmode="decimal" placeholder="0"></div>
+      <div class="f"><label>Min price ($)</label><input id="bMin" inputmode="decimal" placeholder="No min"></div>
+      <div class="f"><label>Max price ($)</label><input id="bMax" inputmode="decimal" placeholder="No max"></div>
     </div>
-    <div class="f full"><label>Asset types <span class="hint">— select any</span></label><div id="bTypeChecks" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px"></div></div>
-    <div class="f full"><label>Target submarkets <span class="hint">— select any</span></label><div id="bSubChecks" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;max-height:150px;overflow:auto"></div></div>
+    <div class="f full"><label>Property types <span class="hint">— leave blank to match all</span></label><div id="bTypeChecks" style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:6px"></div></div>
+    <details class="buydetails"><summary>Target markets <span class="hint">optional · matches all of Massachusetts by default</span></summary><div id="bSubChecks" style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px;max-height:180px;overflow:auto"></div></details>
     <div class="f full"><label>Criteria / notes</label><textarea id="bNotes" rows="2" placeholder="Cash, 1031 buyer, value-add 6–20 units, will close in 30 days…"></textarea></div>
     <div class="mact"><span class="msg" id="bMsg"></span><button class="btn ghost" onclick="close_('mBuy')">Cancel</button><button class="btn acc" onclick="submitBuyBox()">Post client need</button></div>
   </div>
@@ -831,6 +845,8 @@ function inCat(type,c){if(c==='all'||!c)return true;if(TYPES.indexOf(type)<0)ret
 var TYPEF='', ACTTAB='mydeals';
 function $(id){return document.getElementById(id);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+/* Keyboard: Enter/Space activates any focusable button-role element (cards, tiles, nav). */
+document.addEventListener('keydown',function(e){if(e.key!=='Enter'&&e.key!==' ')return;var el=document.activeElement;if(el&&el.getAttribute&&el.getAttribute('role')==='button'&&typeof el.click==='function'){e.preventDefault();el.click();}});
 function uid(p){return (p||'x')+Date.now().toString(36)+Math.floor(Math.random()*1e5).toString(36);}
 function num(v){var f=parseFloat(String(v==null?'':v).replace(/[^0-9.]/g,''));return isFinite(f)?f:0;}
 function money(n){n=Math.round(num(n));if(!n)return '—';if(n>=1e9)return '$'+(n/1e9).toFixed(n%1e9?2:1).replace(/\.0$/,'')+'B';if(n>=1e6)return '$'+(n/1e6).toFixed(n%1e6?2:1).replace(/\.0$/,'')+'M';if(n>=1e3)return '$'+Math.round(n/1e3)+'K';return '$'+n.toLocaleString('en-US');}
@@ -1153,7 +1169,7 @@ function dealCard(d){
   if(d.photoCount)badges+='<span class="bdg">📷 '+d.photoCount+'</span>';
   var cov=(open&&d.photos&&d.photos.length&&d.photos[0]&&d.photos[0].url)?String(d.photos[0].url):'';
   var cover=cov?'<div class="dcover"><img src="'+esc(cov)+'" alt="" loading="lazy" onerror="var p=this.closest(\'.dcover\');if(p)p.style.display=\'none\'"></div>':'';
-  return '<div class="deal'+(d.featured?' feat':'')+'" style="--tc:'+typeColor(d.type)+'" onclick="openDetail(\''+d.id+'\')">'
+  return '<div class="deal'+(d.featured?' feat':'')+'" style="--tc:'+typeColor(d.type)+'" tabindex="0" role="button" onclick="openDetail(\''+d.id+'\')">'
     +cover
     +'<div class="top"><div class="type">'+esc(d.type||'Investment')+'</div><div class="badges">'+badges+'</div></div>'
     +'<div class="sub">'+esc(d.submarket||'Greater Boston')+'</div>'
@@ -1891,7 +1907,7 @@ function submitBuyBox(){
   var body={markets:checkedVals('bSubChecks').join(', '),propType:checkedVals('bTypeChecks').join(', '),
     minPrice:noComma('bMin'),maxPrice:noComma('bMax'),
     notes:($('bNotes').value||'').trim(),contact:($('bFirm').value||'').trim()||ME.email};
-  if(!body.markets&&!body.propType){$('bMsg').textContent='Pick at least one market or property type so we can match deals.';return;}
+  if(!body.markets&&!body.propType&&!num(body.minPrice)&&!num(body.maxPrice)){$('bMsg').textContent='Add at least a price range, property type, or market so we can match deals.';return;}
   $('bMsg').textContent='Posting…';
   if(submitBuyBox._busy)return; submitBuyBox._busy=true; setTimeout(function(){submitBuyBox._busy=false;},5000);
   api('/api/pm/buybox',body).then(function(j){
