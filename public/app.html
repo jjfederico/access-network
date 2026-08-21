@@ -296,6 +296,8 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .rail{position:sticky;top:86px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
 .rail h3{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .rail h3 a{color:var(--acc);font-size:11px;cursor:pointer;text-transform:none;letter-spacing:0}
+.rail .rail-h3r{display:flex;align-items:center;gap:12px}
+.rail .railx{display:none;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:none;background:transparent;color:var(--mut);font-size:22px;line-height:1;cursor:pointer}
 .rail .fg{border-top:1px solid var(--line);padding:12px 0}
 .rail .fg:first-of-type{border-top:none;padding-top:0}
 .rail .lbl{font-size:12px;font-weight:700;margin-bottom:9px}
@@ -338,6 +340,9 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
   .mktlayout{grid-template-columns:1fr}
   .rail{position:fixed;top:0;left:0;bottom:0;width:290px;max-width:86vw;z-index:150;border-radius:0;overflow-y:auto;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 50px rgba(0,0,0,.35)}
   .rail.open{transform:translateX(0)}
+  .rail .railx{display:inline-flex}
+  #railScrim{position:fixed;inset:0;z-index:149;background:rgba(10,14,22,.45);opacity:0;visibility:hidden;transition:opacity .2s}
+  #railScrim.on{opacity:1;visibility:visible}
   .railtog{display:inline-flex}
   .sortbar input{width:140px}
 }
@@ -377,6 +382,10 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
   .mktbar{gap:9px;padding:8px 0 9px;margin-bottom:11px}
   .mktabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;scrollbar-width:none}
   .mktabs::-webkit-scrollbar{display:none}
+  .hero .stats{margin-top:11px}
+  .hero .stats .s{padding:8px 12px}
+  .hero .stats .s .v{font-size:17px}
+  .hero .stats .s .k{font-size:9.5px;letter-spacing:.05em;margin-top:1px}
 }
 </style>
 <style id="ax-dark-fix">
@@ -516,8 +525,9 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
   </div>
   <div class="mktlayout">
     <!-- filter rail -->
+    <div id="railScrim" onclick="toggleFilters(false)"></div>
     <aside class="rail" id="rail">
-      <h3>Filters <a onclick="clearFilters()">Clear all</a></h3>
+      <h3>Filters <span class="rail-h3r"><a onclick="clearFilters()">Clear all</a><button class="railx" onclick="toggleFilters(false)" aria-label="Close filters">×</button></span></h3>
       <div class="fg"><div class="lbl">Property type</div><div id="typeChecks"></div></div>
       <div class="fg"><div class="lbl">Price</div><div class="rng"><input id="fMin" inputmode="numeric" placeholder="Min $" oninput="render()"><input id="fMax" inputmode="numeric" placeholder="Max $" oninput="render()"></div></div>
       <div class="fg"><div class="lbl"><span class="tip" tabindex="0" data-tip="Cap rate = a property's yearly net income ÷ its price. Higher = more income per dollar. Used to compare income deals.">Cap rate</span></div><div class="rng"><input id="fCap" inputmode="decimal" placeholder="Min %" oninput="render()"></div></div>
@@ -543,7 +553,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
             <button data-v="map" onclick="setDealView('map')" title="Map" aria-label="Map view"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M12 21s-6.5-5-6.5-10a6.5 6.5 0 0 1 13 0C18.5 16 12 21 12 21z"/><circle cx="12" cy="11" r="2.2"/></svg></button>
           </div>
           <select id="fSort" onchange="render()"><option value="new">Sort: Newest</option><option value="priceHigh">Price: high → low</option><option value="priceLow">Price: low → high</option><option value="cap">Cap rate</option></select>
-          <button class="btn ghost sm railtog" onclick="document.getElementById('rail').classList.toggle('open')">Filters</button>
+          <button class="btn ghost sm railtog" onclick="toggleFilters()">Filters</button>
           <button class="btn ghost sm" onclick="loadAll()" title="Refresh">↻</button>
         </div>
       </div>
@@ -980,6 +990,7 @@ function introLabel(s){return s==='approved'?'Approved':s==='declined'?'Declined
 // Address visibility is decided server-side: an entitled viewer receives the address
 // in the feed (addressHidden:false). Never trust the client to unlock it.
 function canSeeAddress(d){return !d.addressHidden;}
+function toggleFilters(force){var r=document.getElementById('rail'),s=document.getElementById('railScrim');if(!r)return;var open=(typeof force==='boolean')?force:!r.classList.contains('open');r.classList.toggle('open',open);if(s)s.classList.toggle('on',open);document.body.classList.toggle('mlock',open);}
 // Trust chips. verified=license; pof can be {amount} (card shorthand, already verified)
 // or {status,amount} (directory/intro/profile). Only renders POF when verified.
 function badgeVer(v){return v?'<span class="bdg ver" title="License verified">✓ Verified</span>':'';}
