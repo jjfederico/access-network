@@ -270,7 +270,7 @@ function pmSocial(kind, v) {
   return base ? base + handle : '';
 }
 // Only http(s) and data: URLs may be stored/rendered — blocks javascript:/vbscript: XSS.
-function pmSafeUrl(u) { u = String(u == null ? '' : u).trim(); return /^(https?:|data:)/i.test(u) ? u : ''; }
+function pmSafeUrl(u) { u = String(u == null ? '' : u).trim(); return (/^https?:/i.test(u) || /^data:(image\/|application\/pdf)/i.test(u)) ? u : ''; }
 function pmRefCode(email) {
   const s = _lc(email); let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
@@ -362,6 +362,7 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
     // A Private/Pocket deal must never expose its address, regardless of the
     // hide-address checkbox — force it hidden at write time.
     if ((fields.dist || 'broad') !== 'broad') fields.hideAddress = true;
+    if (!id && !pmNum(fields.price)) return res.status(400).json({ ok: false, error: 'no_price', message: 'Add an asking price.' });
     const in30 = new Date(Date.now() + 30 * 864e5).toISOString();
     let rec, isNew = false;
     if (id) {
@@ -555,6 +556,12 @@ app.post('/api/pm/intro/decide', ensureAuth, pmGate, async (req, res) => {
     it.status = decision; it.decidedAt = new Date().toISOString();
     intros[idx] = it;
     await pmSave(PM_KEYS.intros, intros);
+    // In-app bell notification to the buyer (mirrors the request-side notif).
+    try {
+      const ns = await pmLoad('pm_notifs');
+      ns.push({ id: pmId('N'), to: _lc(it.buyer), type: 'intro', text: 'Your intro request was ' + decision + (decision === 'approved' ? ' — the address is now unlocked.' : '.'), listingId: it.listingId || '', at: it.decidedAt, read: false });
+      await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns);
+    } catch (e) {}
     try { await pmSendEmail(it.buyer, 'AXESS · your intro was ' + decision, decision === 'approved' ? 'The listing agent approved your intro. Open AXESS to see the address and message them.' : 'The listing agent declined your intro this time.'); } catch (e) {}
     res.json({ ok: true, intro: it });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -595,7 +602,11 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
     const boxes = await pmLoad(PM_KEYS.buyboxes);
     const email = pmEmail(req.user);
     const now = new Date().toISOString();
-    const fields = { markets: S(b.markets, 200), propType: S(b.propType, 80), minUnits: S(b.minUnits, 12), maxUnits: S(b.maxUnits, 12), minPrice: S(b.minPrice, 24), maxPrice: S(b.maxPrice, 24), minCap: S(b.minCap, 12), notes: S(b.notes, 1500), contact: S(b.contact || req.user.email, 120) };
+    const fields = { markets: S(b.markets, 200), propType: S(b.propType, 80), minPrice: S(b.minPrice, 24), maxPrice: S(b.maxPrice, 24), notes: S(b.notes, 1500), contact: S(b.contact || req.user.email, 120) };
+    ['minUnits', 'maxUnits', 'minCap'].forEach(k => { if (k in b) fields[k] = S(b[k], 12); });
+    // A buy box needs at least one real criterion, or it matches (and spams) every deal.
+    if (!fields.markets && !fields.propType && !pmNum(fields.minPrice) && !pmNum(fields.maxPrice) && !pmNum(fields.minUnits) && !pmNum(fields.maxUnits) && !pmNum(fields.minCap))
+      return res.status(400).json({ ok: false, error: 'empty_box', message: 'Add at least a price range, property type, or market.' });
     const idx = boxes.findIndex(x => x && _lc(x.owner) === email);
     let rec, isNew = false;
     if (idx >= 0) { rec = Object.assign({}, boxes[idx], fields, { updatedAt: now }); boxes[idx] = rec; }
@@ -962,7 +973,7 @@ app.get('/api/pm/profile/:email', ensureAuth, pmGate, async (req, res) => {
     if (!p) return res.json({ ok: true, profile: null });
     // Pending (unverified) viewers can see who an agent is, but not their contact details.
     const canContact = req.user.role === 'owner' || req.user.status === 'approved';
-    res.json({ ok: true, profile: { email: canContact ? p.email : '', name: p.name || '', brokerage: p.brokerage || '', license: p.license || '', markets: p.markets || '', bio: p.bio || '', phone: canContact ? (p.phone || '') : '', linkedin: canContact ? (p.linkedin || '') : '', instagram: canContact ? (p.instagram || '') : '', facebook: canContact ? (p.facebook || '') : '', x: canContact ? (p.x || '') : '', website: canContact ? (p.website || '') : '', verified: !!p.verified, producer: !!p.producer, pof: pmPofPublic(p), status: p.status || 'pending' } });
+    res.json({ ok: true, profile: { email: canContact ? p.email : '', name: p.name || '', brokerage: p.brokerage || '', license: canContact ? (p.license || '') : '', markets: p.markets || '', bio: p.bio || '', phone: canContact ? (p.phone || '') : '', linkedin: canContact ? (p.linkedin || '') : '', instagram: canContact ? (p.instagram || '') : '', facebook: canContact ? (p.facebook || '') : '', x: canContact ? (p.x || '') : '', website: canContact ? (p.website || '') : '', verified: !!p.verified, producer: !!p.producer, pof: pmPofPublic(p), status: p.status || 'pending' } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.get('/api/pm/directory', ensureAuth, pmGate, async (req, res) => {
@@ -1089,10 +1100,10 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
   const S = (v, n) => String(v == null ? '' : v).slice(0, n || 120).trim();
   const email = S(b.email, 120).toLowerCase(), name = S(b.name, 100);
   const phone = S(b.phone, 40), license = S(b.license, 60), brokerage = S(b.brokerage, 120);
-  if (!name || !email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Name and a valid email are required.' });
+  if (!name || !email || !/^[^@\s"'<>\\]+@[^@\s"'<>\\]+\.[^@\s"'<>\\]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Name and a valid email are required.' });
   if (!phone || !license || !brokerage) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Phone, license number, and brokerage are all required.' });
   if (b.attest !== true) return res.status(400).json({ ok: false, error: 'attest_required', message: 'You must accept the licensure certification to join.' });
-  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip;
+  const ip = req.ip;
   if (!(await verifyTurnstile(b.captcha, ip))) return res.status(400).json({ ok: false, error: 'captcha_failed', message: 'Please complete the verification and try again.' });
   try {
     const now = new Date().toISOString();
@@ -1158,9 +1169,9 @@ app.post('/api/pm/contact', rateLimit('contact', 6, 10 * 60 * 1000), async (req,
   const name = S(b.name, 100), email = S(b.email, 120).toLowerCase();
   const subject = S(b.subject, 120) || 'General question';
   const message = S(b.message, 4000);
-  if (!name || !email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Name and a valid email are required.' });
+  if (!name || !email || !/^[^@\s"'<>\\]+@[^@\s"'<>\\]+\.[^@\s"'<>\\]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Name and a valid email are required.' });
   if (!message || message.length < 3) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Please add a short message.' });
-  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip;
+  const ip = req.ip;
   try {
     const now = new Date().toISOString();
     const list = await pmLoad('pm_contacts');
@@ -1175,7 +1186,7 @@ app.post('/api/pm/contact', rateLimit('contact', 6, 10 * 60 * 1000), async (req,
 app.post('/api/pm/admin/invite', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   const email = String((req.body || {}).email || '').toLowerCase().trim();
-  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_email', message: 'Enter a valid email address.' });
+  if (!email || !/^[^@\s"'<>\\]+@[^@\s"'<>\\]+\.[^@\s"'<>\\]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_email', message: 'Enter a valid email address.' });
   try {
     const base = BASE_URL || 'https://axessre.com';
     const link = base + '/?join=1&inv=1&email=' + encodeURIComponent(email);
@@ -1276,12 +1287,12 @@ app.get('/api/pm/stats', async (req, res) => {
   try {
     const [listings, boxes, profs] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles')]);
     const now = new Date();
-    const active = listings.filter(l => l && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !(l.expiresAt && new Date(l.expiresAt) < now));
+    const active = listings.filter(l => l && !l.sample && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !(l.expiresAt && new Date(l.expiresAt) < now));
     const volume = active.reduce((a, l) => a + pmNum(l.price), 0);
     const commission = active.reduce((a, l) => a + pmNum(l.price) * pmNum(l.commissionPct) / 100, 0);
     const members = profs.filter(p => p && !p.sample && p.status === 'approved' && !p.deactivated).length;
     const foundingCap = Number(process.env.PM_FOUNDING_CAP || 100);
-    res.json({ ok: true, stats: { liveDeals: active.length, volume: Math.round(volume), commission: Math.round(commission), members, clientNeeds: boxes.filter(Boolean).length, dealsPosted: listings.length, foundingCap, foundingLeft: Math.max(0, foundingCap - members), foundingFull: members >= foundingCap } });
+    res.json({ ok: true, stats: { liveDeals: active.length, volume: Math.round(volume), commission: Math.round(commission), members, clientNeeds: boxes.filter(b => b && !b.sample).length, dealsPosted: listings.filter(l => l && !l.sample).length, foundingCap, foundingLeft: Math.max(0, foundingCap - members), foundingFull: members >= foundingCap } });
   } catch (e) { res.json({ ok: false }); }
 });
 

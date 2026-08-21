@@ -42,7 +42,7 @@ async function pmLoad(key) {
     if (!r.rows.length) return [];
     const v = r.rows[0].v;
     return Array.isArray(v) ? v : [];
-  } catch (e) { return []; }
+  } catch (e) { throw e; } // never swallow a read error as [] — the caller would then overwrite the whole table with a truncated array
 }
 
 // Save a named list. Throws on failure ON PURPOSE — the route should report a

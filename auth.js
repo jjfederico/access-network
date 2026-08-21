@@ -103,7 +103,7 @@ async function userFor(email) {
 // flow so a new pending member gets their magic link immediately.
 async function sendMagicLink(email, baseUrl) {
   const e = lc(email);
-  if (!e || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return false;
+  if (!e || !/^[^@\s"'<>\\]+@[^@\s"'<>\\]+\.[^@\s"'<>\\]+$/.test(e)) return false;
   const token = crypto.randomBytes(24).toString('hex');
   await putToken(token, e);
   const link = (baseUrl || 'https://access-network.onrender.com') + '/auth/verify?token=' + token;
@@ -119,7 +119,7 @@ function mount(app, baseUrl) {
   app.post('/auth/request', async (req, res) => {
     if (!authRateOK(req)) return res.status(429).json({ ok: false, error: 'rate_limited', sent: false });
     const email = lc((req.body || {}).email);
-    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_email' });
+    if (!email || !/^[^@\s"'<>\\]+@[^@\s"'<>\\]+\.[^@\s"'<>\\]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_email' });
     const token = crypto.randomBytes(24).toString('hex');
     await putToken(token, email);
     const link = (baseUrl || 'https://axessre.com') + '/auth/verify?token=' + token;
