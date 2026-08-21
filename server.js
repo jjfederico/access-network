@@ -122,10 +122,15 @@ function pmEntitled(listing, u, intros) {
 function pmPublicView(l, full, gated) {
   if (!l) return null;
   const zip = String(l.zip || '');
-  const showAddr = full || (!l.hideAddress && !gated);
+  // Address/docs/photos/pin are visible only to entitled viewers (full), or on a
+  // BROAD deal whose lister didn't hide the address and the viewer isn't gated.
+  // Private/Pocket deals NEVER expose the address here — it unlocks only after an
+  // approved intro (pmEntitled → /api/pm/reveal).
+  const isBroad = (l.dist || 'broad') === 'broad';
+  const showAddr = full || (isBroad && !l.hideAddress && !gated);
   const expired = l.expiresAt ? (new Date(l.expiresAt) < new Date()) : false;
   const out = {
-    id: l.id, owner: l.owner, ownerName: l.ownerName || '',
+    id: l.id, owner: showAddr ? l.owner : '', ownerName: l.ownerName || '',
     createdAt: l.createdAt || '', updatedAt: l.updatedAt || '', expiresAt: l.expiresAt || '', expired,
     status: l.status || 'active', mlsAt: l.mlsAt || '', featured: !!l.featured,
     city: l.city || '', area: l.area || '', state: l.state || '',
@@ -150,8 +155,9 @@ function pmPublicView(l, full, gated) {
   }
   return out;
 }
+const _emailEsc = s => String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const pmSendEmail = (to, subject, body) =>
-  authMod.sendEmail(to, subject, `<pre style="font:inherit;white-space:pre-wrap">${String(body || '')}</pre>`);
+  authMod.sendEmail(to, subject, `<pre style="font:inherit;white-space:pre-wrap">${_emailEsc(body)}</pre>`);
 function pmNum(v) { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.]/g, '')); return isFinite(n) ? n : 0; }
 const pmFocus = v => (['residential', 'commercial', 'both'].indexOf(String(v || '').toLowerCase().trim()) >= 0 ? String(v).toLowerCase().trim() : '');
 // Category grouping (mirrors the app). Crossover types (2–4 unit, land, multifamily)
@@ -262,11 +268,13 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
     const gated = !isOwner && !recip.active;   // throttle non-contributors
     const isExpired = l => l.expiresAt && (new Date(l.expiresAt) < new Date());
     const profBy = {}; profs.forEach(p => { if (p && p.email) profBy[_lc(p.email)] = p; });
-    const attachOwner = r => { const p = profBy[_lc(r.owner)]; r.ownerVerified = !!(p && p.verified); r.ownerProducer = !!(p && p.producer); const pof = pmPofPublic(p || {}); r.ownerPof = pof.status === 'verified' ? { amount: pof.amount } : null; return r; };
+    const attachOwner = (r, ownerEmail) => { const p = profBy[_lc(ownerEmail || r.owner)]; r.ownerVerified = !!(p && p.verified); r.ownerProducer = !!(p && p.producer); const pof = pmPofPublic(p || {}); r.ownerPof = pof.status === 'verified' ? { amount: pof.amount } : null; return r; };
     const rows = listings
       .filter(l => l && (((l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed') || mine(l) || isOwner))
       .filter(l => !isExpired(l) || mine(l) || isOwner)
-      .map(l => attachOwner(pmPublicView(l, mine(l) || isOwner, gated && !mine(l))))
+      // Pocket deals stay out of the general feed for everyone but the owner/admin.
+      .filter(l => (l.dist || 'broad') !== 'pocket' || mine(l) || isOwner)
+      .map(l => attachOwner(pmPublicView(l, mine(l) || isOwner, gated && !mine(l)), l.owner))
       .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
     res.json({ ok: true, listings: rows, me: { email: req.user.email, role: req.user.role, focus: meProf.focus || '', reciprocity: recip } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -314,6 +322,9 @@ app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
       commissionPct: S(b.commissionPct, 16), commissionNotes: S(b.commissionNotes, 300),
       notes: S(b.notes, 3000), docs: docsIn, photos: photosIn
     };
+    // A Private/Pocket deal must never expose its address, regardless of the
+    // hide-address checkbox — force it hidden at write time.
+    if ((fields.dist || 'broad') !== 'broad') fields.hideAddress = true;
     const in30 = new Date(Date.now() + 30 * 864e5).toISOString();
     let rec, isNew = false;
     if (id) {
@@ -326,6 +337,11 @@ app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
       // Preserve existing media when the request doesn't include it (e.g. status toggles).
       if (!Array.isArray(b.docs)) rec.docs = Array.isArray(cur.docs) ? cur.docs : [];
       if (!Array.isArray(b.photos)) rec.photos = Array.isArray(cur.photos) ? cur.photos : [];
+      // Preserve privacy/geo when a partial update (take-off-market / relist) omits them,
+      // so toggling status never silently un-hides an address or wipes the map pin.
+      if (!('hideAddress' in b)) rec.hideAddress = !!cur.hideAddress;
+      if (!('lat' in b)) rec.lat = cur.lat || '';
+      if (!('lng' in b)) rec.lng = cur.lng || '';
       listings[idx] = rec;
     } else {
       rec = Object.assign({ id: pmId('L'), owner: req.user.email, createdAt: now, updatedAt: now, expiresAt: in30, views: 0, featured: false }, fields);
@@ -1048,7 +1064,15 @@ app.post('/api/pm/request', async (req, res) => {
     const isFounder = priorMembers < foundingCap;
     if (pIdx >= 0) {
       const cur = profs[pIdx];
-      profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: cur.state || 'MA', attestation, updatedAt: now, status: 'approved', deactivated: false });
+      // A removed/deactivated member cannot silently re-approve themselves by
+      // re-submitting the join form — keep them out and flag the owner.
+      const banned = !!cur.deactivated || cur.status === 'rejected' || cur.status === 'denied';
+      profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: cur.state || 'MA', attestation, updatedAt: now, status: banned ? cur.status : 'approved', deactivated: banned ? cur.deactivated : false });
+      if (banned) {
+        await pmSave('pm_profiles', profs);
+        if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · removed member tried to rejoin', (name || email) + ' (' + email + ') re-submitted the join form but is deactivated/removed — kept out.'); } catch (e) {} }
+        return res.json({ ok: true, linkSent: false });
+      }
     } else {
       profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'approved', attestation, foundingRate: isFounder, memberNo: priorMembers + 1, createdAt: now, updatedAt: now });
     }
@@ -1095,7 +1119,6 @@ app.post('/api/pm/contact', async (req, res) => {
     list.push({ id: pmId('C'), name, email, subject, message, ip, at: now, status: 'new' });
     await pmSave('pm_contacts', list.length > 3000 ? list.slice(-3000) : list);
     if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · contact form: ' + subject, 'New message from the AXESS contact form.\n\nName: ' + name + '\nEmail: ' + email + '\nSubject: ' + subject + '\n\n' + message + '\n\nReply directly to ' + email + '.'); } catch (e) {} }
-    try { await pmSendEmail(email, 'AXESS · we got your message', 'Hi ' + name + ',\n\nThanks for reaching out to AXESS — we\'ve received your message and will get back to you shortly.\n\nYour message:\n"' + message + '"\n\n— The AXESS team'); } catch (e) {}
     res.json({ ok: true });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -1308,6 +1331,9 @@ app.post('/api/pm/checkout', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {}, kind = String(b.kind || '');
   try {
     if (kind === 'renew' || kind === 'feature') {
+      // Paid actions are off during the free launch — gated by the same billing switch as membership.
+      const settings = await pmSettings();
+      if (!settings.billingOn) return res.status(409).json({ ok: false, error: 'billing_off', message: 'Paid upgrades are off during our free launch period.' });
       const id = String(b.listingId || ''); if (!id) return res.status(400).json({ ok: false, error: 'no_id' });
       const listings = await pmLoad(PM_KEYS.listings); const l = listings.find(x => x && x.id === id);
       if (!l) return res.status(404).json({ ok: false, error: 'not_found' });
