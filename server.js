@@ -474,7 +474,7 @@ app.get('/api/pm/closings', ensureAuth, pmGate, async (req, res) => {
       price: l.showClose === false ? '' : (l.closePrice || l.price || ''),
       ownerName: l.ownerName || nameBy[_lc(l.owner)] || '', closedAt: l.closedAt || ''
     }));
-    const board = {}; closed.forEach(l => { const k = _lc(l.owner); if (!board[k]) board[k] = { email: l.owner, ownerName: l.ownerName || nameBy[k] || l.owner, count: 0, volume: 0 }; board[k].count++; board[k].volume += pmNum(l.closePrice || l.price); });
+    const board = {}; closed.forEach(l => { const k = _lc(l.owner); if (!board[k]) board[k] = { ownerName: l.ownerName || nameBy[k] || l.owner, count: 0, volume: 0 }; board[k].count++; board[k].volume += pmNum(l.closePrice || l.price); });
     const leaderboard = Object.values(board).sort((a, b) => (b.count - a.count) || (b.volume - a.volume)).slice(0, 15);
     res.json({ ok: true, totalCount, totalVolume, recent, leaderboard });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -1322,7 +1322,8 @@ app.post('/api/pm/upload', rateLimit('upload', 60, 60 * 1000), ensureAuth, pmGat
     if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
     const approxBytes = Math.floor(data.length * 0.75);
     if (approxBytes > PM_UPLOAD_MAX) return res.status(413).json({ ok: false, error: 'too_big', message: 'File too large — max ' + Math.round(PM_UPLOAD_MAX / 1e6) + 'MB for now (object storage coming).' });
-    const mime = String(b.mime || 'application/octet-stream').slice(0, 120);
+    const mime = String(b.mime || 'application/octet-stream').slice(0, 120).toLowerCase();
+    if (!/^(image\/(png|jpe?g|gif|webp|heic)|application\/pdf|application\/vnd\.openxmlformats|application\/msword|application\/vnd\.ms-excel|text\/(csv|plain))/.test(mime)) return res.status(415).json({ ok: false, error: 'bad_type', message: 'Unsupported file type — images, PDF, or Office documents only.' });
     const name = String(b.name || 'file').slice(0, 200);
     // Inline data URL — same-origin, no external service. Swap for S3/R2 later.
     const url = 'data:' + mime + ';base64,' + data;
