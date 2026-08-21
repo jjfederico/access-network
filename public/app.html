@@ -367,6 +367,8 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .mact{flex-wrap:wrap;justify-content:flex-start;gap:8px;margin-top:16px!important;padding-top:14px;border-top:1px solid var(--line)}
 .mact .btn{font-size:13px;padding:8px 13px}
 @media(max-width:560px){#mDetail .specgrid{grid-template-columns:1fr}.mact .btn{flex:1 1 auto;justify-content:center}}
+/* wrap long unbroken strings (emails/URLs) instead of clipping them on narrow screens */
+.reqrow,.drow,.grow,.msg{overflow-wrap:anywhere;word-break:break-word}
 </style>
 <style id="ax-dark-fix">
 /* AXESS dark palette — redefine the design tokens so the whole app flips, not just patches */
@@ -1825,13 +1827,14 @@ function openReferral(){
   });
 }
 function copyRef(){var i=$('refLink');if(!i)return;try{i.select();document.execCommand('copy');}catch(e){}if(navigator.clipboard){navigator.clipboard.writeText(i.value).catch(function(){});}var c=$('refCopied');if(c)c.style.display='block';}
-function openDirectory(){
-  api('/api/pm/directory').then(function(j){
+function openDirectory(){var _dr=$('mDirectory');if(_dr){_dr.innerHTML='<div class="modal wide"><div class="mhead"><h3>Member directory</h3><button class="x" onclick="close_(\'mDirectory\')">×</button></div><div class="mbody"><div class="empty">Loading…</div></div></div>';open_('mDirectory');}
+  apiT('/api/pm/directory').then(function(j){
+    if(j&&j.timeout){var _b=_dr&&_dr.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}
     if(j&&j.error==='not_approved'){alert('The member directory unlocks once your membership is approved.');return;}
     DIRLIST=(j&&j.members)||[];
     var owner=ME.role==='owner';
     $('mDirectory').innerHTML='<div class="modal wide">'
-      +'<div class="mhead"><div><h3>Member directory <span style="color:var(--mut);font-size:13px;font-weight:600">'+DIRLIST.length+'</span></h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Vetted AXESS agents — search and reach out directly.</div></div><button class="x" onclick="close_(\'mDirectory\')">×</button></div>'
+      +'<div class="mhead"><div><h3>Member directory <span style="color:var(--mut);font-size:13px;font-weight:600">'+DIRLIST.length+'</span></h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Licensed AXESS agents — search and reach out directly.</div></div><button class="x" onclick="close_(\'mDirectory\')">×</button></div>'
       +'<div class="mbody"><div style="display:flex;gap:8px;margin-bottom:14px"><input id="dirSearch" placeholder="Search name, brokerage, market…" oninput="renderDirList(this.value)" style="flex:1;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:9px 12px;font:inherit;font-size:13.5px">'+(owner?'<button class="btn ghost sm" onclick="exportDirectory()" title="Download member list">⬇ Export CSV</button>':'')+'</div><div id="dirList"></div></div></div>';
     renderDirList(''); open_('mDirectory');
   });
@@ -1905,7 +1908,7 @@ function setIntro(id,status){api('/api/pm/intro/decide',{introId:id,decision:sta
 
 /* ── messaging (TAN-style member-to-member conversations) ── */
 var THREADS=[];
-function loadThreads(cb){api('/api/pm/threads').then(function(j){THREADS=(j&&j.threads)||[];updateMsgDot();cb&&cb();});}
+function loadThreads(cb){apiT('/api/pm/threads').then(function(j){THREADS=(j&&j.threads)||[];updateMsgDot();cb&&cb();});}
 function updateMsgDot(){var un=THREADS.some(function(t){return t.unread>0;});var d=$('msgDot');if(d)d.style.display=un?'':'none';}
 function openMsgs(){loadThreads(function(){renderThreads();open_('mMsgs');});}
 function renderThreads(){
@@ -1973,7 +1976,8 @@ function openNotifs(){loadNotifs(function(){
 });}
 
 /* ── market pulse ── */
-function openMarket(){Promise.all([api('/api/pm/market'),api('/api/pm/closings')]).then(function(r){var j=r[0]||{},cj=r[1]||{};var m=(j&&j.market)||{};
+function openMarket(){var _mk=$('mMarket');if(_mk){_mk.innerHTML='<div class="modal wide"><div class="mhead"><h3>Market pulse</h3><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody"><div class="empty">Loading…</div></div></div>';open_('mMarket');}
+  Promise.all([apiT('/api/pm/market'),apiT('/api/pm/closings')]).then(function(r){var j=r[0]||{},cj=r[1]||{};if((j&&j.timeout)||(cj&&cj.timeout)){var _b=_mk&&_mk.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}var m=(j&&j.market)||{};
   function stat(v,k){return '<div style="background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:15px 16px"><div style="font-family:\'Big Shoulders Display\',system-ui,sans-serif;font-size:25px;font-weight:800">'+v+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-top:3px">'+k+'</div></div>';}
   // closed-deal proof block
   var lb=(cj.leaderboard||[]);var lbRows=lb.length?lb.map(function(x,i){return '<div class="drow"><span>'+(i<3?['🥇','🥈','🥉'][i]:(i+1)+'.')+' '+esc(x.ownerName||x.email)+'</span><b class="mono">'+x.count+' deal'+(x.count===1?'':'s')+(num(x.volume)?(' · '+money(x.volume)):'')+'</b></div>';}).join(''):'<div style="color:var(--mut);font-size:13px">No closings logged yet — mark a deal “closed” to start the board.</div>';
@@ -1998,7 +2002,8 @@ function openMarket(){Promise.all([api('/api/pm/market'),api('/api/pm/closings')
 });}
 
 /* ── broadcast board ── */
-function openBoard(){api('/api/pm/broadcasts').then(function(j){var bs=(j&&j.broadcasts)||[];
+function openBoard(){var _bd=$('mBoard');if(_bd){_bd.innerHTML='<div class="modal wide"><div class="mhead"><h3>Board</h3><button class="x" onclick="close_(\'mBoard\')">×</button></div><div class="mbody"><div class="empty">Loading…</div></div></div>';open_('mBoard');}
+  apiT('/api/pm/broadcasts').then(function(j){if(j&&j.timeout){var _b=_bd&&_bd.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}var bs=(j&&j.broadcasts)||[];
   var posts=bs.length?bs.map(function(b){return '<div class="reqrow" style="align-items:flex-start"><div class="grow"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em">'+esc(b.category||'Misc')+'</div><b style="display:block;margin:2px 0">'+esc(b.title||'(no title)')+'</b><div style="color:var(--mut);font-size:13px;white-space:pre-wrap">'+esc((b.body||'').slice(0,600))+'</div><div style="color:var(--mut2);font-size:12px;margin-top:6px">'+esc(b.fromName||b.from)+' · '+ago(b.at)+'</div></div></div>';}).join(''):'<div class="empty">No posts yet. Start the board — post an ISO, an off-market list, or an announcement.</div>';
   $('mBoard').innerHTML='<div class="modal wide"><div class="mhead"><h3>Board</h3><button class="x" onclick="close_(\'mBoard\')">×</button></div><div class="mbody">'
     +'<div style="border:1px solid var(--line2);border-radius:12px;padding:12px;margin-bottom:16px">'
