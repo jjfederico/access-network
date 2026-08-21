@@ -292,10 +292,10 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .soon .dot{background:var(--acc)}.soon b{color:var(--ink)}
 @keyframes soonpulse{0%{box-shadow:0 0 0 0 rgba(0,100,229,.45)}70%{box-shadow:0 0 0 7px rgba(0,100,229,0)}100%{box-shadow:0 0 0 0 rgba(0,100,229,0)}}
 /* expansion ticker strip (above the nav) */
-.xbar{background:var(--acc);color:#fff;overflow:hidden;position:relative;font-family:'IBM Plex Mono',monospace}
+.xbar{background:var(--acc);color:#fff;overflow:hidden;position:relative;height:33px;font-family:'IBM Plex Mono',monospace}
 .xbar .lbl{position:absolute;left:0;top:0;bottom:0;z-index:2;display:flex;align-items:center;gap:8px;padding:0 16px;background:var(--acc);font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;box-shadow:14px 0 16px -6px rgba(0,100,229,.95)}
 .xbar .lbl .pin{width:6px;height:6px;border-radius:50%;background:#fff;animation:soonpulse 1.8s infinite}
-.xbar .track{display:flex;width:max-content;animation:xscroll 36s linear infinite;padding:9px 0}
+.xbar .track{display:flex;align-items:center;width:max-content;height:100%;position:absolute;top:0;left:0;animation:xscroll 36s linear infinite}
 .xbar:hover .track{animation-play-state:paused}
 .xbar .seg{display:flex;align-items:center;flex:none}
 .xbar .city{font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:0 18px;white-space:nowrap;opacity:.96}
