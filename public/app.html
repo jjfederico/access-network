@@ -298,6 +298,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .rail h3 a{color:var(--acc);font-size:11px;cursor:pointer;text-transform:none;letter-spacing:0}
 .rail .rail-h3r{display:flex;align-items:center;gap:12px}
 .rail .railx{display:none;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:none;background:transparent;color:var(--mut);font-size:22px;line-height:1;cursor:pointer}
+#railScrim{display:none}
 .rail .fg{border-top:1px solid var(--line);padding:12px 0}
 .rail .fg:first-of-type{border-top:none;padding-top:0}
 .rail .lbl{font-size:12px;font-weight:700;margin-bottom:9px}
@@ -341,7 +342,7 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
   .rail{position:fixed;top:0;left:0;bottom:0;width:290px;max-width:86vw;z-index:150;border-radius:0;overflow-y:auto;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 50px rgba(0,0,0,.35)}
   .rail.open{transform:translateX(0)}
   .rail .railx{display:inline-flex}
-  #railScrim{position:fixed;inset:0;z-index:149;background:rgba(10,14,22,.45);opacity:0;visibility:hidden;transition:opacity .2s}
+  #railScrim{display:block;position:fixed;inset:0;z-index:149;background:rgba(10,14,22,.45);opacity:0;visibility:hidden;transition:opacity .2s}
   #railScrim.on{opacity:1;visibility:visible}
   .railtog{display:inline-flex}
   .sortbar input{width:140px}
@@ -1416,10 +1417,10 @@ function openIntro(id){_introDeal=id;close_('mDetail');
   var d=LISTINGS.find(function(x){return x.id===id;});
   $('mActivity');
   var html='<div class="mhead"><h3>Request introduction</h3><button class="x" onclick="close_(\'mIntro\')">×</button></div>'
-    +'<div class="mbody"><p style="color:var(--mut);font-size:13.5px;margin-bottom:12px">The seller sees your name &amp; note and approves before the address and documents are shared. No spam.</p>'
+    +'<div class="mbody"><p style="color:var(--mut);font-size:13.5px;margin-bottom:12px">The listing broker sees your name &amp; note and approves before the address and documents are shared. No spam.</p>'
     +'<div class="f full"><label>Your name</label><input id="iName" value="'+esc(ME.name||'')+'"></div>'
     +'<div class="f full"><label>Firm</label><input id="iFirm" placeholder="Company"></div>'
-    +'<div class="f full"><label>A note to the seller</label><textarea id="iMsg" rows="3" placeholder="Cash buyer, 1031, can close in 30 days. Interested in the numbers on this one."></textarea></div>'
+    +'<div class="f full"><label>A note to the broker — qualify your buyer for permission</label><textarea id="iMsg" rows="3" placeholder="Cash buyer, 1031, can close in 30 days. Interested in the numbers on this one."></textarea></div>'
     +'<div class="mact"><span class="msg" id="iMsgS"></span><button class="btn ghost" onclick="close_(\'mIntro\')">Cancel</button><button class="btn acc" onclick="sendIntro()">Send request</button></div></div>';
   var m=$('mIntro');if(!m){m=document.createElement('div');m.className='mbg';m.id='mIntro';m.onclick=function(e){if(e.target===m)close_('mIntro');};document.body.appendChild(m);}
   m.innerHTML='<div class="modal">'+html+'</div>';open_('mIntro');
