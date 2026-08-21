@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 const _rlHits = new Map();
 function rateLimit(bucket, max, windowMs) {
   return (req, res, next) => {
-    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown';
+    const ip = req.ip || 'unknown';
     const key = bucket + ':' + ip;
     const now = Date.now();
     let e = _rlHits.get(key);
@@ -54,12 +54,15 @@ function rateLimit(bucket, max, windowMs) {
 }
 const _rlCleanup = setInterval(() => { const now = Date.now(); for (const [k, v] of _rlHits) if (now > v.reset) _rlHits.delete(k); }, 10 * 60 * 1000);
 if (_rlCleanup.unref) _rlCleanup.unref();
+const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-change-me';
+const IS_DEPLOYED = !!process.env.BASE_URL || process.env.NODE_ENV === 'production';
+if (IS_DEPLOYED && SESSION_SECRET === 'dev-change-me') throw new Error('SESSION_SECRET must be set in production — refusing to boot with the default signing key.');
 app.use(cookieSession({
   name: 'access_sess',
-  keys: [process.env.SESSION_SECRET || 'dev-change-me'],
+  keys: [SESSION_SECRET],
   maxAge: 90 * 24 * 3600 * 1000,
   httpOnly: true, sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production'
+  secure: IS_DEPLOYED
 }));
 
 const BASE_URL = (process.env.BASE_URL || '').replace(/\/$/, '');
@@ -266,6 +269,8 @@ function pmSocial(kind, v) {
   const base = { linkedin: 'https://www.linkedin.com/in/', instagram: 'https://instagram.com/', facebook: 'https://facebook.com/', x: 'https://x.com/' }[kind];
   return base ? base + handle : '';
 }
+// Only http(s) and data: URLs may be stored/rendered — blocks javascript:/vbscript: XSS.
+function pmSafeUrl(u) { u = String(u == null ? '' : u).trim(); return /^(https?:|data:)/i.test(u) ? u : ''; }
 function pmRefCode(email) {
   const s = _lc(email); let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
@@ -299,12 +304,14 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
     const isExpired = l => l.expiresAt && (new Date(l.expiresAt) < new Date());
     const profBy = {}; profs.forEach(p => { if (p && p.email) profBy[_lc(p.email)] = p; });
     const attachOwner = (r, ownerEmail) => { const p = profBy[_lc(ownerEmail || r.owner)]; r.ownerVerified = !!(p && p.verified); r.ownerProducer = !!(p && p.producer); const pof = pmPofPublic(p || {}); r.ownerPof = pof.status === 'verified' ? { amount: pof.amount } : null; return r; };
+    // A buyer with an APPROVED intro is entitled to the full view (address + docs).
+    const entitled = l => mine(l) || isOwner || intros.some(i => i && i.listingId === l.id && _lc(i.buyer) === meEmail && i.status === 'approved');
     const rows = listings
       .filter(l => l && (((l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed') || mine(l) || isOwner))
       .filter(l => !isExpired(l) || mine(l) || isOwner)
       // Pocket deals stay out of the general feed for everyone but the owner/admin.
       .filter(l => (l.dist || 'broad') !== 'pocket' || mine(l) || isOwner)
-      .map(l => attachOwner(pmPublicView(l, mine(l) || isOwner, gated && !mine(l)), l.owner))
+      .map(l => attachOwner(pmPublicView(l, entitled(l), gated && !mine(l)), l.owner))
       .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
     res.json({ ok: true, listings: rows, me: { email: req.user.email, role: req.user.role, focus: meProf.focus || '', reciprocity: recip } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -315,7 +322,7 @@ app.get('/api/pm/listing/:id', ensureAuth, pmGate, async (req, res) => {
     const [listings, intros, boxes, profs] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros), pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles')]);
     const l = listings.find(x => x && x.id === String(req.params.id));
     if (!l) return res.status(404).json({ ok: false, error: 'not_found' });
-    const full = _lc(l.owner) === pmEmail(req.user) || req.user.role === 'owner';
+    const full = _lc(l.owner) === pmEmail(req.user) || req.user.role === 'owner' || intros.some(i => i && i.listingId === l.id && _lc(i.buyer) === pmEmail(req.user) && i.status === 'approved');
     const recip = pmReciprocity(pmEmail(req.user), listings, boxes, profs);
     const gated = !full && !recip.active;
     const oProf = profs.find(p => p && _lc(p.email) === _lc(l.owner)) || {};
@@ -327,7 +334,7 @@ app.get('/api/pm/listing/:id', ensureAuth, pmGate, async (req, res) => {
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
-app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
+app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const S = (v, n) => String(v == null ? '' : v).slice(0, n || 120);
   try {
@@ -335,8 +342,8 @@ app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
     const listings = await pmLoad(PM_KEYS.listings);
     const id = S(b.id, 40);
     const now = new Date().toISOString();
-    const docsIn = Array.isArray(b.docs) ? b.docs.slice(0, 20).map(d => ({ name: S(d && d.name, 160), url: S(d && d.url, 900) })).filter(d => d.url) : [];
-    const photosIn = Array.isArray(b.photos) ? b.photos.slice(0, 24).map(p => ({ name: String((p && p.name) || '').slice(0, 120), url: String((p && p.url) || '') })).filter(p => p.url && p.url.length < 6000000) : [];
+    const docsIn = Array.isArray(b.docs) ? b.docs.slice(0, 20).map(d => ({ name: S(d && d.name, 160), url: pmSafeUrl(S(d && d.url, 900)) })).filter(d => d.url) : [];
+    const photosIn = Array.isArray(b.photos) ? b.photos.slice(0, 24).map(p => ({ name: String((p && p.name) || '').slice(0, 120), url: pmSafeUrl(String((p && p.url) || '')) })).filter(p => p.url && p.url.length < 6000000) : [];
     const fields = {
       ownerName: S(b.ownerName, 80),
       status: (b.status === 'off' ? 'off' : b.status === 'mls' ? 'mls' : 'active'),
@@ -372,6 +379,8 @@ app.post('/api/pm/listing', ensureAuth, pmGate, async (req, res) => {
       if (!('hideAddress' in b)) rec.hideAddress = !!cur.hideAddress;
       if (!('lat' in b)) rec.lat = cur.lat || '';
       if (!('lng' in b)) rec.lng = cur.lng || '';
+      if (!('dist' in b)) rec.dist = cur.dist || 'broad';
+      if ((rec.dist || 'broad') !== 'broad') rec.hideAddress = true;
       listings[idx] = rec;
     } else {
       rec = Object.assign({ id: pmId('L'), owner: req.user.email, createdAt: now, updatedAt: now, expiresAt: in30, views: 0, featured: false }, fields);
@@ -500,6 +509,12 @@ app.post('/api/pm/intro', rateLimit('intro', 30, 60 * 1000), ensureAuth, pmGate,
       status: 'pending', createdAt: new Date().toISOString(), decidedAt: '' };
     intros.push(rec);
     await pmSave(PM_KEYS.intros, intros);
+    // In-app bell notification to the seller — reliable regardless of email prefs.
+    try {
+      const ns = await pmLoad('pm_notifs');
+      ns.push({ id: pmId('N'), to: _lc(l.owner), type: 'intro', text: (rec.buyerName || rec.buyer) + ' requested an intro on your ' + (l.area || l.city || 'deal') + ' deal.', listingId: l.id, at: rec.createdAt, read: false });
+      await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns);
+    } catch (e) {}
     try {
       const sProf = allProfs.find(p => p && _lc(p.email) === _lc(l.owner)) || {};
       const cred = pmCredLine(buyerProf);
@@ -625,7 +640,8 @@ app.get('/api/pm/activity', ensureAuth, pmGate, async (req, res) => {
 app.post('/api/pm/message', rateLimit('message', 40, 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const to = _lc(b.to), body = String(b.body || '').slice(0, 4000).trim(), listingId = String(b.listingId || '');
-  const att = (b.docUrl) ? { url: String(b.docUrl).slice(0, 6000000), name: String(b.docName || 'file').slice(0, 160) } : null;
+  const _attUrl = pmSafeUrl(String(b.docUrl || '').slice(0, 6000000));
+  const att = _attUrl ? { url: _attUrl, name: String(b.docName || 'file').slice(0, 160) } : null;
   if (!to || (!body && !att)) return res.status(400).json({ ok: false, error: 'bad_request' });
   if (to === pmEmail(req.user)) return res.status(400).json({ ok: false, error: 'cannot_message_self' });
   try {
@@ -715,7 +731,7 @@ app.get('/api/pm/broadcasts', ensureAuth, pmGate, async (req, res) => {
   try { let bs = await pmLoad('pm_broadcasts'); bs = bs.filter(Boolean).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 60); res.json({ ok: true, broadcasts: bs }); }
   catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
-app.post('/api/pm/broadcast', ensureAuth, pmGate, async (req, res) => {
+app.post('/api/pm/broadcast', rateLimit('broadcast', 12, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const title = String(b.title || '').slice(0, 160).trim(), body = String(b.body || '').slice(0, 4000).trim(), category = String(b.category || 'Misc').slice(0, 40);
   if (!title && !body) return res.status(400).json({ ok: false, error: 'empty' });
@@ -886,7 +902,7 @@ app.post('/api/pm/digest/run', async (req, res) => {
 });
 // Member requests a Proof-of-Funds badge (buy-side credibility). Stores amount +
 // optional doc; goes to 'pending' for admin review. Doc is never exposed publicly.
-app.post('/api/pm/pof/request', ensureAuth, pmGate, async (req, res) => {
+app.post('/api/pm/pof/request', rateLimit('pof', 8, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   try {
     if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
@@ -895,7 +911,7 @@ app.post('/api/pm/pof/request', ensureAuth, pmGate, async (req, res) => {
     const idx = profs.findIndex(p => p && _lc(p.email) === email);
     if (idx < 0) return res.status(404).json({ ok: false, error: 'no_profile', message: 'Save your profile first.' });
     const amount = String(b.amount || '').slice(0, 40);
-    const doc = String(b.doc || '').slice(0, 900);
+    const doc = pmSafeUrl(String(b.doc || '').slice(0, 900));
     profs[idx].pof = { status: 'pending', amount, doc, requestedAt: new Date().toISOString() };
     await pmSave('pm_profiles', profs);
     if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · proof-of-funds review', (profs[idx].name || email) + ' requested a Proof-of-Funds badge' + (amount ? (' (' + amount + ')') : '') + '.\n\nReview it in the AXESS admin panel.'); } catch (e) {} }
@@ -951,6 +967,8 @@ app.get('/api/pm/profile/:email', ensureAuth, pmGate, async (req, res) => {
 });
 app.get('/api/pm/directory', ensureAuth, pmGate, async (req, res) => {
   try {
+    // Member directory is owner-only for now (not exposed to members / not public).
+    if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
     if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
     const isOwner = req.user.role === 'owner';
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
@@ -1090,7 +1108,7 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
     // billing is switched on. Everyone after pays the standard rate. memberNo is
     // their join order. (Separate from the give-get `founder` exemption flag.)
     const foundingCap = Number(process.env.PM_FOUNDING_CAP || 100);
-    const priorMembers = profs.filter(p => p && !p.sample && _lc(p.email) !== email).length;
+    const priorMembers = profs.filter(p => p && !p.sample && p.status === 'approved' && !p.deactivated && _lc(p.email) !== email).length;
     const isFounder = priorMembers < foundingCap;
     if (pIdx >= 0) {
       const cur = profs[pIdx];
@@ -1128,7 +1146,7 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
     }
     // 3) Send the sign-in link now so they can log in right away.
     let linkSent = false;
-    try { linkSent = await authMod.sendMagicLink(email, BASE_URL || ('https://' + (req.headers.host || ''))); } catch (e) {}
+    try { linkSent = await authMod.sendMagicLink(email, BASE_URL || 'https://axessre.com'); } catch (e) {}
     if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member joined', name + ' joined AXESS (auto-approved on licensure attestation).\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nManage members — including removing anyone — in the AXESS admin panel (Members tab).'); } catch (e) {} }
     res.json({ ok: true, linkSent });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -1159,7 +1177,7 @@ app.post('/api/pm/admin/invite', ensureAuth, pmGate, async (req, res) => {
   const email = String((req.body || {}).email || '').toLowerCase().trim();
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_email', message: 'Enter a valid email address.' });
   try {
-    const base = BASE_URL || ('https://' + (req.headers.host || ''));
+    const base = BASE_URL || 'https://axessre.com';
     const link = base + '/?join=1&inv=1&email=' + encodeURIComponent(email);
     const now = new Date().toISOString();
     // Log the invite (for a simple record / de-dupe view later).
@@ -1243,7 +1261,7 @@ app.post('/api/pm/admin/request/decide', ensureAuth, pmGate, async (req, res) =>
 app.get('/api/pm/referral', ensureAuth, pmGate, async (req, res) => {
   try {
     const email = pmEmail(req.user), code = pmRefCode(email);
-    const origin = BASE_URL || ((req.headers.origin && /^https?:\/\//.test(req.headers.origin)) ? req.headers.origin : ('https://' + (req.headers.host || '')));
+    const origin = BASE_URL || 'https://axessre.com';
     const link = origin + '/?ref=' + code;
     const [profs, reqs] = await Promise.all([pmLoad('pm_profiles'), pmLoad('pm_requests')]);
     const me = profs.find(p => p && _lc(p.email) === email) || {};
@@ -1261,7 +1279,7 @@ app.get('/api/pm/stats', async (req, res) => {
     const active = listings.filter(l => l && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !(l.expiresAt && new Date(l.expiresAt) < now));
     const volume = active.reduce((a, l) => a + pmNum(l.price), 0);
     const commission = active.reduce((a, l) => a + pmNum(l.price) * pmNum(l.commissionPct) / 100, 0);
-    const members = profs.filter(p => p && p.status === 'approved').length;
+    const members = profs.filter(p => p && !p.sample && p.status === 'approved' && !p.deactivated).length;
     const foundingCap = Number(process.env.PM_FOUNDING_CAP || 100);
     res.json({ ok: true, stats: { liveDeals: active.length, volume: Math.round(volume), commission: Math.round(commission), members, clientNeeds: boxes.filter(Boolean).length, dealsPosted: listings.length, foundingCap, foundingLeft: Math.max(0, foundingCap - members), foundingFull: members >= foundingCap } });
   } catch (e) { res.json({ ok: false }); }

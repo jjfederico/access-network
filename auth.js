@@ -35,7 +35,7 @@ const memTokens = new Map(); // token -> { email, exp } (no-DB fallback)
 // Simple per-IP rate limit for the sign-in email endpoint (anti email-bombing).
 const _authRl = new Map();
 function authRateOK(req) {
-  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+  const ip = req.ip || 'x';
   const now = Date.now();
   let e = _authRl.get(ip);
   if (!e || now > e.reset) { e = { c: 0, reset: now + 10 * 60 * 1000 }; _authRl.set(ip, e); }
@@ -122,7 +122,7 @@ function mount(app, baseUrl) {
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_email' });
     const token = crypto.randomBytes(24).toString('hex');
     await putToken(token, email);
-    const link = (baseUrl || ('https://' + (req.headers.host || ''))) + '/auth/verify?token=' + token;
+    const link = (baseUrl || 'https://axessre.com') + '/auth/verify?token=' + token;
     const sent = await sendEmail(email, 'Your AXESS sign-in link',
       `<p>Tap to sign in to AXESS:</p><p><a href="${link}">Sign in</a></p><p>This link expires in 30 minutes.</p>`);
     // Don't leak whether an address exists, but DO record a real send failure so
