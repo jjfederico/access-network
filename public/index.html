@@ -595,7 +595,7 @@ var D=[
   {t:'Multifamily',s:'Dorchester',pr:'$2.95M',cm:'2.0% BBC'},
   {t:'Mixed-use',s:'Cambridge',pr:'$3.40M',cm:'3.0% BBC'}
 ];
-function typeIcon(t){var m={'Multifamily':'🏢','Single-family':'🏠','Condo':'🏙️','Townhouse':'🏘️','Land':'🌳','Mixed-use':'🏬','Retail / Commercial':'🏪','Commercial':'🏪','Industrial':'🏭','Development site':'🏗️'};return m[t]||'📍';}
+function typeIcon(t){var m={'Multifamily':'🏢','Single-family':'🏠','Condo':'🏙️','Townhouse':'🏘️','Land':'🌳','Mixed-use':'🏬','Retail / Commercial':'🏪','Commercial':'🏪','Industrial':'🏭','Storage / Warehouse':'📦','Mobile Home Park':'🏡','Development site':'🏗️'};return m[t]||'📍';}
 var LOCK_SVG='<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.7" width="16" height="10.3" rx="2.4"/><path d="M8 10.7V7a4 4 0 0 1 8 0v3.7"/></svg>';
 function escH(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function renderDeals(list){document.getElementById('grid').innerHTML=list.map(function(d){return '<div class="deal"><div class="ph"><span class="tico">'+typeIcon(d.t)+'</span>'+LOCK_SVG+'<div class="lktxt">Off-market · Address hidden</div></div><div class="bd"><div class="t">'+escH(d.t)+'</div><div class="s">'+escH(d.s)+'</div><div class="foot"><div class="pr mono">'+escH(d.pr)+'</div><div class="cm">'+escH(d.cm)+'</div></div></div></div>';}).join('');}

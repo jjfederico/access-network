@@ -797,12 +797,12 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
 <script>
 var ME={role:'guest',email:'',name:''};
 var LISTINGS=[];
-var TYPES=['Single-family','Condo / Conversion','Townhouse','Multifamily','Land','Mixed-use','Retail / Commercial','Industrial','Development site'];
+var TYPES=['Single-family','Condo / Conversion','Townhouse','Multifamily','Land','Mixed-use','Retail / Commercial','Industrial','Storage / Warehouse','Mobile Home Park','Development site'];
 // Category grouping for the Residential / Commercial toggle. Crossover types
 // (Multifamily — now covers 2–4 & 5+ — and Land) live in BOTH so an
 // investor-minded residential agent still sees them.
 var RESI_TYPES=['Single-family','Condo / Conversion','Townhouse','Multifamily','Land'];
-var COMM_TYPES=['Multifamily','Mixed-use','Retail / Commercial','Industrial','Development site','Land'];
+var COMM_TYPES=['Multifamily','Mixed-use','Retail / Commercial','Industrial','Storage / Warehouse','Mobile Home Park','Development site','Land'];
 var CAT='all';
 function catTypes(c){return c==='residential'?RESI_TYPES:c==='commercial'?COMM_TYPES:TYPES;}
 function inCat(type,c){if(c==='all'||!c)return true;if(TYPES.indexOf(type)<0)return true;return catTypes(c).indexOf(type)>=0;}
@@ -833,7 +833,9 @@ var DEAL_HIDE={
   'Land':['sUnits','sNoi','sCap','sSf','sBeds','sBaths','sYb'],
   'Development site':['sNoi','sCap','sBeds','sBaths','sYb'],
   'Retail / Commercial':['sBeds','sBaths'],
-  'Industrial':['sBeds','sBaths']
+  'Industrial':['sBeds','sBaths'],
+  'Storage / Warehouse':['sBeds','sBaths'],
+  'Mobile Home Park':['sBeds','sBaths']
 };
 var DEAL_TOGGLE=['sUnits','sNoi','sCap','sSf','sBeds','sBaths','sYb'];
 function syncDealFields(){var t=($('sType')&&$('sType').value)||'';var hide=DEAL_HIDE[t]||[];DEAL_TOGGLE.forEach(function(id){var el=$(id);if(!el)return;var w=el.closest('.f');var h=hide.indexOf(id)>=0;if(w)w.style.display=h?'none':'';if(h)el.value='';});}
@@ -1091,6 +1093,8 @@ function typeColor(t){t=String(t||'').toLowerCase();
   if(t.indexOf('retail')>=0||t.indexOf('commercial')>=0)return '#6D5AA8';
   if(t.indexOf('condo')>=0||t.indexOf('conversion')>=0)return '#B5566B';
   if(t.indexOf('industrial')>=0)return '#4E6B8A';
+  if(t.indexOf('storage')>=0||t.indexOf('warehouse')>=0)return '#8A6D4E';
+  if(t.indexOf('mobile')>=0)return '#3E9E8E';
   if(t.indexOf('single')>=0)return '#2C7FA8';
   return '#0064E5';   // multifamily / default — ink-blue
 }
