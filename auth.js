@@ -32,6 +32,17 @@ const lc = s => String(s || '').toLowerCase().trim();
 const TOKKEY = 'pm_authtokens';
 const memTokens = new Map(); // token -> { email, exp } (no-DB fallback)
 
+// Simple per-IP rate limit for the sign-in email endpoint (anti email-bombing).
+const _authRl = new Map();
+function authRateOK(req) {
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+  const now = Date.now();
+  let e = _authRl.get(ip);
+  if (!e || now > e.reset) { e = { c: 0, reset: now + 10 * 60 * 1000 }; _authRl.set(ip, e); }
+  e.c++;
+  return e.c <= 8;
+}
+
 async function putToken(token, email) {
   const exp = Date.now() + TOKEN_TTL_MS;
   try {
@@ -106,6 +117,7 @@ function mount(app, baseUrl) {
   // Request a login link. Sent to any well-formed address; whether the session
   // can actually reach the app is decided at the gate (approved member / admin).
   app.post('/auth/request', async (req, res) => {
+    if (!authRateOK(req)) return res.status(429).json({ ok: false, error: 'rate_limited', sent: false });
     const email = lc((req.body || {}).email);
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_email' });
     const token = crypto.randomBytes(24).toString('hex');

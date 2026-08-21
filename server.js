@@ -24,6 +24,36 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// ── Basic security headers on every response ────────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
+
+// ── Lightweight in-memory rate limiter (per IP + bucket) ────────────────────
+// Single-instance friendly; caps abuse of email-sending / write endpoints.
+const _rlHits = new Map();
+function rateLimit(bucket, max, windowMs) {
+  return (req, res, next) => {
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown';
+    const key = bucket + ':' + ip;
+    const now = Date.now();
+    let e = _rlHits.get(key);
+    if (!e || now > e.reset) { e = { count: 0, reset: now + windowMs }; _rlHits.set(key, e); }
+    e.count++;
+    if (e.count > max) {
+      res.setHeader('Retry-After', Math.ceil((e.reset - now) / 1000));
+      return res.status(429).json({ ok: false, error: 'rate_limited', message: 'Too many requests — please wait a moment and try again.' });
+    }
+    next();
+  };
+}
+const _rlCleanup = setInterval(() => { const now = Date.now(); for (const [k, v] of _rlHits) if (now > v.reset) _rlHits.delete(k); }, 10 * 60 * 1000);
+if (_rlCleanup.unref) _rlCleanup.unref();
 app.use(cookieSession({
   name: 'access_sess',
   keys: [process.env.SESSION_SECRET || 'dev-change-me'],
@@ -442,7 +472,7 @@ app.get('/api/pm/closings', ensureAuth, pmGate, async (req, res) => {
 });
 
 // ── intros ──────────────────────────────────────────────────────────────────
-app.post('/api/pm/intro', ensureAuth, pmGate, async (req, res) => {
+app.post('/api/pm/intro', rateLimit('intro', 30, 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const listingId = String(b.listingId || '');
   if (!listingId) return res.status(400).json({ ok: false, error: 'no_listing' });
@@ -592,7 +622,7 @@ app.get('/api/pm/activity', ensureAuth, pmGate, async (req, res) => {
 });
 
 // ── messaging ────────────────────────────────────────────────────────────
-app.post('/api/pm/message', ensureAuth, pmGate, async (req, res) => {
+app.post('/api/pm/message', rateLimit('message', 40, 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const to = _lc(b.to), body = String(b.body || '').slice(0, 4000).trim(), listingId = String(b.listingId || '');
   const att = (b.docUrl) ? { url: String(b.docUrl).slice(0, 6000000), name: String(b.docName || 'file').slice(0, 160) } : null;
@@ -1036,7 +1066,7 @@ app.post('/api/pm/admin/feature', ensureAuth, pmGate, async (req, res) => {
 });
 
 // ── public join requests (no auth) ──────────────────────────────────────────
-app.post('/api/pm/request', async (req, res) => {
+app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, res) => {
   const b = req.body || {};
   const S = (v, n) => String(v == null ? '' : v).slice(0, n || 120).trim();
   const email = S(b.email, 120).toLowerCase(), name = S(b.name, 100);
@@ -1104,7 +1134,7 @@ app.post('/api/pm/request', async (req, res) => {
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 // ── Contact / support: anyone (member or not) can send a question or issue. ──
-app.post('/api/pm/contact', async (req, res) => {
+app.post('/api/pm/contact', rateLimit('contact', 6, 10 * 60 * 1000), async (req, res) => {
   const b = req.body || {};
   const S = (v, n) => String(v == null ? '' : v).slice(0, n || 120).trim();
   const name = S(b.name, 100), email = S(b.email, 120).toLowerCase();
@@ -1266,7 +1296,7 @@ app.get('/api/pm/teaser', async (req, res) => {
 
 // ── document upload (small files stored inline until object storage is added) ─
 const PM_UPLOAD_MAX = Number(process.env.PM_UPLOAD_MAX || 3 * 1024 * 1024); // 3MB inline cap
-app.post('/api/pm/upload', ensureAuth, pmGate, async (req, res) => {
+app.post('/api/pm/upload', rateLimit('upload', 60, 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const data = String(b.data || '');
   if (!data) return res.status(400).json({ ok: false, error: 'no_file' });
