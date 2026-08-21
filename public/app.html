@@ -845,6 +845,10 @@ function inCat(type,c){if(c==='all'||!c)return true;if(TYPES.indexOf(type)<0)ret
 var TYPEF='', ACTTAB='mydeals';
 function $(id){return document.getElementById(id);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+/* Escape a value for safe use INSIDE a single-quoted JS string inside a double-quoted
+   HTML on* handler. HTML-entity escaping (esc) is NOT safe there — the parser decodes it
+   back before the JS runs — so quotes must be JS-escaped (\') and " must be entity-escaped. */
+function escJS(s){var j=String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/[\r\n\u2028\u2029]/g,' ').replace(/</g,'\\u003C').replace(/>/g,'\\u003E');return j.replace(/&/g,'&amp;').replace(/"/g,'&quot;');}
 /* Keyboard: Enter/Space activates any focusable button-role element (cards, tiles, nav). */
 document.addEventListener('keydown',function(e){if(e.key!=='Enter'&&e.key!==' ')return;var el=document.activeElement;if(el&&el.getAttribute&&el.getAttribute('role')==='button'&&typeof el.click==='function'){e.preventDefault();el.click();}});
 function uid(p){return (p||'x')+Date.now().toString(36)+Math.floor(Math.random()*1e5).toString(36);}
@@ -1187,7 +1191,7 @@ function dealRow(d){
   if(d.photoCount)badges+='<span class="bdg">📷 '+d.photoCount+'</span>';
   if(isMine(d))badges+='<span class="bdg mine">Yours</span>';
   var kpi=num(d.cap)?num(d.cap).toFixed(1)+'% cap':(num(d.units)?num(d.units)+' units':(num(d.beds)?num(d.beds)+' bd':''));
-  return '<div class="drow-item" style="--tc:'+typeColor(d.type)+'" onclick="openDetail(\''+d.id+'\')">'
+  return '<div class="drow-item" style="--tc:'+typeColor(d.type)+'" tabindex="0" role="button" onclick="openDetail(\''+d.id+'\')">'
     +'<span class="li-type">'+esc(d.type||'Deal')+'</span>'
     +'<span class="li-sub">'+esc(d.submarket||'Greater Boston')+'</span>'
     +'<span class="li-addr">'+addrIcon(open)+(open?((d.addr&&esc(d.addr))||'Shown'):'Hidden')+'</span>'
@@ -1419,7 +1423,7 @@ function openDetail(id){
     });
     api('/api/pm/matches/'+d.id).then(function(j){ var el=$('detMatch'); if(!el||!j||!j.ok)return;
     if(!j.count){ el.innerHTML='<div class="reveal" style="background:var(--card);border-color:var(--line2)">No client needs match this yet.</div>'; return; }
-    var who=(j.buyers||[]).slice(0,6).map(function(b){return '<div class="drow"><span>'+esc(b.ownerName||b.owner)+(b.markets?(' <span style="color:var(--mut2)">· '+esc(b.markets)+'</span>'):'')+'</span><button class="btn link" style="padding:2px 4px" onclick="close_(\'mDetail\');openThread(\''+esc(b.contact||b.owner)+'\',\''+esc(d.id)+'\')">Message</button></div>';}).join('');
+    var who=(j.buyers||[]).slice(0,6).map(function(b){return '<div class="drow"><span>'+esc(b.ownerName||b.owner)+(b.markets?(' <span style="color:var(--mut2)">· '+esc(b.markets)+'</span>'):'')+'</span><button class="btn link" style="padding:2px 4px" onclick="close_(\'mDetail\');openThread(\''+escJS(b.contact||b.owner)+'\',\''+escJS(d.id)+'\')">Message</button></div>';}).join('');
     el.innerHTML='<div class="reveal"><b style="color:var(--gold)">🎯 '+j.count+' client need'+(j.count===1?'':'s')+' match this deal.</b>'+who+'</div>';
   }); }
 }
@@ -1768,7 +1772,7 @@ function openAdmin(){
     var mj=r[0]||{},fj=r[1]||{},rj=r[2]||{},vj=r[3]||{};var members=(mj&&mj.members)||[];var deals=(fj.listings||[]).map(nL).filter(Boolean);var requests=(rj&&rj.requests)||[];var invites=(vj&&vj.invites)||[];
     var invRows=invites.length?invites.map(function(v){
       var st=v.status==='verified'?'<span class="pill appr">Signed up · verified</span>':v.status==='signed_up'?'<span class="pill appr">Signed up</span>':'<span class="pill req">Invite sent</span>';
-      var resend=v.status==='invited'?'<button class="btn ghost sm" onclick="resendInvite(\''+esc(v.email)+'\')">Resend</button>':'';
+      var resend=v.status==='invited'?'<button class="btn ghost sm" onclick="resendInvite(\''+escJS(v.email)+'\')">Resend</button>':'';
       return '<div class="reqrow"><div class="grow"><b>'+esc(v.name||v.email)+'</b> '+st+'<div style="color:var(--mut2);font-size:11.5px;margin-top:3px">'+esc(v.email)+' · invited '+ago(v.at)+'</div></div>'+resend+'</div>';
     }).join(''):'<div class="empty">No invites sent yet. Use “Invite a member” in your account menu.</div>';
     var reqRows=requests.length?requests.map(function(q){
@@ -1781,21 +1785,21 @@ function openAdmin(){
       var verBadge=m.verified?' <span title="License verified" style="color:var(--acc);font-weight:700;font-size:11px">✓ Verified</span>':'';
       var pofBadge=m.pof==='verified'?(' <span style="color:#8A6A12;font-weight:700;font-size:11px">💰 POF'+(m.pofAmount?(' '+esc(m.pofAmount)):'')+'</span>'):(m.pof==='pending'?' <span class="pill req">POF pending</span>':'');
       var prodBadge=m.producer?' <span style="color:#7A4FCC;font-weight:700;font-size:11px">⭐ Producer</span>':'';
-      var verBtn=m.status==='approved'?('<button class="btn '+(m.verified?'ghost':'acc')+' sm" onclick="adminVerify(\''+esc(m.email)+'\','+(!m.verified)+')">'+(m.verified?'Unverify':'Verify license')+'</button>'):'';
-      var prodBtn=m.status==='approved'?('<button class="btn ghost sm" onclick="adminProducer(\''+esc(m.email)+'\','+(!m.producer)+')">'+(m.producer?'Remove Producer':'⭐ Mark Producer')+'</button>'):'';
+      var verBtn=m.status==='approved'?('<button class="btn '+(m.verified?'ghost':'acc')+' sm" onclick="adminVerify(\''+escJS(m.email)+'\','+(!m.verified)+')">'+(m.verified?'Unverify':'Verify license')+'</button>'):'';
+      var prodBtn=m.status==='approved'?('<button class="btn ghost sm" onclick="adminProducer(\''+escJS(m.email)+'\','+(!m.producer)+')">'+(m.producer?'Remove Producer':'⭐ Mark Producer')+'</button>'):'';
       var pofBtn='';
       if(m.status==='approved'){
-        if(m.pof==='pending'||m.pof==='none'||!m.pof)pofBtn=(m.pofDoc?('<a class="btn ghost sm" href="'+esc(m.pofDoc)+'" target="_blank" rel="noopener">View POF doc</a>'):'')+'<button class="btn acc sm" onclick="adminPof(\''+esc(m.email)+'\',\'verified\','+JSON.stringify(m.pofAmount||'')+')">Verify POF'+(m.pofAmount?(' ('+esc(m.pofAmount)+')'):'')+'</button>';
-        else if(m.pof==='verified')pofBtn='<button class="btn ghost sm" onclick="adminPof(\''+esc(m.email)+'\',\'none\','+JSON.stringify('')+')">Remove POF</button>';
+        if(m.pof==='pending'||m.pof==='none'||!m.pof)pofBtn=(m.pofDoc?('<a class="btn ghost sm" href="'+esc(m.pofDoc)+'" target="_blank" rel="noopener">View POF doc</a>'):'')+'<button class="btn acc sm" onclick="adminPof(\''+escJS(m.email)+'\',\'verified\',\''+escJS(m.pofAmount||'')+'\')">Verify POF'+(m.pofAmount?(' ('+esc(m.pofAmount)+')'):'')+'</button>';
+        else if(m.pof==='verified')pofBtn='<button class="btn ghost sm" onclick="adminPof(\''+escJS(m.email)+'\',\'none\',\'\')">Remove POF</button>';
       }
       var att=m.attested?(' <span title="Licensure certification accepted'+(m.attestedAt?(' '+new Date(m.attestedAt).toLocaleString()):'')+'" style="color:#1E7A52;font-size:11px;font-weight:600">✓ certified</span>'):' <span style="color:var(--bad);font-size:11px">no attestation</span>';
       var lookup=m.license?(' <a href="https://elicensing.mass.gov/CitizenAccess/" target="_blank" rel="noopener" title="Look up on the MA license portal, then paste the number" style="color:var(--acc);text-decoration:none;font-weight:600">🔎 verify on Mass.gov ↗</a>'):'';
       var deactBadge=m.deactivated?(' <span class="pill dec" title="Access revoked '+(m.deactivatedAt?new Date(m.deactivatedAt).toLocaleDateString():'')+' — records kept">Deactivated</span>'):'';
-      var reactBtn='<button class="btn acc sm" onclick="adminDeactivate(\''+esc(m.email)+'\',false)">Reactivate</button>';
-      var deactBtn='<button class="btn ghost sm" style="color:var(--bad)" onclick="adminDeactivate(\''+esc(m.email)+'\',true)">Deactivate</button>';
+      var reactBtn='<button class="btn acc sm" onclick="adminDeactivate(\''+escJS(m.email)+'\',false)">Reactivate</button>';
+      var deactBtn='<button class="btn ghost sm" style="color:var(--bad)" onclick="adminDeactivate(\''+escJS(m.email)+'\',true)">Deactivate</button>';
       var act=m.deactivated?reactBtn
-        :m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+esc(m.email)+'\',\'approved\')">Verify &amp; approve</button><button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\'rejected\')">Reject</button>'+deactBtn)
-        :(verBtn+prodBtn+pofBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+esc(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke':'Approve')+'</button>'+deactBtn);
+        :m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+escJS(m.email)+'\',\'approved\')">Verify &amp; approve</button><button class="btn ghost sm" onclick="adminApprove(\''+escJS(m.email)+'\',\'rejected\')">Reject</button>'+deactBtn)
+        :(verBtn+prodBtn+pofBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+escJS(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke':'Approve')+'</button>'+deactBtn);
       return '<div class="reqrow"'+(m.deactivated?' style="opacity:.6"':'')+'><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+deactBadge+verBadge+prodBadge+pofBadge+att+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+esc(m.state||'MA')+' Lic <b>'+esc(m.license||'—')+'</b>'+lookup+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+(m.phone?(' · '+esc(m.phone)):'')+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
     }).join(''):'<div class="empty">No members yet.</div>';
     var dealRows=deals.length?deals.slice(0,40).map(function(d){
@@ -1885,7 +1889,7 @@ function dirCard(m){
     +'<div class="grow"><b>'+esc(m.name||m.email)+'</b> '+trustBadges(m.verified,m.pof,m.producer)+' <span style="color:var(--mut);font-size:12.5px">'+esc(m.brokerage||'')+lic+'</span>'
     +(m.markets?('<div style="color:var(--mut);font-size:12px;margin-top:2px">'+esc(m.markets)+'</div>'):'')
     +'<div style="color:var(--mut2);font-size:11.5px;margin-top:2px">'+contact.join(' · ')+(contact.length?' · ':'')+m.deals+' deal'+(m.deals===1?'':'s')+'</div></div>'
-    +(isMe?'<span class="pill appr">You</span>':'<button class="btn ghost sm" onclick="close_(\'mDirectory\');openThread(\''+esc(m.email)+'\',\'\')">Message</button>')
+    +(isMe?'<span class="pill appr">You</span>':'<button class="btn ghost sm" onclick="close_(\'mDirectory\');openThread(\''+escJS(m.email)+'\',\'\')">Message</button>')
     +'</div>';
 }
 function renderDirList(q){
@@ -1931,7 +1935,7 @@ function renderActivity(){
   } else if(ACTTAB==='requests'){
     h=INBOUND.length?INBOUND.map(function(x){var sub=x.listing?(x.listing.area||x.listing.city||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(x.buyerName||x.buyer||'Buyer')+'</b> '+trustBadges(x.buyerVerified,x.buyerPof,x.buyerProducer)+' '+pill(x.status)+'<div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(sub)+' · '+esc(x.message||'(no note)')+'</div></div>'+(x.status==='pending'?'<button class="btn acc sm" onclick="setIntro(\''+x.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="setIntro(\''+x.id+'\',\'declined\')">Decline</button>':(x.status==='approved'?'<button class="btn acc sm" onclick="close_(\'mActivity\');openThread(\''+esc(x.buyer)+'\',\''+esc(x.listingId||'')+'\')">💬 Deal room</button>':'<span style="color:var(--mut);font-size:12px">'+esc(x.buyer||'')+'</span>'))+'</div>';}).join(''):'<div class="empty">No introduction requests yet.</div>';
   } else if(ACTTAB==='sent'){
-    h=SENT.length?SENT.map(function(x){var l=x.listing?nL(x.listing):null;var sub=l?(l.submarket||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(sub||'Deal')+'</b> <span style="color:var(--mut)">· '+(l?money(l.price):'')+'</span> '+pill(x.status)+(x.status==='approved'&&l&&l.addr?('<div style="color:var(--acc2);font-size:13px;margin-top:4px">📍 '+esc(l.addr)+'</div>'):'')+'</div>'+((x.status==='approved'&&l&&l.byEmail)?'<button class="btn acc sm" onclick="close_(\'mActivity\');openThread(\''+esc(l.byEmail)+'\',\''+esc(l.id)+'\')">💬 Deal room</button>':(l?'<button class="btn ghost sm" onclick="openDetail(\''+l.id+'\')">Open</button>':''))+'</div>';}).join(''):'<div class="empty">You haven\'t requested any introductions yet.</div>';
+    h=SENT.length?SENT.map(function(x){var l=x.listing?nL(x.listing):null;var sub=l?(l.submarket||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(sub||'Deal')+'</b> <span style="color:var(--mut)">· '+(l?money(l.price):'')+'</span> '+pill(x.status)+(x.status==='approved'&&l&&l.addr?('<div style="color:var(--acc2);font-size:13px;margin-top:4px">📍 '+esc(l.addr)+'</div>'):'')+'</div>'+((x.status==='approved'&&l&&l.byEmail)?'<button class="btn acc sm" onclick="close_(\'mActivity\');openThread(\''+escJS(l.byEmail)+'\',\''+escJS(l.id)+'\')">💬 Deal room</button>':(l?'<button class="btn ghost sm" onclick="openDetail(\''+l.id+'\')">Open</button>':''))+'</div>';}).join(''):'<div class="empty">You haven\'t requested any introductions yet.</div>';
   } else {
     var x=BUYBOX;
     h=x?('<div class="reqrow"><div class="grow"><b>'+esc(x.propType||'Any type')+'</b> <span style="color:var(--mut)">· '+money(x.minPrice)+'–'+money(x.maxPrice)+'</span><div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(x.markets||'')+(x.notes?(' · '+esc(x.notes)):'')+'</div></div><button class="btn ghost sm" onclick="close_(\'mActivity\');openBuyBox()">Edit</button></div>'):'<div class="empty">No client needs posted yet. <button class="btn link" onclick="close_(\'mActivity\');openBuyBox()">Post one →</button></div>';
@@ -1952,7 +1956,7 @@ function openMsgs(){var _m=$('mMsgs');if(_m){_m.innerHTML='<div class="modal wid
 function renderThreads(){
   var body=THREADS.length?THREADS.map(function(t){
     var sub=t.listing?(esc(t.listing.area||'Deal')+' · '+money(t.listing.price)):'Direct message';
-    return '<div class="reqrow" style="cursor:pointer" onclick="openThread(\''+esc(t.other)+'\',\''+esc(t.listingId||'')+'\')"><div class="grow"><b>'+esc(t.otherName||t.other)+'</b>'+(t.unread?' <span class="pill req">'+t.unread+' new</span>':'')+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+sub+' — '+esc((t.last||'').slice(0,64))+'</div></div><span style="color:var(--mut2);font-size:12px">'+ago(t.at)+'</span></div>';
+    return '<div class="reqrow" style="cursor:pointer" onclick="openThread(\''+escJS(t.other)+'\',\''+escJS(t.listingId||'')+'\')"><div class="grow"><b>'+esc(t.otherName||t.other)+'</b>'+(t.unread?' <span class="pill req">'+t.unread+' new</span>':'')+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+sub+' — '+esc((t.last||'').slice(0,64))+'</div></div><span style="color:var(--mut2);font-size:12px">'+ago(t.at)+'</span></div>';
   }).join(''):'<div class="empty">No messages yet. Open a deal and <b>Contact agent</b> to start a conversation.</div>';
   $('mMsgs').innerHTML='<div class="modal wide"><div class="mhead"><h3>Messages</h3><button class="x" onclick="close_(\'mMsgs\')">×</button></div><div class="mbody">'+body+'</div></div>';
 }
@@ -1970,7 +1974,7 @@ function openThread(other,listingId){
     $('mMsgs').innerHTML='<div class="modal wide"><div class="mhead"><div><h3 style="font-size:16px">'+esc(other)+'</h3></div><button class="x" onclick="openMsgs()" title="Back to messages">←</button></div><div class="mbody">'
       +head
       +'<div id="thBody" style="max-height:44vh;overflow:auto;padding:2px">'+rows+'</div>'
-      +'<div style="display:flex;gap:8px;margin-top:12px;align-items:center"><input type="file" id="thFile" hidden onchange="attachThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\',this.files)"><button class="btn ghost" title="Attach a document or photo" onclick="$(\'thFile\').click()" style="flex:none;padding:11px 13px">📎</button><input id="thInput" placeholder="Write a message…" style="flex:1;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:11px 12px;font:inherit;font-size:14px" onkeydown="if(event.key===\'Enter\')sendThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\')"><button class="btn acc" onclick="sendThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\')">Send</button></div>'
+      +'<div style="display:flex;gap:8px;margin-top:12px;align-items:center"><input type="file" id="thFile" hidden onchange="attachThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\',this.files)"><button class="btn ghost" title="Attach a document or photo" onclick="$(\'thFile\').click()" style="flex:none;padding:11px 13px">📎</button><input id="thInput" placeholder="Write a message…" style="flex:1;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:11px 12px;font:inherit;font-size:14px" onkeydown="if(event.key===\'Enter\')sendThread(\''+esc(other)+'\',\''+esc(listingId||'')+'\')"><button class="btn acc" onclick="sendThread(\''+escJS(other)+'\',\''+escJS(listingId||'')+'\')">Send</button></div>'
       +'<div id="thMsg" style="font-size:12px;color:var(--mut);margin-top:6px"></div></div></div>';
     open_('mMsgs');var tb=$('thBody');if(tb)tb.scrollTop=tb.scrollHeight;
   });
@@ -1989,7 +1993,7 @@ function openContact(id){
   $('mContact').innerHTML='<div class="modal"><div class="mhead"><h3>Contact agent</h3><button class="x" onclick="close_(\'mContact\')">×</button></div><div class="mbody">'
     +'<p style="color:var(--mut);font-size:13.5px;margin-bottom:12px">Message the agent about <b>'+esc(d.submarket||'this deal')+' · '+money(d.price)+'</b>. Trade contact info and take it from there — no gatekeeping.</p>'
     +'<div class="f full"><label>Message</label><textarea id="ctBody" rows="4" placeholder="Hi — interested in this one. Can you send the setup / OM and rent roll?"></textarea></div>'
-    +'<div class="mact"><span class="msg" id="ctMsg"></span><button class="btn ghost" onclick="close_(\'mContact\')">Cancel</button><button class="btn acc" onclick="sendContact(\''+d.id+'\',\''+esc(d.byEmail)+'\')">Send message</button></div></div></div>';
+    +'<div class="mact"><span class="msg" id="ctMsg"></span><button class="btn ghost" onclick="close_(\'mContact\')">Cancel</button><button class="btn acc" onclick="sendContact(\''+d.id+'\',\''+escJS(d.byEmail)+'\')">Send message</button></div></div></div>';
   open_('mContact');
 }
 function sendContact(listingId,toEmail){
