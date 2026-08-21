@@ -542,7 +542,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
 </div></section>
 
 <div class="foot"><div class="wrap in">
-  <div>AXESS — a Citicore Properties Inc network. Invite-only. Not an MLS.</div>
+  <div>AXESS is operated by AXESS RE LLC. Invite-only. Not an MLS.</div>
   <div>Deals shown are broker/owner submitted. Verify all figures independently.</div>
   <div><a href="/#contact" style="color:var(--acc);font-weight:600">Contact support</a> — questions or issues? We're here to help.</div>
 </div></div>
@@ -1188,7 +1188,7 @@ function dealLatLng(d){
 var DEALMAP=null,MAP_MARKERS=[],MAP_INFO=null;
 function renderMap(list){
   var g=$('grid');if(!g)return;
-  if(!MAPS_KEY){g.innerHTML='<div class="empty">The map needs a Google Maps key.<br><br>Add <b>GOOGLE_MAPS_KEY</b> in Render to enable it.</div>';return;}
+  if(!MAPS_KEY){g.innerHTML='<div class="empty">Map view isn’t available right now.</div>';return;}
   g.innerHTML='<div id="dealMap" class="dealmap"></div>';
   loadMaps(function(){
     var el=$('dealMap');if(!el||!(window.google&&google.maps))return;
@@ -1327,17 +1327,28 @@ function openDetail(id){
   var rows=[['Asset type',esc(d.type||'—')],['Submarket',esc(d.submarket||'—')],['Asking price',moneyFull(d.price)],['Units',num(d.units)||'—'],['Cap rate',num(d.cap)?num(d.cap).toFixed(2)+'%':'—'],['NOI',moneyFull(d.noi)],['Square feet',num(d.sf)?Math.round(num(d.sf)).toLocaleString('en-US'):'—'],['Beds',num(d.beds)||'—'],['Baths',num(d.baths)||'—'],['Year built',d.yb?esc(d.yb):'—'],['Buyer-broker commission',num(d.commission)?num(d.commission).toFixed(1)+'%':'—'],['Distribution',{broad:'Broad',private:'Private (approval)',pocket:'Pocket'}[d.dist]||'Broad'],['Posted',ago(d.at)+(d.by?(' · by '+esc(d.by)):'')]];
   rows=rows.filter(function(r){return !(['Units','Cap rate','NOI','Square feet','Beds','Baths','Year built'].indexOf(r[0])>=0 && (r[1]==='—'||r[1]===''));});
   var addrBlock = seeAddr
-    ? '<div class="reveal"><span style="color:var(--acc);vertical-align:-2px;margin-right:6px">'+addrIcon(true)+'</span><b>'+esc(d.addr||'(no address on file)')+'</b></div>'+(d.addr?mapEmbed(d.addr):(d.submarket?mapEmbed(d.submarket+', MA'):''))
-    : '<div class="reveal" style="background:var(--card);border-color:var(--line2)"><span style="color:var(--gold);vertical-align:-2px;margin-right:6px">'+addrIcon(false)+'</span><b style="color:var(--gold)">Address hidden by the lister.</b> Message the agent to learn more about the deal.</div>'+(d.submarket?'<div style="font-size:11.5px;color:var(--mut);margin:8px 0 4px">Approximate area · '+esc(d.submarket)+'</div>'+mapEmbed(d.submarket+', MA'):'');
+    ? '<div class="reveal"><span style="color:var(--acc);vertical-align:-2px;margin-right:6px">'+addrIcon(true)+'</span><b>'+esc(d.addr||'(no address on file)')+'</b></div>'+(d.addr?mapEmbed(d.addr):(d.submarket?mapEmbed(d.submarket+', '+(d.state||'MA')):''))
+    : '<div class="reveal" style="background:var(--card);border-color:var(--line2)"><span style="color:var(--gold);vertical-align:-2px;margin-right:6px">'+addrIcon(false)+'</span><b style="color:var(--gold)">Address unlocks after an approved intro.</b> Request an introduction — the listing agent approves before the exact address and documents are shared.</div>'+(d.submarket?'<div style="font-size:11.5px;color:var(--mut);margin:8px 0 4px">Approximate area · '+esc(d.submarket)+'</div>'+mapEmbed(d.submarket+', '+(d.state||'MA')):'');
   var renewLbl='↻ Renew 30 days'+(PAYCFG.enabled?(' ($'+PAYCFG.prices.renew+')'):'');
   var featBtn=PAYCFG.enabled?(d.featured?'<button class="btn ghost" disabled style="opacity:.6">★ Featured</button>':'<button class="btn acc" onclick="featureDeal(\''+d.id+'\')">★ Feature ($'+PAYCFG.prices.feature+')</button>'):'';
+  var _calcBtn='<button class="btn ghost" onclick="mcFromDeal('+num(d.price)+')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="4" y="2.5" width="16" height="19" rx="2.2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8.5" y1="12" x2="8.5" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="15.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="8.5" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/></svg>Calc payment</button>';
+  var _introS=intro&&intro.status;
+  // Non-owner action: an entitled/broad deal (address visible) → message directly;
+  // a private/pocket deal → request an intro (address + docs unlock on approval).
+  var nonOwnerCta = seeAddr
+    ? '<button class="btn acc" onclick="openContact(\''+d.id+'\')">Contact agent</button>'+_calcBtn
+    : _introS==='pending'
+      ? '<button class="btn ghost" disabled style="opacity:.75">✓ Intro requested — awaiting approval</button>'+_calcBtn
+      : _introS==='declined'
+        ? '<button class="btn ghost" disabled style="opacity:.6">Intro declined</button>'+_calcBtn
+        : '<button class="btn acc" onclick="openIntro(\''+d.id+'\')">Request introduction</button>'+_calcBtn;
   var cta = mine
     ? (d.status==='closed'
         ? '<button class="btn acc" onclick="markClosed(\''+d.id+'\',false)">Reopen deal</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>'
       : d.status==='mls'
         ? '<button class="btn acc" onclick="markMLS(\''+d.id+'\',false)">Relist to network</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>'
         : '<button class="btn acc" onclick="openEdit(\''+d.id+'\')">✎ Edit</button><button class="btn acc" onclick="markClosed(\''+d.id+'\',true)" style="background:#1E7A52;border-color:#1E7A52">✓ Mark closed</button><button class="btn ghost" onclick="renewDeal(\''+d.id+'\')">'+renewLbl+'</button>'+featBtn+'<button class="btn ghost" onclick="toggleOff(\''+d.id+'\')">'+(d.status==='off'?'Relist':'Take off-market')+'</button><button class="btn ghost" onclick="markMLS(\''+d.id+'\',true)">Moved to MLS</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>')
-    : '<button class="btn acc" onclick="openContact(\''+d.id+'\')">Contact agent</button><button class="btn ghost" onclick="mcFromDeal('+num(d.price)+')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="4" y="2.5" width="16" height="19" rx="2.2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8.5" y1="12" x2="8.5" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="15.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="8.5" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/></svg>Calc payment</button>';
+    : nonOwnerCta;
   var expBadge=d.expiresAt?('<div class="drow"><span>Expires</span><b class="mono">'+ago2(d.expiresAt)+'</b></div>'):'';
   $('detailBody').innerHTML=
     '<div class="mhead"><div><h3>'+esc(d.submarket||'Off-market deal')+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★ Featured</span>':'')+'</h3><div style="color:var(--acc2);font-weight:700;font-size:12.5px;margin-top:3px">'+esc(d.type||'')+' · '+money(d.price)+'</div></div><button class="x" onclick="close_(\'mDetail\')">×</button></div>'
@@ -1397,7 +1408,9 @@ function sendIntro(){
   if(!name){$('iMsgS').textContent='Add your name.';return;}
   var note=($('iMsg').value||'').trim();
   $('iMsgS').textContent='Sending…';
+  if(sendIntro._busy)return; sendIntro._busy=true; setTimeout(function(){sendIntro._busy=false;},5000);
   api('/api/pm/intro',{listingId:d.id,buyerName:name+(firm?(' · '+firm):''),message:note}).then(function(j){
+    sendIntro._busy=false;
     if(j&&j.ok){$('iMsgS').textContent=j.already?'Request already sent ✓':'Sent ✓';setTimeout(function(){close_('mIntro');loadAll();},700);}
     else if(j&&j.error==='contribute_required'){close_('mIntro');ggPrompt();}
     else{$('iMsgS').textContent='Failed — retry';}
@@ -1521,7 +1534,9 @@ function submitDeal(){
   if(!body.area){$('sMsg').textContent='Add a submarket.';return;}
   if(!num(body.price)){$('sMsg').textContent='Add an asking price.';return;}
   $('sMsg').textContent=editing?'Saving…':'Posting…';
+  if(submitDeal._busy)return; submitDeal._busy=true; setTimeout(function(){submitDeal._busy=false;},5000);
   api('/api/pm/listing',body).then(function(j){
+    submitDeal._busy=false;
     if(j&&j.error==='not_approved'){$('sMsg').textContent='Your membership isn’t approved yet.';return;}
     $('sMsg').textContent=(j&&j.ok)?(editing?'Saved ✓':'Posted ✓'):'Failed — retry';
     if(j&&j.ok){resetSubmitForm();renderDocList();renderPhotoList();syncDealFields();EDIT_ID=null;
@@ -1851,8 +1866,11 @@ function submitBuyBox(){
   var body={markets:checkedVals('bSubChecks').join(', '),propType:checkedVals('bTypeChecks').join(', '),
     minPrice:noComma('bMin'),maxPrice:noComma('bMax'),
     notes:($('bNotes').value||'').trim(),contact:($('bFirm').value||'').trim()||ME.email};
+  if(!body.markets&&!body.propType){$('bMsg').textContent='Pick at least one market or property type so we can match deals.';return;}
   $('bMsg').textContent='Posting…';
+  if(submitBuyBox._busy)return; submitBuyBox._busy=true; setTimeout(function(){submitBuyBox._busy=false;},5000);
   api('/api/pm/buybox',body).then(function(j){
+    submitBuyBox._busy=false;
     $('bMsg').textContent=(j&&j.ok)?'Saved ✓':'Failed — retry';
     if(j&&j.ok){BUYBOX=j.buybox||BUYBOX;renderStats();setTimeout(function(){close_('mBuy');$('bMsg').textContent='';},800);}
   });
@@ -1936,7 +1954,9 @@ function openContact(id){
 function sendContact(listingId,toEmail){
   var body=($('ctBody').value||'').trim();if(!body){$('ctMsg').textContent='Write a message.';return;}
   $('ctMsg').textContent='Sending…';
+  if(sendContact._busy)return; sendContact._busy=true; setTimeout(function(){sendContact._busy=false;},5000);
   api('/api/pm/message',{to:toEmail,listingId:listingId,body:body}).then(function(j){
+    sendContact._busy=false;
     if(j&&j.ok){$('ctMsg').textContent='Sent ✓';setTimeout(function(){close_('mContact');openThread(toEmail,listingId);},600);}
     else{$('ctMsg').textContent=(j&&j.error==='cannot_message_self')?'That’s your own deal.':'Failed — retry';}
   });
@@ -2172,24 +2192,9 @@ function sendInvite(){
 /* ── Owner bulk-import: John's real inventory (all Multifamily, 2% BBC). ──
    Appends through POST /api/pm/listing one at a time, so matching alerts,
    IDs, and reciprocity all behave exactly like a normal post. */
-var INV_SEED=[
- {address:"55 W Fifth St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"35000000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"12 Emmons St",city:"Boston",area:"East Boston",state:"MA",zip:"02128",price:"4000000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"68 Phillips St U:6",city:"Boston",area:"Beacon Hill",state:"MA",zip:"02114",price:"649000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"106-112 West 8th St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"3200000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"110 Winn St U:201",city:"Woburn",area:"Woburn",state:"MA",zip:"01801",price:"23",propType:"Multifamily",commissionPct:"2",dist:"broad",notes:"CHECK PRICE — imported as $23 from source (likely a typo)."},
- {address:"391 Waterman Ave",city:"East Providence",area:"East Providence",state:"RI",zip:"02914",price:"825000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"142 Dorchester St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"4500000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"205 L St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"1800000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"595 E 5th St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"1595000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"291 E St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"6400000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"173 Emerson St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"3500000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"631 E 6th St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"5200000",propType:"Multifamily",commissionPct:"2",dist:"pocket",notes:"Was marked 'Only you' in source — set to pocket (private). Change dist to 'broad' to share it."},
- {address:"35 Ellingwood St",city:"Boston",area:"Mission Hill",state:"MA",zip:"02120",price:"650000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"246 N Central Ave",city:"Quincy",area:"Quincy",state:"MA",zip:"02170",price:"791500",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"206 L St",city:"Boston",area:"South Boston",state:"MA",zip:"02127",price:"3100000",propType:"Multifamily",commissionPct:"2",dist:"broad"},
- {address:"Cedar St",city:"Worcester",area:"Worcester",state:"MA",zip:"01609",price:"8000000",propType:"Multifamily",commissionPct:"2",dist:"broad"}
-];
+// Import starter data is loaded on demand from the owner-only endpoint — never
+// hardcoded here, so no real inventory ships in the client source.
+var INV_SEED=[];
 function openImport(){if(!(window.ME&&ME.role==='owner'))return;var t=$('impJson');if(t&&!t.value.trim())t.value=JSON.stringify(INV_SEED,null,2);$('impMsg').textContent='';var m=$('mImport');if(m){m.classList.add('on');document.body.classList.add('mlock');}}
 function runImport(){
   var msg=$('impMsg'),btn=$('impBtn');
