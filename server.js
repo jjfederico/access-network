@@ -270,7 +270,7 @@ function pmSocial(kind, v) {
   return base ? base + handle : '';
 }
 // Only http(s) and data: URLs may be stored/rendered — blocks javascript:/vbscript: XSS.
-function pmSafeUrl(u) { u = String(u == null ? '' : u).trim(); return (/^https?:/i.test(u) || /^data:(image\/|application\/pdf)/i.test(u)) ? u : ''; }
+function pmSafeUrl(u) { u = String(u == null ? '' : u).trim(); return (/^https?:/i.test(u) || /^data:(image\/|application\/pdf|application\/vnd\.openxmlformats|application\/msword|application\/vnd\.ms-excel|text\/(csv|plain))/i.test(u)) ? u : ''; }
 function pmRefCode(email) {
   const s = _lc(email); let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
