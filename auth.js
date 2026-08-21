@@ -18,6 +18,9 @@ const { pmLoad, pmSave } = require('./db');
 const ADMINS = String(process.env.ACCESS_ADMIN || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
 const ADMIN = ADMINS[0] || '';
 const FROM = process.env.ACCESS_FROM || 'AXESS <login@access.example>';
+// Replies to our transactional mail (the From is a no-reply sending subdomain)
+// are routed here so a member who hits "reply" reaches a real inbox.
+const REPLY_TO = process.env.ACCESS_REPLY_TO || 'info@axessre.com';
 const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 min
 
 const lc = s => String(s || '').toLowerCase().trim();
@@ -62,7 +65,7 @@ async function sendEmail(to, subject, html) {
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM, to: [to], subject, html })
+      body: JSON.stringify({ from: FROM, to: [to], subject, html, reply_to: REPLY_TO })
     });
     return r.ok;
   } catch (e) { console.error('email send failed', e); return false; }
