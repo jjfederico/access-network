@@ -11,10 +11,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <!-- self-styled; skip legacy grove.css + hq-bar injection --><div id="hq-bar" hidden></div>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#0A0A0B;--ink-2:#3F3F46;--mut:#71717A;--faint:#A1A1AA;--line:#E4E8EF;--line-2:#EEF1F5;--bg:#F1F4F8;--surface:#fff;--raised:#F4F6FA;
---accent:#17418A;--accent-hover:#1B3EB0;--accent-weak:#E9F0FA;--warn:#17418A;--warn-bg:#F1F3F7;--warn-line:#E1E4EA;--bad:#C0492E;--bad-bg:#FEF3F2;--bad-line:#F4C7C2;
+:root{--ink:#0B0C0E;--ink-2:#3A3F49;--mut:#5B6472;--faint:#8A93A3;--line:#E8EAEE;--line-2:#EEF1F5;--bg:#F2F3F6;--surface:#fff;--raised:#F5F7FA;
+--accent:#0064E5;--accent-hover:#0056C9;--accent-weak:#EAF1FE;--warn:#E11D2E;--warn-bg:#F3F5F8;--warn-line:#E4E7ED;--bad:#E11D2E;--bad-bg:#FDE8EA;--bad-line:#F6C9CE;
 --sh-sm:0 1px 2px rgba(10,10,11,.05);--sh-lg:0 16px 44px rgba(10,10,11,.14);--r:12px;--r-sm:9px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
@@ -91,6 +91,28 @@ html.dark .co-logo,html.dark .co-opt-logo{filter:none}
 .tbar .search{display:flex;align-items:center;gap:8px;margin-left:6px;flex:1;max-width:340px;background:var(--raised);border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:12.5px;color:var(--mut);cursor:text}
 .tbar .search kbd{margin-left:auto;font-size:10.5px;background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--faint)}
 .tbar .bkp{font-size:11.5px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:6px}.tbar .bkp .d{width:7px;height:7px;border-radius:50%;background:#17418A}
+.cotabs{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto;align-items:center;scrollbar-width:none;-ms-overflow-style:none;padding:9px 3px 5px}
+.cotabs::-webkit-scrollbar{display:none}
+.cotabs.scrollable{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 26px),transparent 100%);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 26px),transparent 100%)}
+.cotab{position:relative;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:13px;font-weight:700;color:var(--ink-2);padding:5px 12px 5px 6px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s,box-shadow .12s}
+.cotab .alert{position:absolute;top:-6px;right:1px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:#E11D2E;color:#fff;font:900 11px/16px Inter,-apple-system,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--surface),0 1px 3px rgba(0,0,0,.35);pointer-events:none;z-index:3;animation:cotabPop .18s ease}
+html.dark .cotab .alert{box-shadow:0 0 0 2px var(--headerbg,#181D25),0 1px 3px rgba(0,0,0,.5)}
+@keyframes cotabPop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.cotab .cm{width:22px;height:22px;border-radius:7px;background:var(--tc,#17418A);color:#fff;font-size:11.5px;font-weight:800;display:grid;place-items:center;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.cotab .cm svg{width:15px;height:15px;display:block}
+.cotab.logo{padding:6px 13px;gap:0}
+.cotab .clogo{height:16px;width:auto;max-width:108px;object-fit:contain;display:block;filter:brightness(0);opacity:1;transition:opacity .12s,filter .12s}
+html.dark .cotab .clogo{filter:brightness(0) invert(1);opacity:1}
+.cotab:hover{border-color:var(--tc,#17418A)}
+.cotab:hover .clogo{opacity:1}
+.cotab.on{color:#fff;background:var(--tc,#17418A);border-color:var(--tc,#17418A);box-shadow:0 2px 8px -2px var(--tc,#17418A)}
+.cotab.on .cm{background:rgba(255,255,255,.22);box-shadow:none}
+.cotab.on .clogo,html.dark .cotab.on .clogo{filter:brightness(0) invert(1);opacity:1}
+/* Give the company tabs room before they get crowded: drop the backup pill, then
+   collapse the theme + sign-out controls to icons, then tighten the tabs. */
+@media(max-width:1240px){.tbar .bkp{display:none}}
+@media(max-width:1180px){#themeTop{font-size:0!important;padding:6px 9px!important}#themeTop::before{content:"◐";font-size:15px}.tbar a[href="/logout"]{font-size:0!important;padding:6px 9px!important}.tbar a[href="/logout"]::before{content:"⎋";font-size:15px}}
+@media(max-width:1080px){.tbar{gap:8px;padding:12px 14px}.cotabs{gap:3px}.cotab{font-size:12px;padding:5px 9px 5px 5px}.cotab.logo{padding:5px 10px}.cotab .clogo{height:14px;max-width:88px}.cotab .cm{width:20px;height:20px}}
 .tbar .u{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700}
 main{flex:1;overflow:auto;position:relative}
 .pad{padding:22px}
@@ -170,6 +192,9 @@ iframe.tool{width:100%;height:100%;border:0;display:block;background:#fff}
 .ham{display:none;background:none;border:0;font-size:19px;line-height:1;cursor:pointer;color:var(--ink);padding:2px 6px 2px 0}
 .navscrim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:65;display:none}
 @media(max-width:720px){#app{grid-template-columns:1fr}.ham{display:block}.side{position:fixed;top:0;left:0;bottom:0;width:250px;z-index:70;transform:translateX(-100%);transition:transform .22s}.side.open{transform:none;box-shadow:var(--sh-lg)}.navscrim.open{display:block}}
+/* Mobile: the month × building upload matrix is a wall of red/green — desktop only.
+   The per-company tab badges still flag anything outstanding on a phone. */
+@media(max-width:720px){.remwrap{display:none}}
 .u{cursor:pointer;background-size:cover;background-position:center 30%;transition:box-shadow .12s}
 .u:hover{box-shadow:0 0 0 2px var(--accent-weak)}
 .acard{width:340px;max-width:92vw;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh-lg);overflow:hidden}
@@ -186,7 +211,8 @@ iframe.tool{width:100%;height:100%;border:0;display:block;background:#fff}
 .astat{font-size:11.5px;color:var(--ink-2);text-align:center;min-height:14px}
 .ent3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:14px}
 .entc{cursor:pointer;transition:box-shadow .12s,transform .12s;padding:18px 20px;border-top:3px solid var(--cc,transparent)}
-.co-grove{--cc:#17418A}.co-citicore{--cc:#0E7C6A}.co-summit{--cc:#E0674B}.co-access{--cc:#5B8DEF}
+.co-grove{--cc:#17418A}.co-citicore{--cc:#166534}.co-summit{--cc:#6D28D9}.co-access{--cc:#0064E5}
+html.dark .co-grove{--cc:#5B8DEF}html.dark .co-citicore{--cc:#3F9E6E}html.dark .co-summit{--cc:#A78BFA}html.dark .co-access{--cc:#4C8DFF}
 .entc.co-grove .enth b,.entc.co-citicore .enth b,.entc.co-summit .enth b,.entc.co-access .enth b{color:var(--cc)}
 .entc .entopen{color:var(--cc,var(--accent))!important}
 .entc:hover{box-shadow:var(--sh-lg);transform:translateY(-1px)}
@@ -198,6 +224,39 @@ iframe.tool{width:100%;height:100%;border:0;display:block;background:#fff}
 .entr{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:4px 0;border-top:1px solid var(--line-2)}
 .entr span{color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .entr b{font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+/* ── AXESS skin (migration slice 1): mono micro-labels, bolder, colored tile figures ── */
+.pgh{font-size:26px}
+.pgs{font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.1em;font-weight:600;font-size:10.5px}
+.entsub,.mini .l{font-family:'IBM Plex Mono',monospace;font-weight:600;letter-spacing:.08em}
+.entc .entbig{color:var(--cc,var(--ink))}
+/* Compact reminders: one row per book/building, expand to log months */
+.remrow2{border-top:1px solid var(--line-2)}.remrow2:first-of-type{border-top:0}
+.remrow2>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 2px;cursor:pointer;list-style:none}
+.remrow2>summary::-webkit-details-marker{display:none}
+.remrow2>summary .rl{font-weight:600;font-size:13px}
+.remrow2>summary .rs{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.05em;display:flex;align-items:center;gap:8px}
+.remrow2 .caret{color:var(--mut);transition:transform .15s}.remrow2[open] .caret{transform:rotate(180deg)}
+/* Collapsible Alerts & reminders card — default closed, tap the header to expand */
+details.remcard{padding:0}
+details.remcard>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;cursor:pointer;list-style:none}
+details.remcard>summary::-webkit-details-marker{display:none}
+details.remcard>summary .rcaret{color:var(--mut);font-size:13px;transition:transform .15s;margin-left:2px}
+details.remcard[open]>summary .rcaret{transform:rotate(180deg)}
+details.remcard .rembody{padding:0 14px 12px}
+.remmonths{display:flex;flex-wrap:wrap;gap:5px;padding:2px 0 10px}
+.remchip{display:inline-flex;align-items:center;gap:4px;font:600 11px/1 'IBM Plex Mono',monospace;padding:5px 8px;border-radius:7px;white-space:nowrap}
+.remchip.ok{background:rgba(30,122,82,.12);color:#1E7A52;cursor:pointer}
+.remchip.due{background:var(--bad-bg,#FDE8EA);color:var(--bad,#E11D2E);cursor:pointer}
+.remchip.na{color:var(--faint);background:transparent}
+html.dark .remchip.ok{background:rgba(63,190,134,.15);color:#3FBE86}
+/* Agent quick actions */
+.qa-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.qa{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;cursor:pointer;transition:border-color .12s,box-shadow .12s;box-shadow:var(--sh-sm)}
+.qa:hover{border-color:var(--accent);box-shadow:0 12px 30px -18px var(--accent)}
+.qa .qic{width:34px;height:34px;border-radius:9px;background:var(--accent-weak);color:var(--accent);display:grid;place-items:center;font-size:16px}
+.qa .qt{font-weight:700;font-size:14px;margin-top:11px}
+.qa .qd{font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.4}
+@media(max-width:820px){.qa-row{grid-template-columns:1fr 1fr}}
 .entopen{margin-top:10px;font-size:12px;font-weight:600;color:var(--accent)}
 </style>
 <style id="ax-dark-fix">
@@ -207,10 +266,10 @@ iframe.tool{width:100%;height:100%;border:0;display:block;background:#fff}
 html.dark{
   --ink:#DDE1E8;--ink-2:#AEB6C2;--mut:#8A92A0;--faint:#6E7686;
   --line:#2A303C;--line-2:#242A34;
-  --bg:#111318;--surface:#20252F;--raised:#262C37;
-  --accent-weak:#1F2C49;
-  --warn:#6E9BFF;--warn-bg:#20252F;--warn-line:#272D38;
-  --bad:#E0664A;--bad-bg:#3A1C1C;--bad-line:#5A2E2C;
+  --bg:#0E1116;--surface:#1B2027;--raised:#232A33;
+  --accent:#4C8DFF;--accent-hover:#6AA1FF;--accent-weak:#12233F;
+  --warn:#FF8A7A;--warn-bg:#1B2027;--warn-line:#2A313C;
+  --bad:#FF6B6B;--bad-bg:#3A1C1C;--bad-line:#5A2E2C;
 }
 /* Top bar wants bar-shade, not card-shade (shares --surface with cards). */
 html.dark .tbar{background:#171B22!important;border-bottom-color:#2A303C!important}
@@ -247,9 +306,10 @@ html.dark .qlrow:hover{background:#262C37!important}
   <div class="col">
     <header class="tbar">
       <button class="ham" onclick="toggleNav()" aria-label="Menu">☰</button>
-      <span class="crumb" id="crumb">Overview</span>
-      <span style="flex:1"></span>
+      <nav class="cotabs" id="cotabs"></nav>
+      <span class="crumb" id="crumb" style="display:none">Overview</span>
       <span class="bkp"><span class="d"></span> Backed up</span>
+      <button id="tourBtn" onclick="startTour(true)" title="Take a guided tour of your tools" style="margin-left:12px;font:inherit;font-size:12px;font-weight:600;color:var(--ink);background:var(--card);border:1px solid var(--line2);padding:6px 12px;border-radius:8px;white-space:nowrap;cursor:pointer">🧭 Tour</button>
       <button id="themeTop" onclick="toggleTheme()" title="Light / dark" style="margin-left:12px;font:inherit;font-size:12px;font-weight:600;color:var(--ink);background:var(--card);border:1px solid var(--line2);padding:6px 12px;border-radius:8px;white-space:nowrap;cursor:pointer">◐ Light</button>
       <a href="/logout" title="Sign out" style="margin-left:10px;font:inherit;font-size:12.5px;font-weight:600;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:6px 12px;border-radius:8px;text-decoration:none;white-space:nowrap;cursor:pointer">Sign out</a>
       <span class="u" id="uav" onclick="openAcct()" title="Your account">–</span>
@@ -286,21 +346,25 @@ function moneyK(n){n=Number(n)||0;return n>=1e6?('$'+(n/1e6).toFixed(2)+'M'):mon
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
 /* company + nav config */
-var COINFO={grove:{logo:'GROVE_WHITE',role:'Brokerage'},citicore:{logo:'CITI_WHITE',role:'Portfolio'},summit:{logo:'SUMMIT_WHITE',role:'Wholesale & flips'},reserve:{logo:'GROVE_WHITE',role:'Off-market network'}};
-var OV=['Overview',[['◧','Dashboard','#dash'],['★','Notes / To-Do','#personal'],['✦','Spending','spending.html','spending intelligence monarch budget money map subscriptions recurring advice cut expenses personal finance'],['◫','Ledgerwise','ledgerwise.html','ledgerwise personal finance statements pdf csv budget categories subscriptions reports upload bank credit card']]];
+LOGOS.AXESS='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNTAgMCAxMDAgMTAwSDc0TDUwIDMwIDI2IDEwMEgwWiIvPjxyZWN0IGZpbGw9IiNmZmYiIHg9IjIyLjQiIHk9IjU2LjYiIHdpZHRoPSIzMC4zIiBoZWlnaHQ9IjE0LjUiLz48L3N2Zz4=';
+var COINFO={overview:{logo:'GROVE_WHITE',role:'Everything'},grove:{logo:'GROVE_WHITE',role:'Brokerage'},citicore:{logo:'CITI_WHITE',role:'Portfolio'},summit:{logo:'SUMMIT_WHITE',role:'Wholesale & flips'},reserve:{logo:'AXESS',role:'Real estate network'},personal:{logo:'GROVE_WHITE',role:'Private'}};
+var OV=['Overview',[['◧','Dashboard','#dash'],['★','Notes / To-Do','#personal']]];
+/* Personal workspace tools — owner-only private finance. Kept out of OV so they
+   only appear under the Personal workspace, not every company's Overview. */
+var PERSONAL_TOOLS=['Personal',[['◫','Ledgerwise','ledgerwise.html','ledgerwise personal finance statements pdf csv budget categories subscriptions reports upload bank credit card money merchants advice spending monarch money map']]];
 var NAV={
   grove:[OV,
     ['Deals',[['＋','Submit a Deal','agent-add-deal.html'],['◉','Call List','grove-leads.html','cold call prospecting leads expired fsbo absentee dialer'],['▤','Deals & Payouts','deals-payouts2.html'],['◔','Key Dates','key-dates.html'],['◇','Referrals','referral-tracker.html'],['▾','Request Landlord Funds','landlord-funds.html'],['✓','Transaction Checklist','transaction-checklist.html'],['⚠','Wire Safety','wire-safety.html','wire fraud deposit safety scam wiring instructions'],['∑','Commission Calculator','commission-calc.html'],['▤','Inventory','for-sale-folder.html','inventory for sale folder shared deal packages rent roll om listing off market'],['◈','Access','https://access-network.onrender.com/','premarket off market pocket listings deal network buyers buy box introductions boston']]],
-    ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
+    ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['▦','Full Underwrite · HELOC','deal-analyzer-heloc.html','heloc home equity line of credit purchase my portion no money down investor scenario'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
     ['Money',[['▦','Books','grove-books.html?pf=grove','grove brokerage books bookkeeping commission income chart of accounts'],['▾','Log a Deposit','deposit.html'],['▢','QuickBooks','qbo-connect.html']]],
-    ['Team',[['▧','My Pay','agent-pay.html'],['◎','Agent Goals','agent-goals.html']]],
+    ['Team',[['▧','My Pay','agent-pay.html'],['◎','Agent Goals','agent-goals.html'],['📇','AXESS Rolodex','axess-rolodex.html','rolodex contacts agents outreach members axess referrals angelica']]],
     ['Tools',[['☾','Preferred Vendors','grove-vendors.html'],['⊞','Mortgage Calculator','mortgage-calc.html'],['◎','Owner Lookup & Research','owner-lookup.html'],['▥','Forms & Templates','forms-templates.html'],['▢','W9','citicore-w9.pdf'],['◱','Office & Tools','office-tools.html','office tools utilities'],['⚷','Shared Logins','logins.html','shared logins passwords credentials accounts']]],
     ['Social & Design',[['◎','Social Media Studio','/social-studio.html'],['▦','OM Builder','om-builder.html']]],
     ['Admin',[['▣','Grove Backup','backups.html','grove backup export excel workbook']]]
   ],
   citicore:[OV,
     ['Citicore',[['◧','Dashboard','citicore-dashboard.html','citicore dashboard portfolio cash flow occupancy leases loans'],['◆','Investments','citicore-properties.html','investments properties backbone units value equity cash flow per property tax insurance owned sold statements'],['▤','Rent Roll','rent-roll.html'],['◫','Loan Tracker','loan-tracker.html'],['▦','Books','grove-books.html?pf=citicore'],['▧','Condo Fees','citicore-condo-fees.html']]],
-    ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
+    ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['▦','Full Underwrite · HELOC','deal-analyzer-heloc.html','heloc home equity line of credit purchase my portion no money down investor scenario'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
     ['More',[['▢','Payroll & 401(k)','citicore-payroll.html'],['▤','Bank / Cash','citicore-bank.html','bank cash accounts balances reserves escrow security deposit low cash position'],['⚡','Utilities','citicore-utilities.html','utilities eversource national grid water sewer electric gas account numbers'],['⚷','Keycodes','citicore-keycodes.html','keycodes lockbox door keypad alarm gate garage codes access'],['▨','Lease Tracker','lease-tracker.html'],['▤','Documents','citicore-documents.html','documents deed lease policy tax loan storage links files'],['☾','Vendors & Contractors','vendors.html']]],
     ['Admin',[['▣','Citicore Backup','backups.html','citicore backup export excel workbook']]]
   ],
@@ -308,22 +372,68 @@ var NAV={
     ['Summit',[['▦','Dashboard','summit-dashboard.html','summit dashboard deals wholesale flip volume pipeline profit goal 200k resimpli add deal']]],
     ['Money',[['▦','Books','grove-books.html?pf=summit'],['▧','Money','money.html'],['◇','Portfolio & Offers','summit-portfolio.html']]],
     ['Pipeline',[['✓','Nik — Task Board','nik-task-board.html','nik tasks onboarding daily weekly checklist'],['◫','Rehab Tracker','rehab-tracker.html'],['◎','Deals','track-record.html','deals investors track record flip wholesale entity personal market value mortgage equity']]],
-    ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
-    ['Leads',[['◉','Lead Board','lead-feeds.html','probate foreclosure pulls filings leads'],['🎙','Voice Notes','summit-voice.html','voice notes inbox transcript webhook dictation tasks to-do cold calling'],['◈','Access','https://access-network.onrender.com/','premarket off market pocket listings deal network buyers buy box introductions boston']]],
+    ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['▦','Full Underwrite · HELOC','deal-analyzer-heloc.html','heloc home equity line of credit purchase my portion no money down investor scenario'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
+    ['Leads',[['◉','Lead Board','lead-feeds.html','probate foreclosure pulls filings leads'],['🎙','Voice Notes','summit-voice.html','voice notes inbox transcript webhook dictation tasks to-do cold calling'],['🤝','Network','summit-network.html','networking contacts banks attorneys buyers sellers title wholesalers lenders directory rolodex'],['◈','Access','https://access-network.onrender.com/','premarket off market pocket listings deal network buyers buy box introductions boston']]],
     ['Tools',[['⚷','Summit Logins','summit-logins.html','summit shared logins passwords credentials']]],
-    ['Admin',[['▣','Summit Backup','backups.html','summit backup export excel workbook']]]
+    ['Admin',[['▣','Summit Backup','backups.html','summit backup export excel workbook']]],
+    ['AXESS',[['📇','AXESS Rolodex','axess-rolodex.html','rolodex contacts agents outreach members axess referrals angelica']]]
   ],
   reserve:[OV,
-    ['Access',[['◈','Open Access','https://access-network.onrender.com/','reserve premarket off market pocket listings deal network buyers buy box introductions boston multifamily membership']]]
-  ]
+    ['AXESS',[['◈','Open AXESS','https://access-network.onrender.com/','access reserve premarket off market pocket listings deal network buyers buy box introductions boston multifamily membership']]]
+  ],
+  personal:[OV, PERSONAL_TOOLS],
+  overview:[OV]
 };
+/* Company tabs across the top. Owner sees all + Overview (their cross-company total,
+   owner-only); everyone else sees only the workspace their role is assigned to. */
+// AXESS "cut A" mark (white), shown on the green Access chip.
+var AXESS_MARK='<svg viewBox="0 0 100 100"><path fill="#fff" d="M50 0 100 100H74L50 30 26 100H0Z"/><rect fill="#fff" x="22.4" y="56.6" width="30.3" height="14.5"/></svg>';
+// [id,label,color,kind,val]  kind: logo=wordmark PNG(val=LOGOS key) · axess=AXESS mark chip · mono=glyph(val)
+var TABMETA=[['overview','Overview','#0B1B33','mono','◧'],['grove','Grove','#17418A','logo','GROVE_WHITE'],['citicore','Citicore','#166534','logo','CITI_WHITE'],['summit','Summit','#6D28D9','logo','SUMMIT_WHITE'],['reserve','AXESS','#0064E5','axess',''],['personal','Personal','#2F73E8','mono','P']];
+function tabInner(kind,val,label){
+  if(kind==='logo'&&LOGOS[val])return '<img class="clogo" src="'+LOGOS[val]+'" alt="'+label+'">';
+  if(kind==='axess')return '<span class="cm">'+AXESS_MARK+'</span>'+label;
+  return '<span class="cm">'+val+'</span>'+label;
+}
+/* Per-company outstanding reminders → a red "!" badge on that company's tab.
+   Maps each Alerts & reminders row to a tab: books to their company, the equity
+   model + owned-building statements to Citicore, Ledgerwise to Personal, and the
+   missing-bank-statement flag to Citicore. Overview shows the grand total. */
+function tabDue(){
+  var d={overview:0,grove:0,citicore:0,summit:0,reserve:0,personal:0};
+  if(ME.role!=='owner'||!UP_LOADED)return d;
+  var months=upRange('2026-01',upLastClosed());if(!months.length)months=[upLastClosed()];
+  var map={citicore:'citicore',summit:'summit',equity:'citicore',ledgerwise:'personal'};
+  upCells(months).forEach(function(r){
+    var co=(r.kind==='book')?(map[r.co]||'overview'):'citicore';
+    months.forEach(function(ym){if(r.cell(ym)==='due')d[co]++;});
+  });
+  if(window.__CCP_MISS__)d.citicore++;
+  d.overview=d.grove+d.citicore+d.summit+d.reserve+d.personal;
+  return d;
+}
+function alertBadge(n){return n>0?'<span class="alert" title="'+n+' outstanding">!</span>':'';}
+function renderTabs(){
+  var el=document.getElementById('cotabs');if(!el)return;
+  var due=tabDue();
+  if(ME.role!=='owner'){
+    var one=({summit:['summit','Summit','#E0674B','logo','SUMMIT_WHITE'],bookkeeper:['citicore','Citicore','#0E7C6A','logo','CITI_WHITE'],guest:['citicore','Citicore','#0E7C6A','logo','CITI_WHITE'],agent:['grove','Grove','#17418A','logo','GROVE_WHITE']}[ME.role]||['','Workspace','#17418A','mono','•']);
+    el.innerHTML='<span class="cotab on'+(one[3]==='logo'?' logo':'')+'" style="--tc:'+one[2]+';cursor:default">'+tabInner(one[3],one[4],one[1])+'</span>';return;
+  }
+  el.innerHTML=TABMETA.map(function(t){var on=(t[0]===CO);return '<button class="cotab'+(on?' on':'')+(t[3]==='logo'?' logo':'')+'" style="--tc:'+t[2]+'" onclick="switchWs(\''+t[0]+'\')" title="'+t[1]+(due[t[0]]?' — '+due[t[0]]+' outstanding':'')+'">'+tabInner(t[3],t[4],t[1])+alertBadge(due[t[0]])+'</button>';}).join('');
+  syncTabScroll();
+}
+// Show a right-edge fade only when the tab row actually overflows, so the cut-off
+// tabs read as "scroll for more" instead of looking broken on a narrow window.
+function syncTabScroll(){var el=document.getElementById('cotabs');if(!el)return;el.classList.toggle('scrollable',el.scrollWidth-el.clientWidth>22);}
+window.addEventListener('resize',function(){clearTimeout(window.__tabRz);window.__tabRz=setTimeout(syncTabScroll,120);});
 /* Agent nav — the full toolset John opened up 2026-08-03. Keep in lockstep with
    server.js gates: everything here must NOT be in OWNER_ONLY_PAGES for agents. */
 var NAV_AGENT=[
   ['Overview',[['◧','Dashboard','#dash']]],
-  ['Deals',[['＋','Submit a Deal','agent-add-deal.html'],['▤','My Deals','my-deals.html'],['✓','Transaction Checklist','transaction-checklist.html'],['▾','Log a Deposit','deposit.html'],['▾','Request Landlord Funds','landlord-funds.html'],['∑','Commission Calculator','commission-calc.html'],['▤','Inventory','for-sale-folder.html','inventory for sale folder shared deal packages rent roll om listing off market'],['◈','Access','https://access-network.onrender.com/','premarket off market pocket listings deal network buyers buy box introductions boston']]],
-  ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
-  ['You',[['▧','My Pay','agent-pay.html'],['◎','Goals','agent-goals.html']]],
+  ['Deals',[['＋','Submit a Deal','agent-add-deal.html'],['▤','My Deals & Pay','my-deals.html'],['✓','Transaction Checklist','transaction-checklist.html'],['▾','Log a Deposit','deposit.html'],['▾','Request Landlord Funds','landlord-funds.html'],['∑','Commission Calculator','commission-calc.html'],['▤','Inventory','for-sale-folder.html','inventory for sale folder shared deal packages rent roll om listing off market'],['◈','Access','https://access-network.onrender.com/','premarket off market pocket listings deal network buyers buy box introductions boston']]],
+  ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['▦','Full Underwrite · HELOC','deal-analyzer-heloc.html','heloc home equity line of credit purchase my portion no money down investor scenario'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
+  ['You',[['◎','Goals','my-deals.html#goals']]],
   ['Tools',[['☾','Preferred Vendors','grove-vendors.html'],['⊞','Mortgage Calculator','mortgage-calc.html'],['◎','Owner Lookup & Research','owner-lookup.html'],['▥','Forms & Templates','forms-templates.html'],['⚷','Shared Logins','logins.html','shared logins passwords credentials'],['▢','W9','citicore-w9.pdf'],['⚠','Wire Safety','wire-safety.html','wire fraud deposit safety scam wiring instructions']]],
   ['Social & Design',[['◎','Social Media Studio','/social-studio.html'],['▦','OM Builder','om-builder.html']]]
 ];
@@ -370,16 +480,18 @@ var NAV_NONE=[['Overview',[['◧','Dashboard','#dash']]]];
    from both on purpose. */
 var NAV_SUMMIT=[
   ['Overview',[['◧','Dashboard','#dash'],['▦','Summit Dashboard','summit-dashboard.html','summit dashboard deals wholesale flip volume pipeline profit goal 200k resimpli add deal']]],
-  ['Leads',[['◉','Lead Board','lead-feeds.html','probate foreclosure pulls filings leads'],['🎙','Voice Notes','summit-voice.html','voice notes inbox transcript webhook dictation tasks to-do cold calling'],['◈','Access','https://access-network.onrender.com/','premarket off market pocket listings deal network buyers buy box introductions boston']]],
+  ['Leads',[['◉','Lead Board','lead-feeds.html','probate foreclosure pulls filings leads'],['🎙','Voice Notes','summit-voice.html','voice notes inbox transcript webhook dictation tasks to-do cold calling'],['🤝','Network','summit-network.html','networking contacts banks attorneys buyers sellers title wholesalers lenders directory rolodex'],['◈','Access','https://access-network.onrender.com/','premarket off market pocket listings deal network buyers buy box introductions boston']]],
   ['Pipeline',[['◫','Rehab Tracker','rehab-tracker.html'],['◎','Deals','track-record.html','deals investors track record flip wholesale entity personal market value mortgage equity']]],
-  ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
+  ['Underwriting',[['◈','Quick Underwrite','quick-underwrite.html'],['▦','Full Underwrite','deal-analyzer.html'],['▦','Full Underwrite · HELOC','deal-analyzer-heloc.html','heloc home equity line of credit purchase my portion no money down investor scenario'],['◆','Flip / Hard Money','flip-underwriter.html'],['◫','Airbnb / STR','str-underwriter.html'],['⌂','Multifamily','multifamily-underwriter.html'],['△','Build Feasibility','build-feasibility.html'],['▧','Condo Play','condo-underwriter.html','condo conversion development sellout comps square footage bed bath units underwriter']]],
   ['Resources',[['◎','Social Media','/social-studio.html'],['▦','OM Builder','om-builder.html'],['⚷','Shared Logins','summit-logins.html','summit shared logins passwords credentials propstream sites']]]
 ];
 var NAV_SUMMIT_NIK=[NAV_SUMMIT[0],['My Tasks',[['✓','Task Board','nik-task-board.html','nik tasks onboarding daily weekly checklist']]]].concat(NAV_SUMMIT.slice(1));
+/* Angelica runs AXESS outreach — she alone (besides John) gets the AXESS Rolodex. */
+var NAV_SUMMIT_ANGELICA=NAV_SUMMIT.concat([['AXESS',[['📇','AXESS Rolodex','axess-rolodex.html','rolodex contacts agents outreach members axess referrals']]]]);
 function inSummitList(){var a=ACCESS_NOTE,e=lcem(ME.email);return !!(a&&Array.isArray(a.summit)&&e&&a.summit.indexOf(e)>=0);}
 function navGroups(){
   if(ME.role==='owner')return NAV[CO];
-  if(ME.role==='summit')return lcem(ME.email)==='nik@shbuyers.com'?NAV_SUMMIT_NIK:NAV_SUMMIT;   /* real server role — fixed menu; Nik also gets his task board */
+  if(ME.role==='summit'){var _e=lcem(ME.email);return _e==='nik@shbuyers.com'?NAV_SUMMIT_NIK:(_e==='rentals@gpgboston.com'?NAV_SUMMIT_ANGELICA:NAV_SUMMIT);}   /* real server role — fixed menu; Nik gets his task board, Angelica gets the AXESS Rolodex */
   if(ME.role==='bookkeeper')return NAV_BOOKKEEPER;
   var ac=accessFor();
   if(ME.role==='agent')return (!ac||ac.grove)?NAV_AGENT:(inSummitList()?NAV_SUMMIT:NAV_NONE);
@@ -398,7 +510,7 @@ function loadAccessNote(done){
 }
 function toggleCo(e){e.stopPropagation();$('coMenu').classList.toggle('open');}
 document.addEventListener('click',function(){$('coMenu').classList.remove('open');});
-function setCo(id){if(id==='reserve'){location.href='https://access-network.onrender.com/';return;}CO=id;renderSidebar();go('#dash','Overview');$('coMenu').classList.remove('open');}
+function setCo(id){if(id==='reserve'){location.href='https://access-network.onrender.com/';return;}CO=id;renderSidebar();if(id==='personal'){go('ledgerwise.html','Ledgerwise');}else{go('#dash','Overview');}$('coMenu').classList.remove('open');}
 function entJump(co,url,label){CO=co;renderSidebar();go(url,label);}
 /* Flat workspace switcher — swap the whole active workspace and land on its dashboard.
    Access (reserve) opens the off-market doors app in place, matching setCo. */
@@ -406,8 +518,9 @@ function switchWs(co){
   if(co===CO)return;
   if(co==='reserve'){location.href='https://access-network.onrender.com/';return;}
   CO=co;setTopCo(co);renderSidebar();
-  var dashBy={grove:'#dash',citicore:'citicore-dashboard.html',summit:'summit-dashboard.html'};
-  go(dashBy[co]||'#dash','Dashboard');
+  var dashBy={overview:'#dash',grove:'#dash',citicore:'citicore-dashboard.html',summit:'summit-dashboard.html',personal:'ledgerwise.html'};
+  var lblBy={overview:'Overview',personal:'Ledgerwise'};
+  go(dashBy[co]||'#dash',lblBy[co]||'Dashboard');
 }
 function renderSidebar(){
   var owner=ME.role==='owner';
@@ -455,7 +568,7 @@ function renderSidebar(){
     /* one Overview up top (dashboard + personal live above the companies) */
     h+='<div class="grp c'+(st['ovr']!==false?' open':'')+'" data-g="ovr" onclick="toggleGrp(this)">Overview<span class="tk"></span><span class="car">▸</span></div>'
       +'<div class="gsec'+(st['ovr']!==false?' open':'')+'">'
-      +'<a data-url="#dash" onclick="go(\'#dash\',\'Overview\')"><span class="ic">◧</span>Dashboard</a>'
+      +(CO==='overview'?'<a data-url="#dash" onclick="go(\'#dash\',\'Overview\')"><span class="ic">◧</span>Dashboard</a>':'')
       +'<a data-url="#personal" onclick="go(\'#personal\',\'Notes / To-Do\')"><span class="ic">★</span>Notes / To-Do</a></div>';
     /* Pinned — the most-used tools for the current workspace, one click from anywhere.
        Owner-editable: ★ a tool in the Edit menu to add/remove it here. */
@@ -481,23 +594,15 @@ function renderSidebar(){
     }else{
       h+='<div class="gsec open"><div style="padding:5px 14px 8px;font-size:11px;color:var(--mut2);line-height:1.4">Tap <b>Edit</b> above to pin your most-used tools here.</div></div>';
     }
-    /* Workspace switcher — flat. One workspace is active at a time; its tools list flat
-       directly below. Clicking a chip swaps the whole workspace instead of expanding an
-       accordion, so there's no per-company expand/collapse churn. */
-    var WSMETA=[['grove','Grove','Brokerage','#17418A'],['citicore','Citicore','Portfolio','#0E7C6A'],['summit','Summit','Wholesale & flips','#E0674B'],['reserve','Access','Off-market network','#5B8DEF']];
-    h+='<div class="grp" style="cursor:default">Workspace<span class="tk" style="--tk:#17418A"></span></div>';
-    h+='<div class="wsw">';
-    WSMETA.forEach(function(c){
-      var co=c[0],active=(co===CO);
-      h+='<button class="wsb'+(active?' on':'')+'" onclick="switchWs(\''+co+'\')" style="--wc:'+c[3]+'"><span class="wsdot"></span><span class="wsl">'+c[1]+'</span><span class="wssub">'+c[2]+'</span></button>';
-    });
-    h+='</div>';
+    /* Company switching now lives in the top tab bar (renderTabs). The left bar is just
+       the active company's tools. */
     /* Active workspace's tools — flat, no per-company accordion. If a tool group shares the
        company's name (e.g. Citicore ▸ Citicore), its items show directly with no sub-heading;
        other groups keep a lightweight, collapsible label. */
     if(CO!=='reserve'){
       var actName=({grove:'Grove',citicore:'Citicore',summit:'Summit'}[CO]||CO);
-      var agroups=mpApply(NAV[CO].filter(function(g){return g[0]!=='Overview';}),CO);
+      /* Skip Admin here — it's merged into one Admin section below with Team & Access. */
+      var agroups=mpApply(NAV[CO].filter(function(g){return g[0]!=='Overview'&&g[0]!=='Admin';}),CO);
       agroups.forEach(function(g){
         if(!MEDIT && String(g[0]).toLowerCase()===actName.toLowerCase()){
           h+='<div class="gsec open flat">'+itemsHtml(g,CO)+'</div>';
@@ -506,9 +611,11 @@ function renderSidebar(){
         }
       });
     }
-    /* Standalone owner-admin item — outside the 3 companies, pinned at the bottom */
-    h+='<div class="grp" style="cursor:default">Admin<span class="tk" style="--tk:#94A3B8"></span></div>'
-      +'<div class="gsec open"><a data-url="team-access.html" onclick="go(\'team-access.html\',\'Team & Access\')"><span class="ic">⚙</span>Team &amp; Access</a></div>';
+    /* One Admin section: this company's admin items (e.g. Backup) + owner-wide Team & Access */
+    var _adm='',_ag=(NAV[CO]||[]).filter(function(g){return g[0]==='Admin';})[0];
+    if(_ag){_ag[1].forEach(function(it){_adm+='<a data-url="'+esc(it[2])+'" onclick="entJump(\''+CO+'\',\''+esc(it[2])+'\',\''+esc(it[1])+'\')"><span class="ic">'+it[0]+'</span>'+esc(it[1])+'</a>';});}
+    _adm+='<a data-url="team-access.html" onclick="go(\'team-access.html\',\'Team & Access\')"><span class="ic">⚙</span>Team &amp; Access</a>';
+    h+='<div class="grp" style="cursor:default">Admin<span class="tk" style="--tk:#94A3B8"></span></div><div class="gsec open">'+_adm+'</div>';
   }else{
     var groups=navGroups();
     if(!st){st={};groups.forEach(function(g){st[g[0]]=(g[0]==='Overview');});}
@@ -520,7 +627,7 @@ function renderSidebar(){
       ?'<button class="mpbtn on" onclick="mpToggleEdit()">✓ Done editing</button><div class="mphint"><b>On/Off</b> shows or hides a tool · <b>☆</b> pins it to the top</div>'
       :'<button class="mpbtn" onclick="mpToggleEdit()">⚙ Edit menu</button>';
   }
-  $('sidenav').innerHTML=h;setActive(CURURL);
+  $('sidenav').innerHTML=h;setActive(CURURL);renderTabs();
 }
 if(window.self!==window.top){try{window.top.location.replace(location.href);}catch(e){}}
 var NAVSTATE=null;
@@ -641,7 +748,7 @@ function toggleGrp(el){
 function setTopCo(co){
   var ci=COINFO[co];if(!ci)return;
   var lg=$('coLogo');if(lg)lg.src=LOGOS[ci.logo]||'';
-  var rl=$('coRole');if(rl)rl.textContent=({grove:'Grove · Brokerage',citicore:'Citicore · Portfolio',summit:'Summit · Wholesale & flips'}[co]||ci.role);
+  var rl=$('coRole');if(rl)rl.textContent=({grove:'Grove · Brokerage',citicore:'Citicore · Portfolio',summit:'Summit · Wholesale & flips',personal:'Personal · Private'}[co]||ci.role);
 }
 var CURURL='#dash';
 function setActive(u){Array.prototype.forEach.call(document.querySelectorAll('#sidenav a'),function(a){var on=a.getAttribute('data-url')===u;a.classList.toggle('on',on);
@@ -677,7 +784,7 @@ var QL=null, QL_MAX=6;
 var QL_DEFAULT=[['💼','Payroll','citicore-payroll.html'],['✓','Nik’s tasks','nik-task-board.html'],['◈','Quick Underwrite','quick-underwrite.html']];
 function qlAllOptions(){
   // everything in this user's menus, flattened + de-duped by url
-  var src = ME.role==='owner' ? [NAV.grove,NAV.citicore,NAV.summit] : [navGroups()];
+  var src = ME.role==='owner' ? [NAV.grove,NAV.citicore,NAV.summit,NAV.personal] : [navGroups()];
   var seen={}, out=[];
   src.forEach(function(menu){(menu||[]).forEach(function(g){(g[1]||[]).forEach(function(it){
     var url=it[2]; if(!url||url.charAt(0)==='#'||seen[url])return; seen[url]=1;
@@ -816,7 +923,7 @@ function loadData(){
     }).catch(function(){});
   }
   (function loadDeals(attempt){
-  fetch('/api/deals?year=2026&_='+Date.now(),{credentials:'include',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('http'+r.status);return r.json();}).then(function(j){
+  fetch('/api/deals?year='+(new Date().getFullYear())+'&_='+Date.now(),{credentials:'include',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('http'+r.status);return r.json();}).then(function(j){
     var deals=(j&&j.ok&&Array.isArray(j.deals))?j.deals:[];
     var sales=deals.filter(function(d){return d.type==='Sale';});
     var ua=sales.filter(function(d){return dpStage(d)==='Under Agreement';});
@@ -869,7 +976,9 @@ function note(key,cb){fetch('/api/grove?action=notes&notekey='+encodeURIComponen
    • Book rows are simple monthly ticks, stored in note `owner_uploads`
      = {citicore:{"YYYY-MM":1}, summit:{...}}.
    Months run Jan 2026 → the last CLOSED month (previous calendar month). */
-var UPPROPS=[],UPSTMTS={},UPBOOKS={citicore:{},summit:{}},UP_LOADED=false;
+var UPPROPS=[],UPSTMTS={},UPBOOKS={citicore:{},summit:{},equity:{},ledgerwise:{}},UP_LOADED=false;
+var REMOPEN={}; // which reminder rows are expanded (preserved across re-renders)
+var REM_CARD_OPEN=false; // Alerts & reminders card starts collapsed; stays as John leaves it
 function _p2(n){return String(n).length<2?('0'+n):String(n);}
 function upLastClosed(){var d=new Date(),y=d.getFullYear(),m=d.getMonth();return m===0?((y-1)+'-12'):(y+'-'+_p2(m));}
 function upAdd(ym,k){var y=+ym.slice(0,4),m=+ym.slice(5)+k;while(m>12){m-=12;y++;}while(m<1){m+=12;y--;}return y+'-'+_p2(m);}
@@ -878,19 +987,19 @@ var UPMON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
 function upLabel(ym){var mo=UPMON[(+ym.slice(5))-1],yr=ym.slice(0,4);return mo+(yr!=='2026'?(" '"+ym.slice(2,4)):'');}
 function upFull(ym){return UPMON[(+ym.slice(5))-1]+' '+ym.slice(0,4);}
 function _pdYM(s){s=String(s||'').trim();if(!s)return '';var d=new Date(s);if(!isNaN(d))return d.getFullYear()+'-'+_p2(d.getMonth()+1);var m=s.match(/(20\d{2})/);return m?m[1]+'-01':'';}
-function upStart(p){var ym=_pdYM(p.purchaseDate);if(ym&&ym.slice(0,4)==='2026'&&ym>'2026-01')return ym;return '2026-01';}
+function upStart(p){var ss=String(p&&p.stmtStart||'').trim();if(/^\d{4}-\d{2}$/.test(ss))return ss<'2026-01'?'2026-01':ss;var sd=_pdYM(ss);if(sd&&sd>='2026-01')return sd;var ym=_pdYM(p.purchaseDate);if(ym&&ym.slice(0,4)==='2026'&&ym>'2026-01')return ym;return '2026-01';}
 function upOwned(p){return p&&!p.invest&&(p.status||'owned')!=='sold';}
 function loadReminders(){ // (name kept — booted at startup)
   if(ME.role!=='owner')return;
   var g=function(k){return fetch('/api/grove?action=notes&notekey='+k+'&_='+Date.now(),{cache:'no-store',credentials:'include'}).then(function(r){return r.json();}).then(function(j){var v=(j&&(j.value||j.notes))||'';try{return JSON.parse(v);}catch(e){return null;}}).catch(function(){return null;});};
   Promise.all([g('ccp_properties'),g('ccp_stmts'),g('owner_uploads')]).then(function(a){
     UPPROPS=Array.isArray(a[0])?a[0]:[]; UPSTMTS=(a[1]&&typeof a[1]==='object')?a[1]:{};
-    var b=a[2]||{}; UPBOOKS={citicore:(b.citicore||{}),summit:(b.summit||{})};
-    UP_LOADED=true; if(CURURL==='#dash')renderDashboard();
+    var b=a[2]||{}; UPBOOKS={citicore:(b.citicore||{}),summit:(b.summit||{}),equity:(b.equity||{}),ledgerwise:(b.ledgerwise||{})};
+    UP_LOADED=true; if(typeof renderTabs==='function')renderTabs(); if(CURURL==='#dash')renderDashboard();
   }).catch(function(){UP_LOADED=true;});
 }
 function persistBooks(){fetch('/api/grove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'notes',notekey:'owner_uploads',value:JSON.stringify(UPBOOKS)})}).catch(function(){});}
-function markBook(co,ym){ UPBOOKS[co]=UPBOOKS[co]||{}; if(UPBOOKS[co][ym])delete UPBOOKS[co][ym]; else UPBOOKS[co][ym]=1; persistBooks(); renderDashboard(); }
+function markBook(co,ym){ UPBOOKS[co]=UPBOOKS[co]||{}; if(UPBOOKS[co][ym])delete UPBOOKS[co][ym]; else UPBOOKS[co][ym]=1; persistBooks(); renderDashboard(); if(typeof renderTabs==='function')renderTabs(); }
 /* Cell states: 'na' (before start), 'ok' (logged), 'due' (outstanding). */
 function upCells(months){
   var rows=[];
@@ -898,6 +1007,10 @@ function upCells(months){
     cell:function(ym){return UPBOOKS.citicore[ym]?'ok':'due';}});
   rows.push({kind:'book',co:'summit',label:'Summit books',sub:'Monthly bookkeeping export',
     cell:function(ym){return UPBOOKS.summit[ym]?'ok':'due';}});
+  rows.push({kind:'book',co:'equity',label:'Refresh equity model',sub:'Update Portfolio Equity & Cash Flow from PM + bank statements',
+    cell:function(ym){return UPBOOKS.equity[ym]?'ok':'due';}});
+  rows.push({kind:'book',co:'ledgerwise',label:'Upload to Ledgerwise',sub:'Drop in bank & credit-card statements',
+    cell:function(ym){return UPBOOKS.ledgerwise[ym]?'ok':'due';}});
   UPPROPS.filter(upOwned).sort(function(a,b){return (b.marketValue||0)-(a.marketValue||0);}).forEach(function(p){
     var start=upStart(p),s=UPSTMTS[p.propId]||{};
     rows.push({kind:'prop',propId:p.propId,label:p.name||'Building',sub:'Owner statement',
@@ -913,42 +1026,50 @@ function remindersHTML(){ // (name kept — inserted by renderDashboard)
   var outstanding=0;
   rows.forEach(function(r){months.forEach(function(ym){if(r.cell(ym)==='due')outstanding++;});});
   var accent=outstanding?'var(--bad,#C0492E)':'var(--good,#2E9E6E)';
-  var head='<div class="between" style="margin-bottom:10px"><b style="font-size:14px;display:flex;align-items:center;gap:8px">'
+  var summary='<summary><b style="font-size:14px;display:flex;align-items:center;gap:8px">'
       +'<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:'+accent+';color:#fff;font-weight:900;font-size:15px">'+(outstanding?'!':'✓')+'</span>Alerts &amp; reminders</b>'
-      +'<span class="sub">'+(outstanding?(outstanding+' outstanding'):'All caught up')+'</span></div>';
-  // Grid: sticky row-label column + one column per month. Horizontal scroll if wide.
-  var cw=34, lw=132;
-  var thead='<tr><th style="position:sticky;left:0;z-index:2;background:var(--card);text-align:left;min-width:'+lw+'px;padding:4px 8px 6px 2px"></th>'
-      +months.map(function(ym){return '<th style="min-width:'+cw+'px;padding:0 0 6px;font:700 10px Inter,sans-serif;color:var(--mut);text-align:center;letter-spacing:.02em">'+upLabel(ym).replace(' ','<br>')+'</th>';}).join('')+'</tr>';
-  var body=rows.map(function(r){
-    var tds=months.map(function(ym){
-      var st=r.cell(ym);
-      if(st==='na')return '<td style="text-align:center;padding:3px 0"><span style="color:var(--line2,#c9ced6)">·</span></td>';
+      +'<span style="display:flex;align-items:center;gap:9px"><span class="sub">'+(outstanding?(outstanding+' outstanding'):'All caught up')+'</span><span class="rcaret">▾</span></span></summary>';
+  // One compact row per book/building; tap a row to expand its months and log them.
+  function monthChips(r){
+    return '<div class="remmonths">'+months.map(function(ym){
+      var st=r.cell(ym), lab=upLabel(ym).replace('<br>',' ');
+      if(st==='na')return '<span class="remchip na">'+lab+'</span>';
       if(st==='ok'){
-        var onOk = r.kind==='book' ? ' onclick="markBook(\''+r.co+'\',\''+ym+'\')" title="Uploaded — tap to undo"' : ' title="Statement logged"';
-        return '<td style="text-align:center;padding:3px 0"><span'+onOk+' style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:22px;border-radius:6px;background:var(--goodbg,#E4F3EC);color:var(--good,#2E9E6E);font-weight:900;font-size:12px;cursor:'+(r.kind==='book'?'pointer':'default')+'">✓</span></td>';
+        var onOk=r.kind==='book'?' onclick="markBook(\''+r.co+'\',\''+ym+'\')" title="Uploaded — tap to undo"':' title="Statement logged"';
+        return '<span class="remchip ok"'+onOk+'>'+lab+' ✓</span>';
       }
-      // due
-      var act = r.kind==='book'
-        ? 'markBook(\''+r.co+'\',\''+ym+'\')'
-        : 'go(\'citicore-properties.html?logstmt='+encodeURIComponent(r.propId)+'&ym='+ym+'\',\'Investments\')';
-      var tip = r.kind==='book' ? 'Not uploaded — tap to mark done' : 'Outstanding — tap to log '+upFull(ym);
-      return '<td style="text-align:center;padding:3px 0"><span onclick="'+act+'" title="'+esc(tip)+'" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:22px;border-radius:6px;background:var(--badbg,#F7EBEA);color:var(--bad,#C0492E);font-weight:900;font-size:12px;cursor:pointer">!</span></td>';
-    }).join('');
-    return '<tr><td style="position:sticky;left:0;z-index:1;background:var(--card);padding:3px 8px 3px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+lw+'px"><div style="font-weight:600;font-size:12.5px;overflow:hidden;text-overflow:ellipsis">'+esc(r.label)+'</div></td>'+tds+'</tr>';
+      var act=r.kind==='book'?'markBook(\''+r.co+'\',\''+ym+'\')':'go(\'citicore-properties.html?logstmt='+encodeURIComponent(r.propId)+'&ym='+ym+'\',\'Investments\')';
+      return '<span class="remchip due" onclick="'+act+'" title="Outstanding — tap to log '+esc(upFull(ym))+'">'+lab+' !</span>';
+    }).join('')+'</div>';
+  }
+  var body=rows.map(function(r){
+    var id=String(r.co||r.propId||r.label);
+    var due=0,ok=0; months.forEach(function(ym){var s=r.cell(ym);if(s==='due')due++;else if(s==='ok')ok++;});
+    var status = due>0 ? '<span style="color:var(--bad)">'+due+' month'+(due>1?'s':'')+' due</span>'
+               : (ok>0 ? '<span style="color:#1E7A52">Caught up</span>' : '<span style="color:var(--mut)">Not yet due</span>');
+    var open=REMOPEN[id]?' open':'';
+    return '<details class="remrow2"'+open+' ontoggle="REMOPEN[\''+esc(id).replace(/'/g,'')+'\']=this.open">'
+      +'<summary><span class="rl">'+esc(r.label)+'</span><span class="rs">'+status+'<span class="caret">▾</span></span></summary>'
+      +monthChips(r)
+    +'</details>';
   }).join('');
-  var grid='<div style="overflow-x:auto;margin:2px -2px 0"><table style="border-collapse:collapse;width:100%">'+thead+body+'</table></div>';
-  var legend='<div class="sub" style="margin-top:8px;display:flex;gap:14px;flex-wrap:wrap;font-size:11px">'
-      +'<span><b style="color:var(--bad,#C0492E)">!</b> outstanding — tap to log</span>'
-      +'<span><b style="color:var(--good,#2E9E6E)">✓</b> uploaded</span>'
-      +'<span style="color:var(--mut)">· not yet due</span></div>';
-  return '<div class="card p" style="border:1px solid '+accent+';box-shadow:0 0 0 1px '+accent+'">'+head+grid+legend+'</div>';
+  var open=REM_CARD_OPEN?' open':'';
+  return '<details class="card p remwrap remcard"'+open+' ontoggle="REM_CARD_OPEN=this.open" style="border:1px solid '+accent+';box-shadow:0 0 0 1px '+accent+';margin-bottom:14px">'+summary+'<div class="rembody">'+body+'</div></details>';
 }
 function renderDashboard(){
   var hr=new Date().getHours();var greet=hr<12?'Good morning':(hr<18?'Good afternoon':'Good evening');
   var nm=(ME.name||'').split(' ')[0]||'there';
   var owner=ME.role==='owner';
-  var h='<div class="pad"><div class="wrap"><div class="pgh">'+greet+', '+esc(nm)+'</div><div class="pgs">Here’s where things stand today.</div>';
+  var agentHome=(ME.role==='agent');
+  var h='<div class="pad"><div class="wrap"><div class="pgh">'+(agentHome?('Welcome back, '+esc(nm)):(greet+', '+esc(nm)))+'</div><div class="pgs">'+(agentHome?'Let’s make it a good one.':'Here’s where things stand today.')+'</div>';
+  if(agentHome){
+    h+='<div class="qa-row" style="margin:16px 0 4px">'
+      +'<div class="qa" onclick="go(\'agent-add-deal.html\',\'Submit a Deal\')"><div class="qic">＋</div><div class="qt">Submit a Deal</div><div class="qd">Log a new sale or rental in under a minute.</div></div>'
+      +'<div class="qa" onclick="go(\'quick-underwrite.html\',\'Quick Underwrite\')"><div class="qic">▦</div><div class="qt">Underwrite</div><div class="qd">Run the numbers before you write the offer.</div></div>'
+      +'<div class="qa" onclick="go(\'grove-leads.html\',\'Call List\')"><div class="qic">◉</div><div class="qt">Call List</div><div class="qd">Pick up your prospecting where you left off.</div></div>'
+      +'<div class="qa" onclick="go(\'commission-calc.html\',\'Commission Calculator\')"><div class="qic">∑</div><div class="qt">Commission Calc</div><div class="qd">Split it out and see your take-home.</div></div>'
+    +'</div>';
+  }
   /* Drive-by capture: on a phone, John and Nik get one big tap target up top to
      log a property the moment they pass it. Desktop hides it (CSS). */
   if(ME.role==='owner'||lcem(ME.email)==='nik@shbuyers.com'){
@@ -986,8 +1107,8 @@ function renderDashboard(){
   if(DASH.loanSoon)chips.push('<span class="chip warn"><span class="d"></span>'+DASH.loanSoon+' loans due within 6 months</span>');
   if(DASH.closingSoon&&DASH.closingSoon.length)chips.push('<span class="chip warn"><span class="d"></span>'+DASH.closingSoon.length+' deals close within 2 weeks</span>');
   if(DASH.leaseExp&&DASH.leaseExp.length)chips.push('<span class="chip warn"><span class="d"></span>'+DASH.leaseExp.length+' lease'+(DASH.leaseExp.length>1?'s':'')+' expiring ≤60d</span>');
-  if(DASH.condoOwe>0)chips.push('<span class="chip warn"><span class="d"></span>'+money(DASH.condoOwe)+' condo fees owed</span>');
-  if(owner&&DASH.owed>0)chips.push('<span class="chip accent"><span class="d"></span>'+money(DASH.owed)+' ready to disburse</span>');
+  if(DASH.condoOwe>0)chips.push('<span class="chip warn" onclick="go(\'citicore-condo-fees.html\',\'Condo Fees\')" style="cursor:pointer" title="Open Condo Fees"><span class="d"></span>'+money(DASH.condoOwe)+' condo fees owed →</span>');
+  if(owner&&DASH.owed>0)chips.push('<span class="chip bad" onclick="go(\'deals-payouts2.html\',\'Deals & Payouts\')" style="cursor:pointer;font-weight:700" title="Open Deals & Payouts — pay agents"><span class="d"></span>💵 '+money(DASH.owed)+' payable now → pay agents</span>');
   if(chips.length)h+='<div class="attn"><span class="lb">Needs attention</span>'+chips.join('')+'</div>';
   if(isThermoUser()&&DASH.goalReady){
     var GOAL=100000000, sv=DASH.goalSales||0, rf=DASH.goalRent||0, fsv=DASH.goalForSale||0;
@@ -1016,10 +1137,10 @@ function renderDashboard(){
   }
   if(owner){
     h+='<div class="ent3">';
-    h+='<div class="card entc co-grove" onclick="entJump(\'grove\',\'deals-payouts2.html\',\'Deals & Payouts\')"><div class="enth"><b>Grove</b><span>Brokerage</span></div><div class="entbig">'+moneyK(DASH.ytdFees||0)+'</div><div class="entsub">YTD fees</div><div class="entr"><span>Pipeline · under agr.</span><b>'+moneyK(DASH.uaVol||0)+'</b></div><div class="entr"><span>Ready to disburse</span><b>'+money(DASH.owed||0)+'</b></div><div class="entr"><span>Active deals</span><b>'+((DASH.ua?DASH.ua.length:0)+(DASH.fs?DASH.fs.length:0))+'</b></div><div class="entopen">Open →</div></div>';
-    h+='<div class="card entc co-citicore" onclick="entJump(\'citicore\',\'portfolio.html\',\'Portfolio\')"><div class="enth"><b>Citicore</b><span>Rentals</span></div><div class="entbig">'+(DASH.citiReady&&DASH.rentHas?money(DASH.rentMo):'—')+'</div><div class="entsub">rent / month</div><div class="entr"><span>Units</span><b>'+(DASH.citiReady&&DASH.rentHas?DASH.units:'—')+'</b></div><div class="entr"><span>Loan balance</span><b>'+(DASH.loanBal?moneyK(DASH.loanBal):(DASH.loansReady?'$0':'—'))+'</b></div><div class="entr"><span>Fees owed</span><b>'+money(DASH.condoOwe||0)+'</b></div><div class="entopen">Open →</div></div>';
+    h+='<div class="card entc co-grove" onclick="entJump(\'grove\',\'deals-payouts2.html\',\'Deals & Payouts\')"><div class="enth"><b>Grove</b><span>Brokerage</span></div><div class="entbig">'+moneyK(DASH.ytdFees||0)+'</div><div class="entsub">YTD fees</div><div class="entr"><span>Pipeline · under agr.</span><b>'+moneyK(DASH.uaVol||0)+'</b></div><div class="entr"><span>Ready to disburse</span><b>'+money(DASH.owed||0)+'</b></div><div class="entr"><span>Active deals</span><b>'+((DASH.ua?DASH.ua.length:0)+(DASH.fs?DASH.fs.length:0))+'</b></div>'+((DASH.closingSoon&&DASH.closingSoon.length)?'<div class="entr"><span>Closing ≤2 wks</span><b style="color:var(--accent)">'+DASH.closingSoon.length+'</b></div>':'')+'<div class="entopen">Open →</div></div>';
+    h+='<div class="card entc co-citicore" onclick="entJump(\'citicore\',\'portfolio.html\',\'Portfolio\')"><div class="enth"><b>Citicore</b><span>Rentals</span></div><div class="entbig">'+(DASH.citiReady&&DASH.rentHas?money(DASH.rentMo):'—')+'</div><div class="entsub">rent / month</div><div class="entr"><span>Units</span><b>'+(DASH.citiReady&&DASH.rentHas?DASH.units:'—')+'</b></div><div class="entr"><span>Loan balance</span><b>'+(DASH.loanBal?moneyK(DASH.loanBal):(DASH.loansReady?'$0':'—'))+'</b></div><div class="entr"><span>Annual rent</span><b>'+(DASH.citiReady&&DASH.rentHas?moneyK(DASH.rentMo*12):'—')+'</b></div><div class="entr"><span>Fees owed</span><b>'+money(DASH.condoOwe||0)+'</b></div><div class="entopen">Open →</div></div>';
     h+='<div class="card entc co-summit" onclick="entJump(\'summit\',\'summit-portfolio.html\',\'Portfolio & Offers\')"><div class="enth"><b>Summit</b><span>Wholesale &amp; flips</span></div><div class="entbig">'+(DASH.smReady&&DASH.smHas?DASH.smDeals:'—')+'</div><div class="entsub">active deals</div><div class="entr"><span>Total ARV</span><b>'+(DASH.smReady&&DASH.smHas?moneyK(DASH.smArv):'—')+'</b></div><div class="entr"><span>Equity spread</span><b>'+(DASH.smReady&&DASH.smHas?moneyK(DASH.smEq):'—')+'</b></div><div class="entr"><span>Open offers</span><b>'+(DASH.smReady&&DASH.smHas?DASH.smOffers:'—')+'</b></div><div class="entopen">Open →</div></div>';
-    h+='<div class="card entc co-access" onclick="go(\'https://access-network.onrender.com/\',\'Access\')"><div class="enth"><b>Access</b><span>Off-market network</span></div><div class="entbig">◈</div><div class="entsub">members-only deal network</div>'
+    h+='<div class="card entc co-access" onclick="go(\'https://access-network.onrender.com/\',\'AXESS\')"><div class="enth"><b>AXESS</b><span>Real estate network</span></div><div class="entbig" style="color:var(--cc)"><svg viewBox="0 0 100 100" style="width:38px;height:38px;display:block"><path fill="currentColor" d="M50 0 100 100H74L50 30 26 100H0Z"/><rect fill="currentColor" x="22.4" y="56.6" width="30.3" height="14.5"/></svg></div><div class="entsub">members-only deal network</div>'
       +(function(){var pm=DASH.pm;if(!pm){var d=DASH.pmReady?'0':'…';return '<div class="entr"><span>Live deals</span><b>'+d+'</b></div><div class="entr"><span>Active volume</span><b>'+(DASH.pmReady?'$0':'…')+'</b></div><div class="entr"><span>Members</span><b>'+d+'</b></div>';}
         return '<div class="entr"><span>Live deals</span><b>'+(pm.liveDeals||0)+'</b></div>'
           +'<div class="entr"><span>Active volume</span><b>'+moneyK(pm.volume||0)+'</b></div>'
@@ -1033,15 +1154,29 @@ function renderDashboard(){
   if(owner){
     h+='<div class="grid g4" style="margin-bottom:14px">'
       +tile('Under Agreement',DASH.ua.length,moneyK(DASH.uaVol)+' volume')
-      +tile('For Sale',DASH.fs.length,'')
-      +tile('YTD Fees',moneyK(DASH.ytdFees),'2026')
+      +tile('Listings for Sale',DASH.fs.length,'on the market now')
+      +tile('YTD Fees',moneyK(DASH.ytdFees),String(new Date().getFullYear()))
       +'<div class="mini feature"><div class="l">Ready to Pay</div><div class="v num">'+money(DASH.owed)+'</div><div class="s">collected · awaiting disbursement</div></div></div>';
   }else{
-    var myClosed=DASH.deals.filter(function(d){return dpStage(d)==='Closed';});
-    h+='<div class="grid g3" style="margin-bottom:14px">'
-      +tile('Your deals · under agr.',DASH.ua.length,'')
-      +'<div class="mini feature"><div class="l">Pending your payout</div><div class="v num">'+money(DASH.owed)+'</div><div class="s">collected, not yet paid</div></div>'
-      +tile('Closed YTD',myClosed.length,money(myClosed.reduce(function(a,d){return a+dpFee(d);},0))+' in fees')+'</div>';
+    /* Agents never see total deal FEES — that would let them back into other
+       people's splits. Show sales VOLUME (the sale price, which isn't a split)
+       and activity counts instead, and compute "your payout" from only THIS
+       agent's own commission lines. */
+    var AN=String(window.__AGENTNAME__||'').trim().toUpperCase();
+    var mine=function(d){ return !AN || (d.lines||[]).some(function(l){return String(l.agent||'').trim().toUpperCase()===AN;}); };
+    var myClosed=DASH.deals.filter(function(d){return dpStage(d)==='Closed' && mine(d);});
+    var myClosedVol=myClosed.reduce(function(a,d){return a+(Number(d.price)||0);},0);
+    var myUA=DASH.ua.filter(mine),   myUAVol=myUA.reduce(function(a,d){return a+(Number(d.price)||0);},0);
+    var myFS=DASH.fs.filter(mine);
+    var myOwed=0;
+    if(AN){ DASH.deals.forEach(function(d){ if(d.fee!=='collected')return; (d.lines||[]).forEach(function(l){ if(String(l.agent||'').trim().toUpperCase()===AN && !l.paid) myOwed+=Number(l.amount)||0; }); }); }
+    else { myOwed=DASH.owed; }
+    var yr=String(new Date().getFullYear());
+    h+='<div class="grid g4" style="margin-bottom:14px">'
+      +tile('Sales Volume Closed',moneyK(myClosedVol),myClosed.length+' closed · '+yr)
+      +tile('Under Agreement',myUA.length,moneyK(myUAVol)+' volume')
+      +tile('Prospects',myFS.length,'listings you’re on')
+      +'<div class="mini feature"><div class="l">Pending your payout</div><div class="v num">'+money(myOwed)+'</div><div class="s">your split · not yet paid</div></div></div>';
   }
   // recent + upcoming
   var dealsPg=owner?'deals-payouts2.html':'my-deals.html',dealsTitle=owner?'Deals & Payouts':'My Deals';
@@ -1094,7 +1229,7 @@ function buildContentIndex(cb){
   // address and show a raw id as the label. ?load=<key-suffix> tells the page which
   // saved scenario to open. 'deal:' also matches the typed underwriters — filter those.
   var UWTYPES=[['deal:mf:','multifamily-underwriter.html','Multifamily'],['quick:','quick-underwrite.html','Quick Underwrite'],['deal:','deal-analyzer.html','Full Underwrite']];
-  var UWFOREIGN=/^deal:(mf|flip|str|build):/;
+  var UWFOREIGN=/^deal:(mf|flip|str|build|heloc):/;
   UWTYPES.forEach(function(u){
     jobs.push(fetch('/api/uw?prefix='+encodeURIComponent(u[0])+'&_='+Date.now(),{credentials:'include'}).then(function(r){return r.ok?r.json():null;}).then(function(j){
       var keys=((j&&j.keys)||[]).map(String).filter(function(k){return !(u[0]==='deal:'&&UWFOREIGN.test(k));});
@@ -1134,7 +1269,7 @@ var SUBPAL=[
   ['⊞','Mortgage Calculator','mortgage-calc.html','mortgage calculator payment amortization interest down payment loan pmi'],
   ['◎','Owner Lookup & Research','owner-lookup.html','owner property lookup assessor corp search truepeople people research skip trace']
 ];
-function buildPal(){PAL=[];var seen={};var src=ME.role==='owner'?[NAV.grove,NAV.citicore,NAV.summit]:[navGroups()];
+function buildPal(){PAL=[];var seen={};var src=ME.role==='owner'?[NAV.grove,NAV.citicore,NAV.summit,NAV.personal]:[navGroups()];
   src.forEach(function(gs){gs.forEach(function(g){g[1].forEach(function(it){if(seen[it[2]]!=null)return;seen[it[2]]=PAL.length;PAL.push([it[0],it[1],it[2],it[3]||'']);});});});
   if(ME.role==='owner'){SUBPAL.forEach(function(it){var ix=seen[it[2]];if(ix!=null){PAL[ix][3]=((PAL[ix][3]||'')+' '+(it[3]||'')).replace(/\s+/g,' ').trim();}else{seen[it[2]]=PAL.length;PAL.push([it[0],it[1],it[2],it[3]||'']);}});}}
 function openPal(){$('scrim').classList.add('open');$('palIn').value='';palSel=0;palRender();$('palIn').focus();buildContentIndex(function(){palRender();});}
@@ -1181,7 +1316,7 @@ window.addEventListener('hashchange',function(){var u=hashToUrl();if(u&&knownUrl
 fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).then(function(j){
   ME=j||ME;window.__ROLE__=ME.role;window.__EMAIL__=ME.email;window.__USER__=ME.name;window.__AGENTNAME__=ME.agentName;
   acctBoot();
-  if(ME.role!=='owner')CO='grove';
+  CO=(ME.role==='owner')?'overview':'grove';
   loadAccessNote(function(){
     mpLoad(function(){
       renderSidebar();buildPal();if(!routeFromHash())go(ME.role==='guest'?'citicore-portfolio.html':'#dash',ME.role==='guest'?'Portfolio':'Overview');loadData();loadReminders();
@@ -1189,5 +1324,176 @@ fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).the
   });
 }).catch(function(){renderSidebar();if(!routeFromHash())go('#dash','Overview');loadData();});
 </script>
+<script>
+/* ── Guided tour ──────────────────────────────────────────────────────────────
+   A role-aware, in-app walkthrough. Each person sees a tour of exactly the tools
+   their access gives them — anchored to the real sidebar items. If a tool isn't
+   in the current menu (e.g. an owner on a different company tab), that step
+   degrades gracefully to a centered info card so the message still lands.
+   Trigger: the 🧭 Tour button up top, or auto-once for non-owners on first login. */
+(function(){
+  var TOUR_VER='v1';
+  function role(){ return (window.__ROLE__||'agent'); }
+  var C='(center)';
+  var TOURS={
+    agent:[
+      [C,'Welcome to HQ 👋','Here’s a quick tour of the tools you have. Use the buttons below or your ← → arrow keys, and Skip anytime.'],
+      ['agent-add-deal.html','Submit a Deal','Log a new deal here — the fastest way to get a transaction into the system.'],
+      ['my-deals.html','My Deals','Every deal you’ve submitted, with its status and details, in one place.'],
+      ['agent-pay.html','My Pay','Your commission splits and payouts — what you’ve earned and what’s coming.'],
+      ['agent-goals.html','Goals','Track your production against your targets for the year.'],
+      ['transaction-checklist.html','Transaction Checklist','A step-by-step closing checklist so nothing slips between contract and close.'],
+      ['deal-analyzer.html','Underwriting','Run the numbers on a property — full underwrite, flip, rental and more.'],
+      ['for-sale-folder.html','For-Sale Inventory','Browse the current listings in tiles, list, or expandable view.'],
+      ['forms-templates.html','Forms & Templates','Grab the documents you need — contracts, disclosures, templates.'],
+      ['vendors.html','Vendors','Preferred vendors — lenders, inspectors, attorneys and more.'],
+      [C,'You’re all set 🎉','That’s your toolkit. Click 🧭 Tour up top anytime to see this again.']
+    ],
+    summit:[
+      [C,'Welcome to HQ 👋','A quick tour of your Summit acquisition tools. ← → to move, Skip anytime.'],
+      ['lead-feeds.html','Lead Board','Fresh probate & pre-foreclosure leads — with the personal rep, phone lookup, and Zillow, plus one-click push into REsimpli.'],
+      ['summit-network.html','Summit Network','Your directory of banks, attorneys, buyers, sellers, and wholesalers.'],
+      ['deal-analyzer.html','Underwriting','The full suite — flip, rental, multifamily, STR, build feasibility, and condo play.'],
+      ['om-builder.html','OM Builder','Turn a deal into a polished offering memorandum to send buyers.'],
+      ['investor-tracker.html','Trackers','Investor tracker, rehab tracker, and your deal track record.'],
+      ['social-studio.html','Social Studio','Create branded social content in a few clicks.'],
+      ['summit-dashboard.html','Summit Dashboard','Your outbound activity and pipeline at a glance.'],
+      [C,'You’re all set 🎉','That’s your toolkit. Click 🧭 Tour up top to replay anytime.']
+    ],
+    guest:[
+      [C,'Welcome 👋','A quick look at your Citicore views. ← → to move.'],
+      ['citicore-portfolio.html','Portfolio','Every Citicore property at a glance.'],
+      ['rent-roll.html','Rent Roll','Units, tenants, and rents across the portfolio.'],
+      ['loan-tracker.html','Loan Tracker','Loans, balances, and terms by property.'],
+      ['citicore-condo-fees.html','Condo Fees','Condo fee tracking by property.'],
+      ['citicore-payroll.html','Payroll','Payroll figures.'],
+      [C,'All set 🎉','Click 🧭 Tour up top to replay anytime.']
+    ],
+    bookkeeper:[
+      [C,'Welcome 👋','A quick tour of the financial views you have. ← → to move.'],
+      ['grove-books.html','Books','The company books and ledgers.'],
+      ['citicore-portfolio.html','Citicore Financials','Property portfolio, rent roll, and loans.'],
+      ['loan-tracker.html','Loan Tracker','Loans and balances by property.'],
+      [C,'All set 🎉','Click 🧭 Tour up top anytime.']
+    ],
+    owner:[
+      [C,'HQ Tour 👋','A quick orientation. ← → to move, Skip anytime. Everyone else sees a version of this tailored to what they can access.'],
+      ['@#cotabs','Company tabs','Switch between Overview, Grove, Citicore, and Summit here — each has its own tools and numbers.'],
+      ['team-access.html','Team & Access','Add people, grant Summit access, deactivate logins, and preview the hub as anyone — all here.'],
+      ['lead-feeds.html','Lead Board','Summit’s probate & pre-foreclosure pipeline (also on the Summit tab).'],
+      [C,'That’s the tour 🎉','Click 🧭 Tour up top to replay this anytime.']
+    ]
+  };
+  function steps(){ return TOURS[role()] || TOURS.agent; }
+  var i=0, S=[], nodes={};
+  function seenKey(){ return 'hqTour_'+role()+'_'+TOUR_VER; }
+  function target(step){
+    var t=step[0];
+    if(t===C) return null;
+    if(t.charAt(0)==='@'){ try{return document.querySelector(t.slice(1));}catch(e){return null;} }
+    return document.querySelector('#sidenav a[data-url="'+t+'"]');
+  }
+  function visible(el){ if(!el) return false; var r=el.getBoundingClientRect(); return r.width>4 && r.height>4; }
+  function ensureNodes(){
+    if(nodes.block) return;
+    nodes.block=document.createElement('div'); nodes.block.className='tour-block';
+    nodes.spot=document.createElement('div'); nodes.spot.className='tour-spot';
+    nodes.tip=document.createElement('div'); nodes.tip.className='tour-tip';
+    nodes.block.addEventListener('click',function(e){ e.stopPropagation(); });
+    document.body.appendChild(nodes.block);
+    document.body.appendChild(nodes.spot);
+    document.body.appendChild(nodes.tip);
+  }
+  function paint(){
+    var step=S[i]; if(!step){ endTour(true); return; }
+    var el=target(step);
+    var centered = !el || !visible(el);
+    if(!centered){ try{ el.scrollIntoView({block:'center',inline:'nearest'}); }catch(e){} }
+    // measure after scroll
+    setTimeout(function(){
+      var pad=8, r=(!centered)? el.getBoundingClientRect() : null;
+      if(!centered && r){
+        nodes.spot.style.display='block';
+        nodes.spot.style.top=(r.top-pad)+'px';
+        nodes.spot.style.left=(r.left-pad)+'px';
+        nodes.spot.style.width=(r.width+pad*2)+'px';
+        nodes.spot.style.height=(r.height+pad*2)+'px';
+      } else {
+        nodes.spot.style.display='none';
+      }
+      var isFirst=i===0, isLast=i===S.length-1;
+      nodes.tip.innerHTML=
+        '<div class="tour-h">'+esc(step[1])+'</div>'+
+        '<div class="tour-b">'+esc(step[2])+'</div>'+
+        '<div class="tour-f"><span class="tour-n">'+(i+1)+' / '+S.length+'</span>'+
+          '<span class="tour-btns">'+
+            (isFirst?'':'<button class="tour-bk" onclick="tourGo(-1)">Back</button>')+
+            '<button class="tour-skip" onclick="tourEnd()">'+(isLast?'':'Skip')+'</button>'+
+            '<button class="tour-nx" onclick="tourGo(1)">'+(isLast?'Done':'Next')+'</button>'+
+          '</span></div>';
+      // position the tip
+      nodes.tip.style.visibility='hidden'; nodes.tip.style.display='block';
+      var tw=nodes.tip.offsetWidth, th=nodes.tip.offsetHeight, m=14;
+      var vw=window.innerWidth, vh=window.innerHeight, top, left;
+      if(centered || !r){
+        top=Math.max(m,(vh-th)/2); left=Math.max(m,(vw-tw)/2);
+      } else {
+        // below target if room, else above, else beside
+        if(r.bottom+m+th < vh){ top=r.bottom+m; left=Math.min(Math.max(m,r.left), vw-tw-m); }
+        else if(r.top-m-th > 0){ top=r.top-m-th; left=Math.min(Math.max(m,r.left), vw-tw-m); }
+        else { top=Math.max(m,(vh-th)/2); left=Math.min(r.right+m, vw-tw-m); if(left<m)left=m; }
+      }
+      nodes.tip.style.top=top+'px'; nodes.tip.style.left=left+'px';
+      nodes.tip.style.visibility='visible';
+    }, centered?0:180);
+  }
+  window.tourGo=function(d){ i+=d; if(i>=S.length){ endTour(true); return; } if(i<0)i=0; paint(); };
+  window.tourEnd=function(){ endTour(true); };
+  function endTour(markSeen){
+    if(nodes.block){ nodes.block.remove(); nodes.spot.remove(); nodes.tip.remove(); nodes={}; }
+    document.removeEventListener('keydown',keyNav);
+    if(markSeen){ try{ localStorage.setItem(seenKey(),'1'); }catch(e){} }
+  }
+  function keyNav(e){
+    if(e.key==='ArrowRight'||e.key==='Enter') tourGo(1);
+    else if(e.key==='ArrowLeft') tourGo(-1);
+    else if(e.key==='Escape') tourEnd();
+  }
+  window.startTour=function(force){
+    S=steps(); if(!S.length) return; i=0;
+    if(!force){ try{ if(localStorage.getItem(seenKey())) return; }catch(e){} }
+    try{ if(typeof closeNav==='function' && window.innerWidth>860){} }catch(e){}
+    ensureNodes(); document.addEventListener('keydown',keyNav); paint();
+  };
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  // Auto-run once for the people being onboarded (not the owner). Waits for the
+  // sidebar to render so anchored steps can find their targets.
+  function autoRun(){
+    if(role()==='owner') return;
+    try{ if(localStorage.getItem(seenKey())) return; }catch(e){}
+    var tries=0;
+    var iv=setInterval(function(){
+      tries++;
+      var ready=document.querySelector('#sidenav a[data-url]');
+      if(ready || tries>20){ clearInterval(iv); startTour(false); }
+    }, 400);
+  }
+  if(document.readyState==='complete'||document.readyState==='interactive') setTimeout(autoRun,1400);
+  else window.addEventListener('load',function(){ setTimeout(autoRun,1400); });
+})();
+</script>
+<style>
+.tour-block{position:fixed;inset:0;z-index:99990;background:transparent}
+.tour-spot{position:fixed;z-index:99991;border-radius:10px;box-shadow:0 0 0 4000px rgba(10,15,25,.60);pointer-events:none;transition:top .2s ease,left .2s ease,width .2s ease,height .2s ease;display:none}
+.tour-tip{position:fixed;z-index:99992;max-width:330px;width:calc(100vw - 28px);background:var(--card,#fff);color:var(--ink,#141a24);border:1px solid var(--line2,#d3dbe8);border-radius:14px;padding:16px 18px 14px;box-shadow:0 16px 48px rgba(0,0,0,.32)}
+.tour-h{font-size:16px;font-weight:700;margin-bottom:5px}
+.tour-b{font-size:13.5px;line-height:1.5;color:var(--mut,#54607a)}
+.tour-f{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:10px}
+.tour-n{font-size:12px;color:var(--mut,#8a96ab);font-weight:600;white-space:nowrap}
+.tour-btns{display:flex;gap:8px}
+.tour-tip button{font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:7px 13px;cursor:pointer;border:1px solid var(--line2,#d3dbe8)}
+.tour-bk,.tour-skip{background:var(--card,#fff);color:var(--ink,#141a24)}
+.tour-nx{background:#1d4f8f;color:#fff;border-color:#1d4f8f}
+</style>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}</script>
 </body></html>

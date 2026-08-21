@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Deals & Pay — Grove</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0B1020;--ink:#0A0A0B;--mut:#71717A;--line:#E4E4E7;--sand:#F4F4F6;--good:#17418A;--warn:#17418A;--bad:#C0492E;--card:#fff;--accent:#17418A;--paper:#F4F4F6;--blue:#2450DC;--bluebg:#EEF2FB;--panel:#F4F4F6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,-apple-system,sans-serif;padding-bottom:60px}
+header{background:var(--navy);color:#fff;padding:14px 20px}
+header .wrap{max-width:1040px;margin:0 auto}
+.hublogo{font-family:Inter;font-weight:700;font-size:22px;letter-spacing:.5px}
+.tsub{font-size:13px;color:#c7cff0;margin-top:3px}
+main.wrap{max-width:1040px;margin:0 auto;padding:18px 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 11px;box-shadow:0 1px 3px rgba(20,30,60,.06)}
+h2{font-family:Inter;font-size:15px;letter-spacing:.3px;color:var(--ink);margin:0 0 12px}
+.tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.tile{flex:1;min-width:130px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;box-shadow:0 1px 3px rgba(20,30,60,.06)}
+.tile .v{font-family:Inter;font-size:22px;font-weight:700}
+.tile .l{font-size:10px;letter-spacing:.7px;color:var(--mut);font-weight:600;margin-top:3px}
+/* Tabs */
+.tabbar{display:flex;gap:8px;margin:2px 0 16px;flex-wrap:wrap}
+.tabbtn{padding:9px 16px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
+.tabbtn.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;color:var(--mut);font-size:11px;letter-spacing:.04em;padding:8px;border-bottom:2px solid var(--line);white-space:nowrap}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--ink)}
+th .ar{opacity:.5;font-size:9px;margin-left:3px}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.amt{font-weight:800}
+.st{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.st.paid{background:var(--bluebg);color:var(--good)}
+.st.owed{background:var(--bluebg);color:var(--warn)}
+.st.pend{background:var(--panel);color:var(--mut)}
+.seccount{font-size:11px;color:var(--mut);font-weight:600;margin-left:6px}
+label{display:block;font-size:10px;letter-spacing:.6px;color:var(--mut);font-weight:600;margin-bottom:4px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:var(--card);font-family:inherit}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>div{flex:1;min-width:150px}
+.btn{background:var(--navy);color:#fff;border:0;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn.good{background:var(--good)}
+.muted{color:var(--mut);font-size:13px}
+.hint{font-size:11px;color:var(--mut);margin-top:8px}
+#subMsg{font-size:13px;margin-top:8px;min-height:18px}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:5px}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* Goals */
+.gcards{display:flex;gap:12px;flex-wrap:wrap}
+.gcard{flex:1;min-width:170px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 15px;box-shadow:0 1px 3px rgba(20,30,60,.06)}
+.gl{font-size:11px;letter-spacing:.6px;color:var(--mut);font-weight:700;text-transform:uppercase}
+.gv{font-size:26px;font-weight:800;margin-top:4px}
+.gg{font-size:12.5px;color:var(--mut);margin-top:2px}
+.gp{font-size:12px;font-weight:700;color:var(--accent);margin-top:6px}
+.gp.muted{color:var(--mut);font-weight:600}
+.gtrack{height:8px;background:var(--sand);border-radius:20px;margin-top:8px;overflow:hidden}
+.gfill{height:100%;background:var(--accent);border-radius:20px;transition:width .4s ease}
+.notes-card{margin-top:14px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:13px 15px}
+.notes-l{font-size:11px;letter-spacing:.6px;color:#92400E;font-weight:700;text-transform:uppercase;margin-bottom:5px}
+.notes-b{font-size:13.5px;color:#3f3f46;line-height:1.5;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="hublogo">My Deals &amp; Pay</div><div class="tsub" id="who">Your deals and commissions</div></div></header>
+<main class="wrap">
+
+  <div class="tabbar">
+    <button class="tabbtn on" id="tabDealsBtn" onclick="showTab('deals')">Deals &amp; Pay</button>
+    <button class="tabbtn" id="tabGoalsBtn" onclick="showTab('goals')">Goals</button>
+  </div>
+
+  <!-- ══ DEALS & PAY ══ -->
+  <div id="tabDeals">
+    <div class="tiles" id="tiles"></div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <h2 style="margin:0">Your deals</h2>
+        <input id="dSearch" type="search" placeholder="🔍 Search address, town, type, date…" oninput="doSearch(this.value)" style="flex:1;min-width:200px;max-width:340px;margin-left:auto">
+      </div>
+      <div id="salesWrap" style="margin-bottom:18px"></div>
+      <div id="rentalsWrap"></div>
+      <div class="hint">You only see the deals you’re on and your own commission. Everyone’s splits are private. Tap a column header to sort. Tap <b>Edit</b> to fix the address, unit, date, or listing side — money fields go through John.</div>
+    </div>
+
+    <!-- Edit-own-deal sheet -->
+    <div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:flex-end;justify-content:center" onclick="if(event.target===this)closeEdit()">
+      <div style="background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;padding:22px 20px 34px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <span style="font-weight:700;font-size:15px;color:var(--ink)">Edit deal</span>
+          <button onclick="closeEdit()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);line-height:1">&times;</button>
+        </div>
+        <div class="row" style="margin-bottom:12px">
+          <div style="flex:2;min-width:200px"><label>Property address</label><input id="eProp"></div>
+          <div><label>Apt / Unit #</label><input id="eUnit" placeholder="e.g. 2"></div>
+        </div>
+        <div class="row" style="margin-bottom:12px">
+          <div><label>Date</label><input id="eDate" type="date"></div>
+          <div><label>Listing side (agent)</label><input id="eListing" placeholder="optional"></div>
+        </div>
+        <div class="row" style="margin-bottom:12px">
+          <div><label>Status</label><select id="eStage"><option value="">— no change —</option><option>Prospect</option><option>For Sale</option><option>Under Agreement</option><option>Closed</option></select></div>
+        </div>
+        <div style="margin-bottom:12px"><label>Note</label><textarea id="eNote" rows="2" placeholder="Anything to flag for John (optional)" style="width:100%"></textarea></div>
+        <button class="btn good" style="width:100%" onclick="saveEdit()">Save changes</button>
+        <div id="eMsg" class="hint" style="min-height:16px"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Submit a deal to John</h2>
+      <div class="row" style="margin-bottom:12px">
+        <div style="flex:2"><label>Property address</label><input id="sProp" class="gaddr" placeholder="e.g. 595 East 5th St #2"></div>
+        <div><label>Type</label><select id="sType"><option>Rental</option><option>Sale</option></select></div>
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <div><label>Price (if a sale)</label><input id="sPrice" inputmode="decimal" placeholder="$ optional"></div>
+        <div><label>Your commission</label><input id="sComm" inputmode="decimal" placeholder="$ your cut"></div>
+      </div>
+      <div style="margin-bottom:12px"><label>Note for John</label><textarea id="sNote" rows="2" placeholder="Anything he should know — co-broke, client, timeline…"></textarea></div>
+      <button class="btn good" onclick="submitDeal()">Send to John for approval</button>
+      <div id="subMsg" class="hint">This emails John. It’ll appear in your list once he confirms the details.</div>
+    </div>
+  </div>
+
+  <!-- ══ GOALS ══ -->
+  <div id="tabGoals" style="display:none">
+    <div class="card">
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <h2 style="margin:0">Your <span id="goalYear"></span> Goals</h2>
+        <span class="muted" style="font-size:12px">Progress is based on your closed / paid deals.</span>
+      </div>
+      <div id="goalsBody"><div class="muted"><span class="spin"></span>Loading your goals…</div></div>
+    </div>
+  </div>
+
+</main>
+
+<script>/*BKPILL*/
+(function(){
+if(window.__BKPILL__)return;window.__BKPILL__=1;
+var css=document.createElement('style');
+css.textContent='#bkpill{position:fixed;bottom:12px;right:12px;z-index:2147483000;display:flex;align-items:center;gap:6px;font:600 12px system-ui,-apple-system,Segoe UI,sans-serif;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:5px 11px;box-shadow:0 1px 5px rgba(0,0,0,.14)}#bkpill .bkdot{width:9px;height:9px;border-radius:50%;background:var(--blue);flex:0 0 auto}#bkpill.fail .bkdot{background:var(--bad)}#bkpill .bktxt{color:var(--mut);white-space:nowrap}';
+(document.head||document.documentElement).appendChild(css);
+var pill=document.createElement('div');pill.id='bkpill';pill.innerHTML='<span class="bkdot"></span><span class="bktxt">Checking</span>';
+function mount(){if(document.body&&!document.getElementById('bkpill'))document.body.appendChild(pill);}
+if(document.body)mount();else document.addEventListener('DOMContentLoaded',mount);
+function set(s,m){pill.className=(s==='ok'?'':s);var t=pill.querySelector('.bktxt');if(t)t.textContent=m;}
+function ping(){fetch('/api/grove?action=notes&notekey=_heartbeat').then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(){set('ok','Backed up');}).catch(function(){set('fail','Offline');});}
+ping();setInterval(ping,60000);
+})();
+</script>
+
+<script>
+var AGENT='', NAME='';
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function money(n){return '$'+(Math.round(+n||0)).toLocaleString();}
+function num(v){return parseFloat(String(v||'').replace(/[^0-9.]/g,''))||0;}
+
+/* ── address parsing: split a full address into Street / Unit / Town / State / Zip
+   so the list can be organized and sorted by any part. ── */
+function parseAddr(full, unit){
+  var s=String(full||'').trim().replace(/,\s*(usa|united states)\s*$/i,'');
+  var parts=s.split(',').map(function(x){return x.trim();}).filter(Boolean);
+  var street=parts[0]||'', town='', statezip='';
+  if(parts.length>=3){ town=parts[1]; statezip=parts[2]; }
+  else if(parts.length===2){ town=parts[1]; }
+  var u=String(unit||'').trim();
+  if(!u){ var m=street.match(/\s*(?:#|u:|unit\s*|apt\.?\s*)\s*([\w\-]+)\s*$/i); if(m){ u=m[1]; street=street.slice(0,m.index).trim(); } }
+  var st='', zip='';
+  if(statezip){ var mz=statezip.match(/([A-Za-z]{2})\s*(\d{5})?/); if(mz){ st=mz[1].toUpperCase(); zip=mz[2]||''; } }
+  else { var mz2=street.match(/\b([A-Za-z]{2})\s+(\d{5})\b/); if(mz2){ st=mz2[1].toUpperCase(); zip=mz2[2]; } }
+  return {street:street, unit:u, town:town, state:st, zip:zip};
+}
+
+fetch('/api/me').then(function(r){return r.json();}).then(function(j){NAME=(j&&j.name)||'';}).catch(function(){});
+
+var DEALS=[],QUERY='',SORT={col:'date',dir:-1};
+function load(){
+  fetch('/api/mydeals?_='+Date.now()).then(function(r){return r.json();}).then(function(j){
+    AGENT=(j&&j.agent)||'';
+    if(AGENT)document.getElementById('who').textContent='Signed in as '+AGENT+' · your deals and commissions only';
+    DEALS=(j&&j.deals)||[];
+    DEALS.forEach(function(d){ d._a=parseAddr(d.property, d.unit); });
+    doSearch(QUERY);
+    renderGoals();
+  }).catch(function(){ document.getElementById('salesWrap').innerHTML='<div class="muted">Couldn’t load right now — refresh in a moment.</div>'; });
+}
+function isSale(d){ return String(d.type||'').toLowerCase().indexOf('rent')<0; }  // Sale (or anything not a rental)
+
+function doSearch(q){
+  QUERY=String(q||'').toLowerCase().trim();
+  renderTiles();
+  var list=QUERY?DEALS.filter(function(d){
+    var a=d._a||{};
+    var hay=[d.property,a.street,a.town,a.state,a.zip,d.unit,d.type,d.date,d.stage].join(' ').toLowerCase();
+    if(hay.indexOf(QUERY)>=0)return true;
+    var qn=QUERY.replace(/[^0-9]/g,'');
+    return !!qn&&String(Math.round(+d.myAmount||0)).indexOf(qn)>=0;
+  }):DEALS;
+  renderSection('salesWrap','Sales',list.filter(isSale));
+  renderSection('rentalsWrap','Rentals',list.filter(function(d){return !isSale(d);}));
+}
+
+function renderTiles(){
+  var paid=0,owed=0,pend=0;
+  DEALS.forEach(function(d){
+    var a=+d.myAmount||0;
+    if(d.myPaid)paid+=a; else if(String(d.fee).toLowerCase()==='collected')owed+=a; else pend+=a;
+  });
+  document.getElementById('tiles').innerHTML=
+     '<div class="tile"><div class="v" style="color:var(--good)">'+money(paid)+'</div><div class="l">Paid to you</div></div>'
+    +'<div class="tile"><div class="v" style="color:var(--warn)">'+money(owed)+'</div><div class="l">Owed to you</div></div>'
+    +'<div class="tile"><div class="v" style="color:var(--mut)">'+money(pend)+'</div><div class="l">Pending (fee not in)</div></div>'
+    +'<div class="tile"><div class="v" style="color:var(--ink)">'+DEALS.length+'</div><div class="l">Your deals</div></div>';
+}
+
+function sortVal(d,col){
+  var a=d._a||{};
+  if(col==='date')return String(d.date||'');
+  if(col==='street')return (a.street||'').toLowerCase();
+  if(col==='town')return (a.town||'').toLowerCase();
+  if(col==='price')return +d.price||0;
+  if(col==='cut')return +d.myAmount||0;
+  if(col==='status')return String(d.stage||d.fee||'').toLowerCase();
+  return '';
+}
+function sortBy(col){ if(SORT.col===col)SORT.dir=-SORT.dir; else {SORT.col=col;SORT.dir=(col==='date'?-1:1);} doSearch(QUERY); }
+function arrow(col){ if(SORT.col!==col)return ''; return '<span class="ar">'+(SORT.dir>0?'▲':'▼')+'</span>'; }
+
+function renderSection(hostId, title, deals){
+  var host=document.getElementById(hostId);
+  var head='<div style="display:flex;align-items:baseline;margin-bottom:8px"><h2 style="margin:0">'+title+'<span class="seccount">'+deals.length+'</span></h2></div>';
+  if(!deals.length){ host.innerHTML=head+'<div class="muted" style="padding:4px 2px 6px">'+(QUERY?'Nothing matches that search.':('No '+title.toLowerCase()+' on your name yet.'))+'</div>'; return; }
+  var sorted=deals.slice().sort(function(a,b){
+    var va=sortVal(a,SORT.col), vb=sortVal(b,SORT.col);
+    if(va<vb)return -1*SORT.dir; if(va>vb)return 1*SORT.dir; return 0;
+  });
+  var isSales=(title==='Sales');
+  var h=head+'<div style="overflow:auto"><table><thead><tr>'
+    +'<th class="sortable" onclick="sortBy(\'date\')">Date'+arrow('date')+'</th>'
+    +'<th class="sortable" onclick="sortBy(\'street\')">Street'+arrow('street')+'</th>'
+    +'<th>Unit</th>'
+    +'<th class="sortable" onclick="sortBy(\'town\')">Town'+arrow('town')+'</th>'
+    +(isSales?'<th class="sortable" style="text-align:right" onclick="sortBy(\'price\')">Price'+arrow('price')+'</th>':'')
+    +'<th class="sortable" style="text-align:right" onclick="sortBy(\'cut\')">Your cut'+arrow('cut')+'</th>'
+    +'<th class="sortable" onclick="sortBy(\'status\')">Status'+arrow('status')+'</th><th></th></tr></thead><tbody>';
+  sorted.forEach(function(d){
+    var a=d._a||{}, st, cls;
+    if(d.myPaid){st='Paid ✓';cls='paid';}
+    else if(String(d.fee).toLowerCase()==='collected'){st='Owed to you';cls='owed';}
+    else {st='Pending — fee not in';cls='pend';}
+    var key=String(d.dealId||d.id||'');
+    h+='<tr><td style="white-space:nowrap;color:var(--mut)">'+esc(d.date||'—')+'</td>'
+      +'<td style="font-weight:600;color:var(--ink)">'+esc(a.street||d.property||'—')+'</td>'
+      +'<td style="color:var(--mut)">'+esc(a.unit||'')+'</td>'
+      +'<td>'+esc(a.town||'')+(a.state?(' <span style="color:var(--mut);font-size:11px">'+esc(a.state)+'</span>'):'')+'</td>'
+      +(isSales?('<td style="text-align:right;font-weight:600">'+(d.price?money(d.price):'—')+'</td>'):'')
+      +'<td style="text-align:right" class="amt">'+money(d.myAmount)+'</td>'
+      +'<td><span class="st '+cls+'">'+st+'</span></td>'
+      +'<td style="text-align:right">'+(d.myPaid?'<span style="color:var(--mut);font-size:12px" title="Paid out — locked. Ask John for changes.">🔒</span>':'<button onclick="openEdit(\''+esc(key).replace(/\x27/g,'')+'\')" style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink)">Edit</button>')+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  host.innerHTML=h;
+}
+
+/* ── Goals ── */
+function pct(a,g){ return g>0?Math.round(a/g*100):0; }
+function goalCard(label, actualFmt, goalFmt, p, hasGoal){
+  return '<div class="gcard"><div class="gl">'+label+'</div><div class="gv">'+actualFmt+'</div>'
+    +'<div class="gg">Goal: <b>'+(goalFmt||'—')+'</b></div>'
+    +(hasGoal?'<div class="gp">'+p+'% to goal</div>':'<div class="gp muted">No goal set</div>')
+    +'<div class="gtrack"><div class="gfill" style="width:'+(hasGoal?Math.min(p,100):(0))+'%"></div></div></div>';
+}
+var GOALS_NOTE=null, GOALS_YEAR=(new Date()).getFullYear();
+function loadGoalsNote(cb){
+  fetch('/api/grove?action=notes&notekey=agent_goals_'+GOALS_YEAR+'&_='+Date.now())
+    .then(function(r){return r.json();}).then(function(j){
+      var raw=j&&(j.value!=null?j.value:j.notes);
+      try{ GOALS_NOTE=raw?JSON.parse(String(raw)):{}; }catch(e){ GOALS_NOTE={}; }
+      cb&&cb();
+    }).catch(function(){ GOALS_NOTE={}; cb&&cb(); });
+}
+function renderGoals(){
+  document.getElementById('goalYear').textContent=GOALS_YEAR;
+  if(GOALS_NOTE===null){ loadGoalsNote(renderGoals); return; }
+  // Actuals from the agent's OWN paid deals (matches the old Goals page: paid lines only).
+  var dealsA=0,gciA=0,volA=0;
+  DEALS.forEach(function(d){ if(d.myPaid){ dealsA++; gciA+=(+d.myAmount||0); if(isSale(d))volA+=(+d.price||0); } });
+  var g=(GOALS_NOTE&&AGENT&&GOALS_NOTE[AGENT])||{};
+  var dealsG=parseInt(g.dealsGoal)||0, gciG=parseFloat(g.gciGoal)||0, volG=parseFloat(g.volumeGoal)||0;
+  var body=document.getElementById('goalsBody');
+  var cards='<div class="gcards">'
+    +goalCard('Deals Closed', String(dealsA), dealsG>0?String(dealsG):null, pct(dealsA,dealsG), dealsG>0)
+    +goalCard('Commission (GCI)', money(gciA), gciG>0?money(gciG):null, pct(gciA,gciG), gciG>0)
+    +goalCard('Sales Volume', money(volA), volG>0?money(volG):null, pct(volA,volG), volG>0)
+    +'</div>';
+  var notes=g.notes?('<div class="notes-card"><div class="notes-l">Notes from John</div><div class="notes-b">'+esc(g.notes)+'</div></div>'):'';
+  body.innerHTML=cards+notes;
+}
+
+/* ── tabs ── */
+function showTab(t){
+  var d=t==='deals';
+  document.getElementById('tabDeals').style.display=d?'':'none';
+  document.getElementById('tabGoals').style.display=d?'none':'';
+  document.getElementById('tabDealsBtn').classList.toggle('on',d);
+  document.getElementById('tabGoalsBtn').classList.toggle('on',!d);
+  try{ history.replaceState(null,'',d?'#deals':'#goals'); }catch(e){}
+  if(!d)renderGoals();
+}
+
+// ── edit own deal (address/unit/date/listing only — server keeps splits safe) ──
+var EDIT_KEY='';
+function findDeal(key){for(var i=0;i<DEALS.length;i++){var d=DEALS[i];if(String(d.dealId||d.id||'')===key)return d;}return null;}
+function openEdit(key){
+  var d=findDeal(key);if(!d)return;
+  EDIT_KEY=key;
+  document.getElementById('eProp').value=d.property||'';
+  document.getElementById('eUnit').value=d.unit||'';
+  document.getElementById('eDate').value=/^\d{4}-\d{2}-\d{2}/.test(String(d.date||''))?String(d.date).slice(0,10):'';
+  document.getElementById('eListing').value=d.listing||'';
+  var es=document.getElementById('eStage');if(es)es.value=d.stage||'';
+  var en=document.getElementById('eNote');if(en)en.value=d.note||'';
+  document.getElementById('eMsg').textContent='';
+  document.getElementById('editModal').style.display='flex';
+}
+function closeEdit(){document.getElementById('editModal').style.display='none';EDIT_KEY='';}
+function saveEdit(){
+  if(!EDIT_KEY)return;
+  var msg=document.getElementById('eMsg');
+  msg.innerHTML='<span class="spin"></span>Saving…';
+  fetch('/api/grove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'agentEditDeal',dealId:EDIT_KEY,changes:{
+    property:(document.getElementById('eProp').value||'').trim(),
+    unit:(document.getElementById('eUnit').value||'').trim(),
+    date:(document.getElementById('eDate').value||'').trim(),
+    listing:(document.getElementById('eListing').value||'').trim(),
+    stage:(document.getElementById('eStage')&&document.getElementById('eStage').value||'').trim(),
+    note:(document.getElementById('eNote')&&document.getElementById('eNote').value||'').trim()
+  }})}).then(function(r){return r.json();}).then(function(j){
+    if(j&&j.ok){msg.textContent='Saved ✓';setTimeout(function(){closeEdit();load();},700);}
+    else{msg.textContent='Couldn’t save'+(j&&j.error?(' — '+j.error):'')+'. Try again.';}
+  }).catch(function(){msg.textContent='Couldn’t save — check your connection.';});
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&EDIT_KEY)closeEdit();});
+
+function submitDeal(){
+  var prop=(document.getElementById('sProp').value||'').trim();
+  var type=document.getElementById('sType').value;
+  var price=num(document.getElementById('sPrice').value);
+  var comm=num(document.getElementById('sComm').value);
+  var note=(document.getElementById('sNote').value||'').trim();
+  var msg=document.getElementById('subMsg');
+  if(!prop){ msg.textContent='Enter a property address.'; document.getElementById('sProp').focus(); return; }
+  msg.innerHTML='<span class="spin"></span>Sending to John…';
+  var deal={property:prop,type:type,price:(price||''),note:note,submittedBy:NAME||AGENT,
+            lines: comm>0 ? [{agent:AGENT,amount:comm,paid:false}] : []};
+  fetch('/api/grove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'agentDeal',deal:deal,by:(NAME||AGENT)})})
+    .then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok){ msg.textContent='Sent to John ✓ — he’ll confirm the details and it’ll show in your list.';
+        document.getElementById('sProp').value='';document.getElementById('sPrice').value='';document.getElementById('sComm').value='';document.getElementById('sNote').value='';
+        setTimeout(load,1200);
+      } else { msg.textContent='Couldn’t send'+(j&&j.error?(' — '+j.error):'')+'. Try again.'; }
+    }).catch(function(){ msg.textContent='Couldn’t send — check your connection and try again.'; });
+}
+
+if(/goals/i.test(location.hash))showTab('goals');
+load();
+</script>
+<script>/* deep-link from hub search: ?find=<address> pre-fills the deal search */
+(function(){try{var f=new URLSearchParams(location.search).get('find');if(!f)return;var n=0,t=setInterval(function(){var el=document.getElementById('dSearch');if(el&&typeof doSearch==='function'){el.value=f;doSearch(f);clearInterval(t);}else if(++n>40){clearInterval(t);}},150);}catch(e){}})();</script>
+</body>
+</html>
