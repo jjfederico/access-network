@@ -369,6 +369,15 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 @media(max-width:560px){#mDetail .specgrid{grid-template-columns:1fr}.mact .btn{flex:1 1 auto;justify-content:center}}
 /* wrap long unbroken strings (emails/URLs) instead of clipping them on narrow screens */
 .reqrow,.drow,.grow,.msg{overflow-wrap:anywhere;word-break:break-word}
+/* Mobile home: tighten spacing, drop the duplicate quick-action cards, and make the
+   region chips a single scrollable row — so deals surface without a long scroll. */
+@media(max-width:640px){
+  section{padding:16px 0}
+  .qa{display:none}
+  .mktbar{gap:9px;padding:8px 0 9px;margin-bottom:11px}
+  .mktabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;scrollbar-width:none}
+  .mktabs::-webkit-scrollbar{display:none}
+}
 </style>
 <style id="ax-dark-fix">
 /* AXESS dark palette — redefine the design tokens so the whole app flips, not just patches */
