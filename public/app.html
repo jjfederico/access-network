@@ -439,14 +439,14 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
   <span class="nlink hideM" onclick="openBuyBox()">Client needs</span>
   <span class="nlink hideM" onclick="openMarket()">Market</span>
   <span class="nlink hideM" onclick="openBoard()">Board</span>
-  <span class="nlink hideM" onclick="openDirectory()">Members</span>
+  <span class="nlink hideM ownerOnly" onclick="openDirectory()" style="display:none">Members</span>
   <div class="navmore" id="navmore"><button class="nlink ico" onclick="toggleNav(event)" title="Menu" aria-label="Menu" style="font-size:17px;line-height:1">☰</button>
     <div class="navMenu" id="navMenu">
       <a onclick="close_nav();scrollTo(0,(document.getElementById('feed').offsetTop-70))">Deal feed</a>
       <a onclick="close_nav();openBuyBox()">Client needs</a>
       <a onclick="close_nav();openMarket()">Market</a>
       <a onclick="close_nav();openBoard()">Board</a>
-      <a onclick="close_nav();openDirectory()">Members</a>
+      <a class="ownerOnly" onclick="close_nav();openDirectory()" style="display:none">Members</a>
       <a class="navmsg" onclick="close_nav();openMsgs()">Messages</a>
       <a class="navmsg" onclick="close_nav();mcToggle()">Mortgage calculator</a>
     </div>
@@ -830,10 +830,10 @@ function catTypes(c){return c==='residential'?RESI_TYPES:c==='commercial'?COMM_T
 function inCat(type,c){if(c==='all'||!c)return true;if(TYPES.indexOf(type)<0)return true;return catTypes(c).indexOf(type)>=0;}
 var TYPEF='', ACTTAB='mydeals';
 function $(id){return document.getElementById(id);}
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function uid(p){return (p||'x')+Date.now().toString(36)+Math.floor(Math.random()*1e5).toString(36);}
 function num(v){var f=parseFloat(String(v==null?'':v).replace(/[^0-9.]/g,''));return isFinite(f)?f:0;}
-function money(n){n=Math.round(num(n));if(!n)return '—';if(n>=1e6)return '$'+(n/1e6).toFixed(n%1e6?2:1).replace(/\.0$/,'')+'M';if(n>=1e3)return '$'+Math.round(n/1e3)+'K';return '$'+n.toLocaleString('en-US');}
+function money(n){n=Math.round(num(n));if(!n)return '—';if(n>=1e9)return '$'+(n/1e9).toFixed(n%1e9?2:1).replace(/\.0$/,'')+'B';if(n>=1e6)return '$'+(n/1e6).toFixed(n%1e6?2:1).replace(/\.0$/,'')+'M';if(n>=1e3)return '$'+Math.round(n/1e3)+'K';return '$'+n.toLocaleString('en-US');}
 function moneyFull(n){n=Math.round(num(n));return n?'$'+n.toLocaleString('en-US'):'—';}
 function ago(iso){try{var s=(Date.now()-new Date(iso))/1000;if(s<3600)return Math.max(1,Math.round(s/60))+'m ago';if(s<86400)return Math.round(s/3600)+'h ago';return Math.round(s/86400)+'d ago';}catch(e){return '';}}
 function initials(n){n=String(n||'').trim();if(!n)return '?';var p=n.split(/\s+/);return ((p[0]||'')[0]+(p.length>1?(p[p.length-1]||'')[0]:'')).toUpperCase();}
@@ -908,6 +908,7 @@ function loadAll(){
       var gn=$('heroGreet');if(gn){var fn=String(ME.name||'').trim().split(/\s+/)[0];gn.textContent=fn?('Welcome back, '+fn+'.'):'Welcome back.';}}
     LISTINGS=(feed.listings||[]).map(nL).filter(Boolean);
     $('adminLink').style.display=(ME.role==='owner')?'':'none';
+    document.querySelectorAll('.ownerOnly').forEach(function(el){el.style.display=(ME.role==='owner')?'':'none';});
     var il=$('importLink');if(il)il.style.display=(ME.role==='owner')?'':'none';
     var vl=$('inviteLink');if(vl)vl.style.display=(ME.role==='owner')?'':'none';
     if(ME.role==='owner')loadAdminDot();
@@ -995,13 +996,13 @@ function toggleFilters(force){var r=document.getElementById('rail'),s=document.g
 // Trust chips. verified=license; pof can be {amount} (card shorthand, already verified)
 // or {status,amount} (directory/intro/profile). Only renders POF when verified.
 function badgeVer(v){return v?'<span class="bdg ver" title="License verified">✓ Verified</span>':'';}
-function badgeProd(v){return v?'<span class="bdg prod" title="Curated producer — vetted by AXESS">⭐ Producer</span>':'';}
+function badgeProd(v){return v?'<span class="bdg prod" title="Curated producer — verified by AXESS">⭐ Producer</span>':'';}
 function badgePof(p){if(!p)return '';var ok=(p.status==='verified')||(p.status===undefined&&(p.amount!==undefined));if(!ok)return '';var amt=p.amount?(' '+esc(String(p.amount))):'';return '<span class="bdg pof" title="Proof of funds verified">💰 POF'+amt+'</span>';}
 function trustBadges(v,p,prod){return badgeProd(prod)+badgeVer(v)+badgePof(p);}
 
 /* ── stats ── */
 function renderStats(){
-  var live=LISTINGS.filter(function(d){return d.status!=='off'&&d.status!=='mls';});
+  var live=LISTINGS.filter(function(d){return d.status!=='off'&&d.status!=='mls'&&d.status!=='closed'&&!d.expired;});
   var val=live.reduce(function(a,d){return a+num(d.price);},0);
   var comms=live.map(function(d){return num(d.commission);}).filter(function(x){return x>0;});
   var avg=comms.length?(comms.reduce(function(a,b){return a+b;},0)/comms.length):0;
@@ -1874,13 +1875,13 @@ function dirCard(m){
 function renderDirList(q){
   q=(q||'').toLowerCase();
   var list=DIRLIST.filter(function(m){return !q||((m.name+' '+m.brokerage+' '+m.markets+' '+m.email).toLowerCase().indexOf(q)>=0);});
-  var el=$('dirList'); if(el)el.innerHTML=list.length?list.map(dirCard).join(''):'<div class="empty" style="padding:30px">No members match “'+esc(q)+'”.</div>';
+  var el=$('dirList'); if(el)el.innerHTML=list.length?list.map(dirCard).join(''):'<div class="empty" style="padding:30px">'+(q?('No members match “'+esc(q)+'”.'):'No members yet.')+'</div>';
 }
 function exportDirectory(){
   var rows=[['Name','Email','Phone','Brokerage','License','Markets','Deals','Joined']];
   DIRLIST.forEach(function(m){rows.push([m.name,m.email,m.phone,m.brokerage,m.license,m.markets,m.deals,m.joined]);});
   var csv=rows.map(function(r){return r.map(function(c){c=String(c==null?'':c);return /[",\n]/.test(c)?('"'+c.replace(/"/g,'""')+'"'):c;}).join(',');}).join('\n');
-  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='doors-members.csv';document.body.appendChild(a);a.click();a.remove();
+  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='axess-members.csv';document.body.appendChild(a);a.click();a.remove();
 }
 
 /* ── buy box ── */
@@ -1931,7 +1932,7 @@ function setIntro(id,status){api('/api/pm/intro/decide',{introId:id,decision:sta
 var THREADS=[];
 function loadThreads(cb){apiT('/api/pm/threads').then(function(j){THREADS=(j&&j.threads)||[];updateMsgDot();cb&&cb();});}
 function updateMsgDot(){var un=THREADS.some(function(t){return t.unread>0;});var d=$('msgDot');if(d)d.style.display=un?'':'none';}
-function openMsgs(){loadThreads(function(){renderThreads();open_('mMsgs');});}
+function openMsgs(){var _m=$('mMsgs');if(_m){_m.innerHTML='<div class="modal wide"><div class="mhead"><h3>Messages</h3><button class="x" onclick="close_(\'mMsgs\')">×</button></div><div class="mbody"><div class="empty">Loading…</div></div></div>';open_('mMsgs');}loadThreads(function(){renderThreads();open_('mMsgs');});}
 function renderThreads(){
   var body=THREADS.length?THREADS.map(function(t){
     var sub=t.listing?(esc(t.listing.area||'Deal')+' · '+money(t.listing.price)):'Direct message';
@@ -1988,8 +1989,8 @@ function sendContact(listingId,toEmail){
 
 /* ── alerts / notifications (the bell) ── */
 var NOTIFS=[];
-function loadNotifs(cb){api('/api/pm/notifs').then(function(j){NOTIFS=(j&&j.notifs)||[];var un=(j&&j.unread)||0;var b=$('notifBadge');if(b){b.style.display=un?'':'none';b.textContent=un;}cb&&cb();});}
-function openNotifs(){loadNotifs(function(){
+function loadNotifs(cb){apiT('/api/pm/notifs').then(function(j){NOTIFS=(j&&j.notifs)||[];var un=(j&&j.unread)||0;var b=$('notifBadge');if(b){b.style.display=un?'':'none';b.textContent=un;}cb&&cb();});}
+function openNotifs(){var _n=$('mNotifs');if(_n){_n.innerHTML='<div class="modal wide"><div class="mhead"><h3>Alerts</h3><button class="x" onclick="close_(\'mNotifs\')">×</button></div><div class="mbody"><div class="empty">Loading…</div></div></div>';open_('mNotifs');}loadNotifs(function(){
   var body=NOTIFS.length?NOTIFS.map(function(n){return '<div class="reqrow"'+(n.listingId?(' style="cursor:pointer" onclick="close_(\'mNotifs\');openDetail(\''+esc(n.listingId)+'\')"'):'')+'><div class="grow"><b'+(n.read?'':' style="color:var(--gold)"')+'>'+esc(n.text)+'</b><div style="color:var(--mut2);font-size:12px;margin-top:2px">'+ago(n.at)+'</div></div></div>';}).join(''):'<div class="empty">No alerts yet. When a new deal matches a client need you posted, it shows up here.</div>';
   $('mNotifs').innerHTML='<div class="modal wide"><div class="mhead"><h3>Alerts</h3><button class="x" onclick="close_(\'mNotifs\')">×</button></div><div class="mbody">'+body+'</div></div>';
   open_('mNotifs');
@@ -2094,7 +2095,7 @@ document.addEventListener('click',function(e){var a=$('acct');if(a&&!a.contains(
   var p=$('mcPanel');if(p&&p.classList.contains('on')&&!p.contains(e.target)&&!(e.target.closest&&e.target.closest('.nlink.ico')))mcClose();});
 
 /* ── mortgage calculator (nav-anchored dropdown, top right) ── */
-function mcPlace(){var p=$('mcPanel'),nav=document.querySelector('.nav');if(p&&nav)p.style.top=(nav.getBoundingClientRect().bottom+10)+'px';}
+function mcPlace(){var p=$('mcPanel'),nav=document.querySelector('.nav');if(!p)return;if(window.innerWidth<=640){p.style.top='';return;}if(nav)p.style.top=(nav.getBoundingClientRect().bottom+10)+'px';}
 function mcToggle(e){if(e)e.stopPropagation();var p=$('mcPanel');if(!p)return;if(p.classList.contains('on')){mcClose();}else{mcPlace();p.classList.add('on');mcCalc();}}
 function mcClose(){var p=$('mcPanel');if(p)p.classList.remove('on');}
 function mcOpen(){var p=$('mcPanel');if(p&&!p.classList.contains('on')){mcPlace();p.classList.add('on');}mcCalc();}
