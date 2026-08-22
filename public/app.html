@@ -126,10 +126,11 @@ html.dark .bdg.pof{color:#E7C374!important;border-color:rgba(231,195,116,.32)!im
 .emptybig p{color:var(--mut);font-size:14px;line-height:1.5;max-width:44ch;margin:0 auto 18px}
 .emptybig .eb-act{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
 /* ── modal ── */
-.mbg{position:fixed;inset:0;background:rgba(5,7,10,.72);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:28px 16px;overflow-y:auto}
+.mbg{position:fixed;inset:0;background:rgba(8,12,20,.66);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:28px 16px;overflow-y:auto}
 .mbg.on{display:flex}
+@media(max-width:560px){.mbg{padding:10px 8px}.modal,.modal.wide{max-width:100%}.modal{border-radius:16px;max-height:calc(100vh - 20px);max-height:calc(100dvh - 20px)}}
 body.mlock{overflow:hidden}
-.modal{background:var(--bg2);border:1px solid var(--line2);border-radius:18px;width:100%;max-width:540px;box-shadow:0 40px 100px -30px rgba(0,0,0,.9)}
+.modal{background:var(--bg2);border:1px solid var(--line2);border-radius:18px;width:100%;max-width:540px;margin:auto;box-shadow:0 40px 100px -30px rgba(0,0,0,.9)}
 .modal.wide{max-width:620px}
 .mhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 0}
 .mhead h3{font-size:18px;font-weight:800;letter-spacing:-.01em}
@@ -216,8 +217,8 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .bdg.broad{color:var(--acc);border-color:rgba(0,100,229,.35)}
 .bdg.private{color:var(--gold);border-color:rgba(180,136,46,.45)}
 .bdg.pocket{color:var(--acc);border-color:rgba(0,100,229,.30)}
-.mbg{background:rgba(28,26,22,.42)}
-.modal{box-shadow:0 30px 80px -30px rgba(30,26,18,.30)}
+.mbg{background:rgba(12,16,26,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.modal{box-shadow:0 24px 64px -16px rgba(10,15,30,.45),0 0 0 1px rgba(10,15,30,.06)}
 .reveal{background:var(--accdim);border-color:rgba(0,100,229,.28)}
 .reveal b{color:var(--acc)}
 .pill.req{background:#FBF2DD;color:var(--warn)}
@@ -376,7 +377,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 @media(max-width:1200px){.brand small{display:none}}
 @media(max-width:980px){.nav .in{gap:12px}.msg-txt{display:none}.msg-ico{display:inline;font-size:15px}}
 /* ── deal detail popup: more compact + clean, wrapping action buttons ── */
-.modal{max-height:calc(100vh - 48px);overflow-y:auto}
+.modal{max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);overflow-y:auto}
 #mDetail .modal{max-width:560px}
 #mDetail .mbody{padding:10px 20px 18px}
 #mDetail .specgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;margin:2px 0 4px}
@@ -1220,6 +1221,7 @@ function dealRow(d){
   if(d.featured)badges+='<span class="bdg feat">★</span>';
   if(d.photoCount)badges+='<span class="bdg">📷 '+d.photoCount+'</span>';
   if(isMine(d))badges+='<span class="bdg mine">Yours</span>';
+  badges+=trustBadges(d.ownerVerified,d.ownerPof,d.ownerProducer);
   var kpi=num(d.cap)?num(d.cap).toFixed(1)+'% cap':(num(d.units)?num(d.units)+' units':(num(d.beds)?num(d.beds)+' bd':''));
   return '<div class="drow-item" style="--tc:'+typeColor(d.type)+'" tabindex="0" role="button" onclick="openDetail(\''+d.id+'\')">'
     +'<span class="li-type">'+esc(d.type||'Deal')+'</span>'
