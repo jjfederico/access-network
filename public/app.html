@@ -622,7 +622,7 @@ html.dark .ggbar{background:#33291180;border-color:#6E571E}
 .welcome .wsub{color:var(--mut);font-size:13.5px;margin-bottom:15px;line-height:1.45}
 .welcome .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
 .welcome .step{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
-.welcome .step .n{width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-family:'IBM Plex Mono',monospace}
+.welcome .step .n{font-size:22px;line-height:1;margin-bottom:8px}
 .welcome .step b{font-size:14px;display:block;margin-bottom:3px}
 .welcome .step span{color:var(--mut);font-size:12.5px;line-height:1.4}
 .welcome .wact{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
@@ -1009,11 +1009,11 @@ function renderWelcome(){
   if(!show){el.style.display='none';return;}
   el.innerHTML='<button class="wx" onclick="dismissWelcome()" aria-label="Dismiss">×</button>'
     +'<h3>Welcome to AXESS 👋</h3>'
-    +'<div class="wsub">An invite-only network where agents move deals to each other before they hit the market. Here\'s the whole idea in three steps:</div>'
+    +'<div class="wsub">An invite-only network where agents move deals to each other before they hit the market. Three ways to use it:</div>'
     +'<div class="steps">'
-      +'<div class="step"><div class="n">1</div><b>Post</b><span>Share a deal or a client need. Contributing is what unlocks the network for you.</span></div>'
-      +'<div class="step"><div class="n">2</div><b>Get matched</b><span>We email you only the deals that fit your buy box — never a blast of everything.</span></div>'
-      +'<div class="step"><div class="n">3</div><b>Connect</b><span>Request an intro. The listing agent approves, the address unlocks, and you talk directly.</span></div>'
+      +'<div class="step"><div class="n">🔑</div><b>Post</b><span>Share a deal or a client need whenever you have one.</span></div>'
+      +'<div class="step"><div class="n">🔔</div><b>Get matched</b><span>Save what your buyers want — we email you only the deals that fit, never a blast.</span></div>'
+      +'<div class="step"><div class="n">🤝</div><b>Connect</b><span>See a deal you like? Request an intro; the listing broker approves and the address unlocks.</span></div>'
     +'</div>'
     +'<div class="wact"><button class="btn acc sm" onclick="dismissWelcome();openSubmit()">＋ Post a deal</button><button class="btn ghost sm" onclick="dismissWelcome();openBuyBox()">Post a client need</button><button class="btn link" onclick="dismissWelcome()" style="margin-left:2px">Just browsing →</button></div>';
   el.style.display='';
