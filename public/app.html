@@ -484,7 +484,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
       <a onclick="close_nav();openBoard()">Board</a>
       <a class="ownerOnly" onclick="close_nav();openDirectory()" style="display:none">Members</a>
       <a class="navmsg" onclick="close_nav();openMsgs()">Messages</a>
-      <a class="navmsg" onclick="close_nav();mcToggle()">Mortgage calculator</a>
+      <a class="navmsg" onclick="event.stopPropagation();close_nav();mcOpen()">Mortgage calculator</a>
     </div>
   </div>
   <span class="nlink hideS" onclick="openMsgs()" title="Messages"><span class="msg-txt">Messages</span><span class="msg-ico">✉</span> <span id="msgDot" style="display:none;color:var(--gold)">●</span></span>
