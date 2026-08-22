@@ -2184,8 +2184,8 @@ function mpCols(data){
   return '<svg width="100%" viewBox="0 0 '+W+' '+H+'">'+s+'</svg>';
 }
 function openMarket(){var _mk=$('mMarket');if(_mk){_mk.innerHTML='<div class="modal wide"><div class="mhead"><h3>Market Pulse</h3><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mMarket');}
-  Promise.all([apiT('/api/pm/market'),apiT('/api/pm/closings')]).then(function(r){var j=r[0]||{},cj=r[1]||{};if((j&&j.timeout)||(cj&&cj.timeout)){var _b=_mk&&_mk.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}renderMarket((j&&j.market)||{},cj||{});});}
-function renderMarket(m,cj){
+  apiT('/api/pm/market').then(function(j){j=j||{};if(j&&j.timeout){var _b=_mk&&_mk.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}renderMarket((j&&j.market)||{});});}
+function renderMarket(m){
   var S=mpSeries(12);
   var tile=function(k,v,spark,delta){return '<div class="mp-tile"><div class="k">'+k+'</div><div class="v">'+v+'</div><div class="r"><span class="d'+(delta?'':' flat')+'">'+(delta||'—')+'</span>'+spark+'</div></div>';};
   var newThisWk=S.perCount[S.perCount.length-1]||0;
@@ -2202,16 +2202,13 @@ function renderMarket(m,cj){
   var areaCard='<div class="mp-card"><div class="ch"><h4>Off-market value on the network</h4><span class="hint">12 wks</span></div>'+(hasTrend?mpArea(S.cumVal,money(m.totalValue||0)):'<div class="mp-empty">Trend builds as more deals post.</div>')+'</div>';
   var barsCard='<div class="mp-card"><div class="ch"><h4>Deals by asset class</h4><span class="hint">live</span></div><div style="margin-top:2px">'+bars+'</div></div>';
   var colsCard='<div class="mp-card"><div class="ch"><h4>New deals / week</h4><span class="hint">12 wks</span></div>'+(hasTrend?mpCols(S.perCount):'<div class="mp-empty">Weekly activity appears as deals accumulate.</div>')+'</div>';
-  var closRecent=(cj.recent||[]);
-  var closRows=closRecent.length?closRecent.slice(0,5).map(function(c){return '<div class="clg2"><div class="l">'+esc(c.area||'Deal')+' <small>'+esc(c.propType||'')+'</small></div><div style="text-align:right"><div class="p mono">'+(num(c.price)?money(c.price):'—')+'</div><span class="pill2">Closed</span></div></div>';}).join(''):'<div class="mp-empty">No closings logged yet.</div>';
-  var closCard='<div class="mp-card"><div class="ch"><h4>Recent closings</h4><span class="hint">through AXESS</span></div><div style="margin-top:2px">'+closRows+'</div></div>';
-  var lb=(cj.leaderboard||[]);var lbRows=lb.length?lb.slice(0,5).map(function(x,i){return '<div class="drow"><span>'+(i<3?['🥇','🥈','🥉'][i]:(i+1)+'.')+' '+esc(x.ownerName||x.email)+'</span><b class="mono">'+x.count+' · '+(num(x.volume)?money(x.volume):'—')+'</b></div>';}).join(''):'';
-  var closedBanner=(cj.totalCount)?'<div class="mp-card" style="margin-top:0;background:linear-gradient(120deg,rgba(28,122,78,.08),var(--card))"><div class="ch"><h4 style="color:#1C7A4E">'+money(cj.totalVolume||0)+' closed through AXESS</h4><span class="hint">'+(cj.totalCount||0)+' deals</span></div>'+(lbRows?('<div style="margin-top:6px"><div class="hint" style="margin-bottom:4px">Top closers</div>'+lbRows+'</div>'):'')+'</div>':'';
+  var areas=m.byArea||{};var aKeys=Object.keys(areas).sort(function(a,b){return areas[b]-areas[a];}).slice(0,6),amx=aKeys.length?areas[aKeys[0]]:1;
+  var subBars=aKeys.length?aKeys.map(function(a){return '<div class="mp-bar"><span class="lb">'+esc(a)+'</span><div class="tr"><div class="fl" style="width:'+(areas[a]/amx*100)+'%;background:var(--acc)"></div></div><span class="nv">'+areas[a]+'</span></div>';}).join(''):'<div class="mp-empty">No live deals yet.</div>';
+  var subCard='<div class="mp-card"><div class="ch"><h4>Top submarkets</h4><span class="hint">live</span></div><div style="margin-top:2px">'+subBars+'</div></div>';
   $('mMarket').innerHTML='<div class="modal wide"><div class="mhead"><div><h3>Market Pulse</h3><div style="color:var(--mut);font-size:12px;margin-top:2px">Off-market activity across '+esc((MARKETS[MARKET]||MARKETS.MA).name)+'</div></div><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody">'
     +kpis
     +'<div class="mp-row">'+areaCard+barsCard+'</div>'
-    +'<div class="mp-row">'+colsCard+closCard+'</div>'
-    +closedBanner
+    +'<div class="mp-row">'+colsCard+subCard+'</div>'
     +'</div></div>';
   open_('mMarket');
 }
