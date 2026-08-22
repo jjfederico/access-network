@@ -470,6 +470,8 @@ html.dark .finstate.op{color:#57ECC2;background:rgba(87,236,194,.1);border-color
 .clg2 .p{font-weight:600}
 .pill2{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;color:var(--ok);background:rgba(28,122,78,.1);border:1px solid rgba(28,122,78,.28);border-radius:100px;padding:2px 6px;text-transform:uppercase;letter-spacing:.04em}
 @media(max-width:640px){.mp-kpis{grid-template-columns:1fr 1fr}.mp-row{grid-template-columns:1fr}}
+.bdg.soon{color:var(--acc);background:var(--accdim);border-color:rgba(0,100,229,.28)}
+html.dark .bdg.soon{color:#4d97ff!important;background:rgba(0,100,229,.14)!important;border-color:rgba(77,151,255,.34)!important}
 </style>
 <style id="ax-dark-fix">
 /* AXESS dark palette — redefine the design tokens so the whole app flips, not just patches */
@@ -812,6 +814,7 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
     <div class="f full"><label>Distribution</label>
       <select id="sDist"><option value="broad">Broad — everyone in the network sees it</option><option value="private">Private — visible, intro requires your approval</option><option value="pocket">Pocket — only matched client needs see it</option></select>
     </div>
+    <div class="f full" style="display:flex;flex-direction:row;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:8px 11px;margin-top:-2px"><input type="checkbox" id="sSoon" style="width:16px;height:16px;accent-color:var(--acc);flex:none"><label for="sSoon" style="margin:0;cursor:pointer;font-size:12.5px;color:var(--tx);text-transform:none;letter-spacing:0;font-weight:500;font-family:'Public Sans',system-ui,sans-serif">Coming soon <span style="color:var(--mut)">— pre-market; flag it as launching shortly</span></label></div>
     <div class="mact"><span class="msg" id="sMsg"></span><button class="btn ghost" onclick="close_('mSubmit')">Cancel</button><button class="btn acc" id="sBtn" onclick="submitDeal()">Post deal</button></div>
   </div>
 </div></div>
@@ -973,7 +976,7 @@ function nL(l){
     submarket:l.area||l.city||'',city:l.city||'',area:l.area||'',state:l.state||'',zip:l.zip||l.zipPrefix||'',
     type:l.propType||'',price:l.price,commission:l.commissionPct,commNotes:l.commissionNotes||'',
     units:l.units,cap:l.capRate,noi:l.noi,sf:l.sqft,gross:l.grossIncome,exp:l.expenses,vac:l.vacancy,tax:l.taxes,hasFin:!!l.hasFinancials,
-    beds:l.beds,baths:l.baths,yb:l.yearBuilt,desc:l.notes||'',dist:l.dist||'broad',
+    beds:l.beds,baths:l.baths,yb:l.yearBuilt,desc:l.notes||'',dist:l.dist||'broad',soon:!!l.comingSoon,
     docs:Array.isArray(l.docs)?l.docs:[],photos:Array.isArray(l.photos)?l.photos:[],photoCount:(l.photoCount||(Array.isArray(l.photos)?l.photos.length:0)),lat:l.lat||'',lng:l.lng||'',views:l.views||0,featured:!!l.featured,
     ownerVerified:!!l.ownerVerified,ownerProducer:!!l.ownerProducer,ownerPof:l.ownerPof||null,expiresAt:l.expiresAt||'',expired:!!l.expired};
 }
@@ -1222,6 +1225,7 @@ function addrIcon(open){return open
 function dealCard(d){
   var open=canSeeAddress(d);
   var badges='';
+  if(d.soon)badges+='<span class="bdg soon">◔ Coming soon</span>';
   if(d.featured)badges+='<span class="bdg feat">★ Featured</span>';
   badges+=distBadge(d);
   if(isMine(d))badges+='<span class="bdg mine">Yours</span>';
@@ -1261,6 +1265,7 @@ function dealCard(d){
 function dealRow(d){
   var open=canSeeAddress(d);
   var badges='';
+  if(d.soon)badges+='<span class="bdg soon">◔ Soon</span>';
   if(d.featured)badges+='<span class="bdg feat">★</span>';
   if(d.photoCount)badges+='<span class="bdg">📷 '+d.photoCount+'</span>';
   if(isMine(d))badges+='<span class="bdg mine">Yours</span>';
@@ -1515,7 +1520,7 @@ function openDetail(id){
     : nonOwnerCta;
   var expBadge=d.expiresAt?('<div class="drow"><span>Expires</span><b class="mono">'+ago2(d.expiresAt)+'</b></div>'):'';
   $('detailBody').innerHTML=
-    '<div class="mhead"><div><h3>'+esc(d.submarket||'Off-market deal')+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★ Featured</span>':'')+'</h3><div style="color:var(--acc2);font-weight:700;font-size:12.5px;margin-top:3px">'+esc(d.type||'')+' · '+money(d.price)+'</div></div><button class="x" onclick="close_(\'mDetail\')">×</button></div>'
+    '<div class="mhead"><div><h3>'+esc(d.submarket||'Off-market deal')+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★ Featured</span>':'')+(d.soon?' <span class="pill req" style="background:var(--acc);color:#fff">◔ Coming soon</span>':'')+'</h3><div style="color:var(--acc2);font-weight:700;font-size:12.5px;margin-top:3px">'+esc(d.type||'')+' · '+money(d.price)+'</div></div><button class="x" onclick="close_(\'mDetail\')">×</button></div>'
     +'<div class="mbody">'
       +(d.status==='closed'?'<div class="reveal" style="background:rgba(30,122,82,.08);border-color:#1E7A52"><b style="color:#1E7A52">🎉 Closed through AXESS'+(d.closedAt?(' · '+new Date(d.closedAt).toLocaleDateString()):'')+(num(d.closePrice)?(' · '+money(d.closePrice)):'')+'.</b> Counted in the network\'s closed-deal proof. Removed from the live feed.</div>':'')
       +(d.status==='mls'?'<div class="reveal" style="background:var(--card);border-color:var(--gold)"><b style="color:var(--gold)">✓ Moved to the MLS'+(d.mlsAt?(' · '+new Date(d.mlsAt).toLocaleDateString()):'')+'.</b> This deal is now public and has been removed from the AXESS feed.</div>':'')
@@ -1694,7 +1699,7 @@ function submitDeal(){
     grossIncome:noComma('sGross'),expenses:noComma('sExp'),vacancy:noComma('sVac'),taxes:noComma('sTax'),
     sqft:noComma('sSf'),beds:($('sBeds').value||'').trim(),baths:($('sBaths').value||'').trim(),yearBuilt:($('sYb').value||'').trim(),
     notes:($('sDesc').value||'').trim(),dist:$('sDist').value,status:keepStatus,
-    hideAddress:$('sHideAddr').checked,docs:SUBMIT_DOCS,photos:SUBMIT_PHOTOS,
+    hideAddress:$('sHideAddr').checked,comingSoon:!!($('sSoon')&&$('sSoon').checked),docs:SUBMIT_DOCS,photos:SUBMIT_PHOTOS,
     lat:(SUBMIT_COORDS?SUBMIT_COORDS.lat:''),lng:(SUBMIT_COORDS?SUBMIT_COORDS.lng:''),state:SUBMIT_STATE||''};
   if(editing)body.id=EDIT_ID;
   if(!body.area){$('sMsg').textContent='Add a submarket.';return;}
@@ -2233,7 +2238,7 @@ function close_(id){var m=$(id);if(m)m.classList.remove('on');if(!document.query
 var EDIT_ID=null;
 function resetSubmitForm(){
   ['sAddr','sSub','sPrice','sComm','sUnits','sCap','sNoi','sGross','sVac','sTax','sExp','sSf','sBeds','sBaths','sYb','sDesc'].forEach(function(id){var el=$(id);if(el)el.value='';});
-  if($('sHideAddr'))$('sHideAddr').checked=false;
+  if($('sHideAddr'))$('sHideAddr').checked=false;if($('sSoon'))$('sSoon').checked=false;
   if($('sType'))$('sType').value=(TYPES[0]||'');
   if($('sDist'))$('sDist').value='broad';
   SUBMIT_DOCS=[];SUBMIT_PHOTOS=[];SUBMIT_COORDS=null;SUBMIT_STATE='';
@@ -2253,7 +2258,7 @@ function openEdit(id){
   set('sGross',fmtMoneyStr(d.gross));set('sVac',fmtMoneyStr(d.vac));set('sTax',fmtMoneyStr(d.tax));set('sExp',fmtMoneyStr(d.exp));
   set('sSf',fmtMoneyStr(d.sf));set('sBeds',d.beds);set('sBaths',d.baths);set('sYb',d.yb);
   set('sDesc',d.desc);if($('sDist'))$('sDist').value=(d.dist||'broad');
-  if($('sHideAddr'))$('sHideAddr').checked=!!d.hideAddress;
+  if($('sHideAddr'))$('sHideAddr').checked=!!d.hideAddress;if($('sSoon'))$('sSoon').checked=!!d.soon;
   SUBMIT_DOCS=Array.isArray(d.docs)?d.docs.slice():[];
   SUBMIT_PHOTOS=Array.isArray(d.photos)?d.photos.slice():[];
   SUBMIT_COORDS=(d.lat&&d.lng)?{lat:d.lat,lng:d.lng}:null;SUBMIT_STATE=String(d.state||'').toUpperCase();
