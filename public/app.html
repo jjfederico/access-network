@@ -84,14 +84,14 @@ section{padding:40px 0}
 .chip{border:1px solid var(--line2);background:var(--bg2);color:var(--mut);border-radius:100px;padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer}
 .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
 /* ── deal grid — text-forward premium cards ── */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:13px}
-.deal{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s,transform .12s,box-shadow .2s;display:flex;flex-direction:column;padding:13px 13px 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:12px;align-items:start}
+.deal{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s,transform .12s,box-shadow .2s;display:flex;flex-direction:column;padding:12px}
 .deal::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--acc);opacity:0;transition:opacity .15s}
 .deal:hover{border-color:var(--line2);transform:translateY(-3px);box-shadow:0 22px 46px -28px rgba(30,26,18,.45)}
 .deal:hover::before{opacity:.55}
 .deal.feat{border-color:rgba(180,136,46,.5)}
 .deal.feat::before{background:var(--gold);opacity:1}
-.deal .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+.deal .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:5px}
 .deal .type{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--acc);padding-top:3px}
 .deal .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .bdg{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px;border-radius:6px;background:var(--card2);border:1px solid var(--line2);color:var(--mut);white-space:nowrap}
@@ -108,13 +108,13 @@ html.dark .bdg.prod{color:#B2ABF0!important;border-color:rgba(178,171,240,.34)!i
 html.dark .bdg.ver{color:#57ECC2!important;border-color:rgba(87,236,194,.3)!important;background:rgba(87,236,194,.1)!important}
 html.dark .bdg.pof{color:#E7C374!important;border-color:rgba(231,195,116,.32)!important;background:rgba(231,195,116,.12)!important}
 .deal .sub{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;font-weight:700;line-height:1.2;letter-spacing:0}
-.deal .addr{display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--mut2)}
+.deal .addr{display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--mut2)}
 .deal .addr.open{color:var(--acc)}
-.deal .desc{font-size:12.5px;color:var(--mut);line-height:1.45;margin-top:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.deal .kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;border-top:1px solid var(--line);margin-top:10px;padding-top:9px}
+.deal .desc{font-size:12.5px;color:var(--mut);line-height:1.4;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.deal .kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;border-top:1px solid var(--line);margin-top:9px;padding-top:8px}
 .deal .kpis .k{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut2);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 .deal .kpis .v{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;margin-top:2px}
-.deal .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.deal .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:9px;padding-top:8px;border-top:1px solid var(--line)}
 .deal .price{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:0;line-height:1;color:var(--tx)}
 .deal .fr{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
 .deal .comm{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--acc);font-weight:600;background:rgba(0,100,229,.07);border:1px solid rgba(0,100,229,.18);padding:4px 8px;border-radius:6px;white-space:nowrap}
@@ -316,6 +316,8 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .ck{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);padding:4px 0;cursor:pointer}
 .ck input{width:15px;height:15px;accent-color:var(--acc);flex:none}
 .ck .sw{width:9px;height:9px;border-radius:2px;margin-left:auto;flex:none}
+.ckgrp{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin:12px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.ckgrp:first-child{margin-top:0}
 .rng{display:flex;gap:8px}
 .rng input{width:100%;background:var(--card2);border:1px solid var(--line2);border-radius:8px;padding:8px 9px;font:inherit;font-size:13px;color:var(--tx)}
 .rng input:focus{outline:none;border-color:var(--acc)}
@@ -547,7 +549,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
   <div class="mktbar">
     <div class="catseg" id="catSeg">
       <button data-cat="residential" onclick="setCat('residential')">Residential</button>
-      <button data-cat="commercial" onclick="setCat('commercial')">Commercial</button>
+      <button data-cat="commercial" onclick="setCat('commercial')">Investment</button>
       <button data-cat="all" class="on" onclick="setCat('all')">All</button>
     </div>
     <div class="mksel">Market <select id="fMarket" onchange="setMarket(this.value)"><option value="MA">Massachusetts</option><option value="NH">New Hampshire</option><option value="RI">Rhode Island</option></select></div>
@@ -851,14 +853,14 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
 <script>
 var ME={role:'guest',email:'',name:''};
 var LISTINGS=[];
-var TYPES=['Single-family','Condo / Conversion','Townhouse','Multifamily','Land','Mixed-use','Retail / Commercial','Industrial','Storage / Warehouse','Mobile Home Park','Development site'];
-// Category grouping for the Residential / Commercial toggle. Crossover types
-// (Multifamily — now covers 2–4 & 5+ — and Land) live in BOTH so an
-// investor-minded residential agent still sees them.
-var RESI_TYPES=['Single-family','Condo / Conversion','Townhouse','Multifamily','Land'];
-var COMM_TYPES=['Multifamily','Mixed-use','Retail / Commercial','Industrial','Storage / Warehouse','Mobile Home Park','Development site','Land'];
+var TYPES=['Single-family','Condo','Townhouse','Multifamily','Mixed-use','Retail / Commercial','Industrial','Land','Development site','Mobile Home Park','Storage / Warehouse'];
+// Property-type groups. Residential = owner/occupier assets; Investment = income
+// & commercial assets. The top toggle and the left filter both use these groups.
+var RESI_TYPES=['Single-family','Condo','Townhouse'];
+var INVEST_TYPES=['Multifamily','Mixed-use','Retail / Commercial','Industrial','Land','Development site','Mobile Home Park','Storage / Warehouse'];
 var CAT='all';
-function catTypes(c){return c==='residential'?RESI_TYPES:c==='commercial'?COMM_TYPES:TYPES;}
+// 'commercial' is the internal key for the Investment group (kept for stored prefs).
+function catTypes(c){return c==='residential'?RESI_TYPES:c==='commercial'?INVEST_TYPES:TYPES;}
 function inCat(type,c){if(c==='all'||!c)return true;if(TYPES.indexOf(type)<0)return true;return catTypes(c).indexOf(type)>=0;}
 var TYPEF='', ACTTAB='mydeals';
 function $(id){return document.getElementById(id);}
@@ -889,7 +891,7 @@ var SUBMARKETS=['South Boston','Dorchester','Roxbury','Jamaica Plain','East Bost
 /* ── Post a deal: fields that don't apply to certain asset types ── */
 var DEAL_HIDE={
   'Single-family':['sUnits','sNoi','sCap','sGross','sExp'],
-  'Condo / Conversion':['sUnits','sNoi','sCap','sGross','sExp'],
+  'Condo':['sUnits','sNoi','sCap','sGross','sExp'],
   'Land':['sUnits','sNoi','sCap','sGross','sExp','sSf','sBeds','sBaths','sYb'],
   'Development site':['sNoi','sCap','sGross','sExp','sBeds','sBaths','sYb'],
   'Retail / Commercial':['sBeds','sBaths'],
@@ -1116,7 +1118,13 @@ function goHome(){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 // The property-type checkboxes only list the types in the current category.
-function fillTypeChecks(){var tc=$('typeChecks');if(!tc)return;tc.innerHTML=catTypes(CAT).map(function(t){return '<label class="ck"><input type="checkbox" value="'+esc(t)+'" onchange="render()">'+esc(t)+'<span class="sw" style="background:'+typeColor(t)+'"></span></label>';}).join('');}
+function fillTypeChecks(){var tc=$('typeChecks');if(!tc)return;
+  function row(t){return '<label class="ck"><input type="checkbox" value="'+esc(t)+'" onchange="render()">'+esc(t)+'<span class="sw" style="background:'+typeColor(t)+'"></span></label>';}
+  function grp(label,arr){return arr.length?('<div class="ckgrp">'+esc(label)+'</div>'+arr.map(row).join('')):'';}
+  var allowed=catTypes(CAT);
+  var resi=RESI_TYPES.filter(function(t){return allowed.indexOf(t)>=0;});
+  var inv=INVEST_TYPES.filter(function(t){return allowed.indexOf(t)>=0;});
+  tc.innerHTML=grp('Residential',resi)+grp('Investment',inv);}
 function setCat(c){CAT=c;try{localStorage.setItem('access_cat',c);}catch(e){}
   var seg=$('catSeg');if(seg)seg.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-cat')===c);});
   fillTypeChecks();render();}
