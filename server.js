@@ -1030,9 +1030,32 @@ app.get('/api/pm/admin/members', ensureAuth, pmGate, async (req, res) => {
   try {
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
-    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', state: p.state || 'MA', status: p.status || 'pending', verified: !!p.verified, producer: !!p.producer, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', attested: !!(p.attestation && p.attestation.accepted), attestedAt: (p.attestation && p.attestation.at) || '', deactivated: !!p.deactivated, deactivatedAt: p.deactivatedAt || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.deactivated ? 1 : 0) - (b.deactivated ? 1 : 0) || (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
+    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', state: p.state || 'MA', status: p.status || 'pending', verified: !!p.verified, producer: !!p.producer, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', attested: !!(p.attestation && p.attestation.accepted), attestedAt: (p.attestation && p.attestation.at) || '', deactivated: !!p.deactivated, deactivatedAt: p.deactivatedAt || '', marketingOptIn: p.marketingOptIn !== false, marketingConsentAt: p.marketingConsentAt || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.deactivated ? 1 : 0) - (b.deactivated ? 1 : 0) || (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
     res.json({ ok: true, members, pending: members.filter(m => m.status === 'pending').length, pofPending: members.filter(m => m.pof === 'pending').length });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
+// Owner-only marketing/CRM export — the full member list as a downloadable CSV,
+// with a clear Opted-in column so blasts can be filtered to consenting agents only.
+app.get('/api/pm/admin/export.csv', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).send('forbidden');
+  try {
+    const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
+    const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
+    const csvCell = v => { const s = String(v == null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const cols = ['Name', 'Email', 'Phone', 'Brokerage', 'Markets', 'Focus', 'Status', 'Verified', 'Producer', 'Deals', 'Marketing opt-in', 'Consent date', 'Joined'];
+    const rows = profs.filter(p => p && !p.sample).map(p => [
+      p.name || '', p.email || '', p.phone || '', p.brokerage || '', p.markets || '', p.focus || '',
+      (p.deactivated ? 'removed' : (p.status || 'pending')),
+      p.verified ? 'yes' : 'no', p.producer ? 'yes' : 'no', counts[_lc(p.email)] || 0,
+      (p.marketingOptIn !== false && !p.deactivated) ? 'YES' : 'NO',
+      p.marketingConsentAt ? String(p.marketingConsentAt).slice(0, 10) : '',
+      p.createdAt ? String(p.createdAt).slice(0, 10) : ''
+    ]);
+    const csv = [cols.join(','), ...rows.map(r => r.map(csvCell).join(','))].join('\r\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="axess-members.csv"');
+    res.send(csv);
+  } catch (e) { res.status(502).send('error'); }
 });
 app.post('/api/pm/admin/approve', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
@@ -1161,14 +1184,14 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
       // A removed/deactivated member cannot silently re-approve themselves by
       // re-submitting the join form — keep them out and flag the owner.
       const banned = !!cur.deactivated || cur.status === 'rejected' || cur.status === 'denied';
-      profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: cur.state || 'MA', attestation, updatedAt: now, status: banned ? cur.status : 'approved', deactivated: banned ? cur.deactivated : false });
+      profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: cur.state || 'MA', attestation, marketingOptIn: (b.marketingOptIn !== false), marketingConsentAt: (b.marketingOptIn !== false ? now : (cur.marketingConsentAt || '')), updatedAt: now, status: banned ? cur.status : 'approved', deactivated: banned ? cur.deactivated : false });
       if (banned) {
         await pmSave('pm_profiles', profs);
         if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · removed member tried to rejoin', (name || email) + ' (' + email + ') re-submitted the join form but is deactivated/removed — kept out.'); } catch (e) {} }
         return res.json({ ok: true, linkSent: false });
       }
     } else {
-      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'approved', attestation, foundingRate: isFounder, memberNo: priorMembers + 1, createdAt: now, updatedAt: now });
+      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'approved', attestation, foundingRate: isFounder, memberNo: priorMembers + 1, marketingOptIn: b.marketingOptIn !== false, marketingConsentAt: now, createdAt: now, updatedAt: now });
     }
     // Credit the referrer (if any), now that the member is in.
     try {
