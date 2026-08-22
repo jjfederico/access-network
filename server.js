@@ -1219,14 +1219,16 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
     // Welcome email for brand-new members (separate from the sign-in link) — orients them on day one.
     if (pIdx < 0) {
       try {
-        await pmSendEmail(email, 'Welcome to AXESS',
+        await pmSendEmail(email, 'You\'re in — welcome to AXESS',
           'Welcome to AXESS, ' + (name || 'there') + '!\n\n' +
           'You\'re in — AXESS is the invite-only, agent-to-agent network for off-market deals in Massachusetts.\n\n' +
-          'Two things to do first:\n' +
-          '1) Post a deal — share an off-market property in about 30 seconds. Keep it broad, or mark it private so you approve who sees the address.\n' +
-          '2) Post a client need — tell the network what your buyers want, and get matched automatically the moment a deal fits.\n\n' +
+          'Three quick things to get value on day one:\n' +
+          '1) Post a deal — share an off-market property in about 30 seconds. Keep it broad, or mark it private so you approve who sees the address and financials.\n' +
+          '2) Post a client need — tell the network what your buyers are hunting for, and get matched automatically the moment a deal fits.\n' +
+          '3) Set your alerts — pick your property types and markets so you only hear about deals in your lane.\n\n' +
           'Sign in anytime: ' + (BASE_URL || 'https://axessre.com') + '/app.html\n\n' +
-          'Deals move quietly between agents here — glad to have you in the room.\n— AXESS');
+          'Deals move quietly between agents here — glad to have you in the room. Reply to this email anytime; it comes straight to me.\n\n' +
+          '— John, Founder · AXESS\ninfo@axessre.com');
       } catch (e) {}
     }
     if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member joined', name + ' joined AXESS (auto-approved on licensure attestation).\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nManage members — including removing anyone — in the AXESS admin panel (Members tab).'); } catch (e) {} }
