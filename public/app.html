@@ -1772,7 +1772,7 @@ function openNotifSettings(){
   if(p){mode=p.deals||'all';selTypes=p.dealTypes||[];markets=p.dealMarkets||[];emailOn=p.email!==false;introsOn=p.intros!==false;}
   else{ // never set — reflect what they currently get (from their focus)
     var f=(ME.focus)||(PROFILE&&PROFILE.focus)||'';
-    if(f==='commercial'){mode='types';selTypes=COMM_TYPES.slice();}
+    if(f==='commercial'){mode='types';selTypes=INVEST_TYPES.slice();}
     else if(f==='residential'){mode='types';selTypes=RESI_TYPES.slice();}
     else{mode='all';selTypes=[];}
     markets=[];
