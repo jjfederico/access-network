@@ -30,29 +30,29 @@ a{color:inherit;text-decoration:none}
 .navMenu .navmsg{display:none}
 @media(max-width:560px){.nav .nlink.hideS{display:none}.navMenu .navmsg{display:flex}}
 .brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:18px;letter-spacing:.02em}
-.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px 2px rgba(53,160,127,.6)}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px 2px rgba(0,100,229,.6)}
 .brand .rb{width:30px;height:30px;border-radius:8px;display:block;flex:none}
 .brand small{font-weight:600;color:var(--mut);font-size:11px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
 .nav .sp{flex:1}
 .nlink{color:var(--mut);font-weight:600;font-size:13.5px;padding:8px 10px;border-radius:8px;cursor:pointer}
 .nlink:hover{color:var(--tx);background:var(--card)}
 .who{font-size:12.5px;color:var(--mut);display:flex;align-items:center;gap:8px}
-.who .av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),#0056C9);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#04150f}
+.who .av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),#0056C9);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff}
 .btn{border:0;border-radius:11px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;padding:11px 18px;transition:transform .08s,box-shadow .15s,background .15s;white-space:nowrap}
 .btn:active{transform:translateY(1px)}
-.btn.acc{background:linear-gradient(135deg,var(--acc2),var(--acc));color:#04150f;box-shadow:0 6px 20px -6px rgba(53,160,127,.55)}
-.btn.acc:hover{box-shadow:0 10px 28px -6px rgba(53,160,127,.7)}
+.btn.acc{background:linear-gradient(135deg,var(--acc2),var(--acc));color:#fff;box-shadow:0 6px 20px -6px rgba(0,100,229,.55)}
+.btn.acc:hover{box-shadow:0 10px 28px -6px rgba(0,100,229,.7)}
 .btn.ghost{background:var(--card2);color:var(--tx);border:1px solid var(--line2)}
-.btn.ghost:hover{border-color:#3a4552;background:#1b212a}
+.btn.ghost:hover{border-color:var(--mut2);background:#E7EAF0}
 .btn.sm{padding:8px 13px;font-size:12.5px;border-radius:9px}
 .btn.link{background:none;color:var(--acc2);padding:6px 4px}
 /* ── hero ── */
 .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
 .hero::before{content:"";position:absolute;inset:-40% 0 auto 0;height:520px;background:
-  radial-gradient(600px 300px at 22% 20%,rgba(53,160,127,.20),transparent 60%),
+  radial-gradient(600px 300px at 22% 20%,rgba(0,100,229,.20),transparent 60%),
   radial-gradient(700px 320px at 85% 0%,rgba(91,140,255,.14),transparent 60%);pointer-events:none}
 .hero .in{position:relative;padding:24px 0 18px}
-.ey{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2);background:rgba(53,160,127,.10);border:1px solid rgba(53,160,127,.28);padding:6px 12px;border-radius:100px}
+.ey{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2);background:rgba(0,100,229,.10);border:1px solid rgba(0,100,229,.28);padding:6px 12px;border-radius:100px}
 .hero h1{font-size:clamp(34px,5.4vw,58px);line-height:1.04;font-weight:900;letter-spacing:-.025em;margin:20px 0 0;max-width:14ch}
 .hero h1 .g{background:linear-gradient(120deg,var(--acc2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p.sub{font-size:clamp(15px,2vw,18.5px);color:var(--mut);max-width:56ch;margin:18px 0 0;font-weight:450}
@@ -82,7 +82,7 @@ section{padding:40px 0}
 .filters .fx{flex:1;min-width:120px}
 .chipset{display:flex;gap:7px;flex-wrap:wrap}
 .chip{border:1px solid var(--line2);background:var(--bg2);color:var(--mut);border-radius:100px;padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer}
-.chip.on{background:var(--acc);border-color:var(--acc);color:#04150f}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
 /* ── deal grid — text-forward premium cards ── */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:13px}
 .deal{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s,transform .12s,box-shadow .2s;display:flex;flex-direction:column;padding:13px 13px 12px}
@@ -160,7 +160,7 @@ body.mlock{overflow:hidden}
 /* detail sheet */
 .drow{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
 .drow span{color:var(--mut)}.drow b{font-weight:700}
-.reveal{background:var(--accdim);border:1px solid rgba(53,160,127,.35);border-radius:12px;padding:14px;margin:14px 0;font-size:14px}
+.reveal{background:var(--accdim);border:1px solid rgba(0,100,229,.35);border-radius:12px;padding:14px;margin:14px 0;font-size:14px}
 .reveal b{color:var(--acc2)}
 .pill{display:inline-block;font-size:11px;font-weight:800;padding:4px 10px;border-radius:100px}
 .pill.req{background:#2a2410;color:var(--warn)}.pill.appr{background:var(--accdim);color:var(--acc2)}.pill.dec{background:var(--badbg);color:var(--bad)}
@@ -395,16 +395,16 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .buydetails .hint{font-weight:400;color:var(--mut)}
 /* Bigger tap targets on mobile */
 @media(max-width:640px){
-  .nlink.ico{min-width:42px;min-height:42px;display:inline-flex;align-items:center;justify-content:center}
+  .nlink.ico{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   .viewseg button{min-height:38px;padding:8px 11px}
   .catseg button{min-height:36px}
-  .railx{width:40px;height:40px}
+  .railx{width:44px;height:44px}
 }
 /* Mobile home: tighten spacing, drop the duplicate quick-action cards, and make the
    region chips a single scrollable row — so deals surface without a long scroll. */
 @media(max-width:640px){
   section{padding:16px 0}
-  .qa{display:none!important}
+  .qa{display:grid!important;grid-template-columns:1fr}
   .mktbar{gap:9px;padding:8px 0 9px;margin-bottom:11px}
   .mktabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;scrollbar-width:none}
   .mktabs::-webkit-scrollbar{display:none}
@@ -413,6 +413,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
   .hero .stats .s .v{font-size:17px}
   .hero .stats .s .k{font-size:9.5px;letter-spacing:.05em;margin-top:1px}
 }
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 </style>
 <style id="ax-dark-fix">
 /* AXESS dark palette — redefine the design tokens so the whole app flips, not just patches */
@@ -503,10 +504,6 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
     <div class="ah-l">
       <h1>Live off-market deals</h1>
       <p class="sub">Investment property moving agent-to-agent across Massachusetts — before it hits the market.</p>
-    </div>
-    <div class="ah-r">
-      <button class="btn ghost sm" onclick="openBuyBox()">Post a client need</button>
-      <button class="btn acc sm" onclick="openSubmit()">＋ Post a deal</button>
     </div>
   </div>
   <div class="stats" id="stats">
