@@ -1130,6 +1130,9 @@ function setCat(c){CAT=c;try{localStorage.setItem('access_cat',c);}catch(e){}
   fillTypeChecks();render();}
 function initCat(){var saved;try{saved=localStorage.getItem('access_cat');}catch(e){}
   var def=saved||(ME.focus==='commercial'?'commercial':ME.focus==='residential'?'residential':'all');
+  // Never strand the user on an empty tab: if the chosen group has no live deals
+  // but the market does, open on All instead (e.g. all-Investment inventory).
+  try{if(def!=='all'&&!LISTINGS.some(function(d){return feedVisible(d)&&inCat(d.type,def);})&&LISTINGS.some(feedVisible))def='all';}catch(e){}
   setCat(def);}
 function fillFilters(){
   // property-type checkboxes with the type's color swatch (scoped to the current category)
