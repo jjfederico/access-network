@@ -190,8 +190,11 @@ function pmPublicView(l, full, gated) {
     propType: l.propType || '', dist: l.dist || 'broad',
     units: l.units || '', sqft: l.sqft || '',
     beds: l.beds || '', baths: l.baths || '', yearBuilt: l.yearBuilt || '',
-    price: l.price || '', noi: l.noi || '', capRate: l.capRate || '',
-    grossIncome: l.grossIncome || '', expenses: l.expenses || '',
+    price: l.price || '', capRate: l.capRate || '',
+    // Operating statement (NOI, gross income, expenses, vacancy, taxes) is the
+    // sensitive pro-forma — withheld here and revealed only to entitled viewers
+    // below. Cap rate stays public as the headline metric / filter.
+    hasFinancials: !!(l.noi || l.grossIncome || l.expenses || l.vacancy || l.taxes),
     commissionPct: l.commissionPct || '', commissionNotes: l.commissionNotes || '',
     notes: l.notes || '', docCount: Array.isArray(l.docs) ? l.docs.length : 0, views: l.views || 0,
     photoCount: Array.isArray(l.photos) ? l.photos.length : 0,
@@ -204,6 +207,12 @@ function pmPublicView(l, full, gated) {
     // Documents (OMs, financials) contain the address & full details — only entitled viewers get them.
     out.docs = Array.isArray(l.docs) ? l.docs : [];
     if (l.lat && l.lng) { out.lat = l.lat; out.lng = l.lng; } // exact pin only for entitled viewers
+  }
+  // Full operating statement unlocks only for entitled viewers (owner / own listing /
+  // approved intro) — same qualify-your-buyer gate as the address & documents.
+  if (full) {
+    out.noi = l.noi || ''; out.grossIncome = l.grossIncome || ''; out.expenses = l.expenses || '';
+    out.vacancy = l.vacancy || ''; out.taxes = l.taxes || '';
   }
   return out;
 }
@@ -375,6 +384,7 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
       price: S(b.price, 24), noi: S(b.noi, 24), capRate: S(b.capRate, 16),
       lat: S(b.lat, 24), lng: S(b.lng, 24),
       grossIncome: S(b.grossIncome, 24), expenses: S(b.expenses, 24),
+      vacancy: S(b.vacancy, 24), taxes: S(b.taxes, 24),
       commissionPct: S(b.commissionPct, 16), commissionNotes: S(b.commissionNotes, 300),
       notes: S(b.notes, 3000), docs: docsIn, photos: photosIn
     };
