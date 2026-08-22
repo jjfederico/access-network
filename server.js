@@ -900,40 +900,41 @@ function pmDigestFor(prof, listings, boxes, sinceMs) {
     return true;
   }).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 }
+async function pmRunDigest(daysArg, dry) {
+  const days = Math.min(60, Math.max(1, parseInt(daysArg, 10) || 7));
+  const [listings, boxes, profs, ns] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles'), pmLoad('pm_notifs')]);
+  const now = new Date().toISOString(), fallback = Date.now() - days * 86400000;
+  const results = []; let sent = 0, notifs = 0;
+  for (const prof of profs) {
+    if (!prof || prof.status !== 'approved' || prof.deactivated) continue;
+    const sinceMs = prof.lastDigestAt ? new Date(prof.lastDigestAt).getTime() : fallback;
+    const matches = pmDigestFor(prof, listings, boxes, sinceMs);
+    if (!matches.length) { if (!dry) prof.lastDigestAt = now; continue; }
+    const top = matches.slice(0, 10);
+    results.push({ email: prof.email, name: prof.name || '', count: matches.length });
+    if (!dry) {
+      ns.push({ id: pmId('N'), to: _lc(prof.email), type: 'digest', text: matches.length + ' new deal' + (matches.length === 1 ? '' : 's') + ' match your criteria', at: now, read: false });
+      notifs++;
+      if (pmWantsEmail(prof, 'deals')) {
+        const body = matches.length + ' new off-market deal' + (matches.length === 1 ? '' : 's') + ' match your criteria on AXESS:\n\n' +
+          top.map(pmDigestLine).join('\n') + (matches.length > top.length ? ('\n…and ' + (matches.length - top.length) + ' more') : '') +
+          '\n\nSee them and request intros: ' + PM_BASE + '/app.html\n\nToo many or too few? Tune your buy box and alert settings in AXESS → Notifications.';
+        try { await pmSendEmail(prof.email, 'AXESS · ' + matches.length + ' new deal' + (matches.length === 1 ? '' : 's') + ' match you', body); sent++; } catch (e) {}
+      }
+      prof.lastDigestAt = now;
+    }
+  }
+  if (!dry) { await pmSave('pm_profiles', profs); await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns); }
+  return { dry: !!dry, days, recipients: results.length, emailsSent: sent, notifsCreated: notifs, breakdown: results.slice(0, 100) };
+}
 app.post('/api/pm/digest/run', async (req, res) => {
   const q = req.query || {}, b = req.body || {};
   const key = String(q.key || b.key || '');
   const admin = req.user && req.user.role === 'owner';
   const DKEY = process.env.DIGEST_KEY || '';
   if (!admin && !(DKEY && key === DKEY)) return res.status(403).json({ ok: false, error: 'forbidden' });
-  const dry = String(q.dry || b.dry || '') === '1';
-  const days = Math.min(60, Math.max(1, parseInt(q.days || b.days || '7', 10) || 7));
-  try {
-    const [listings, boxes, profs, ns] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles'), pmLoad('pm_notifs')]);
-    const now = new Date().toISOString(), fallback = Date.now() - days * 86400000;
-    const results = []; let sent = 0, notifs = 0;
-    for (const prof of profs) {
-      if (!prof || prof.status !== 'approved') continue;
-      const sinceMs = prof.lastDigestAt ? new Date(prof.lastDigestAt).getTime() : fallback;
-      const matches = pmDigestFor(prof, listings, boxes, sinceMs);
-      if (!matches.length) { if (!dry) prof.lastDigestAt = now; continue; }
-      const top = matches.slice(0, 10);
-      results.push({ email: prof.email, name: prof.name || '', count: matches.length });
-      if (!dry) {
-        ns.push({ id: pmId('N'), to: _lc(prof.email), type: 'digest', text: matches.length + ' new deal' + (matches.length === 1 ? '' : 's') + ' match your criteria', at: now, read: false });
-        notifs++;
-        if (pmWantsEmail(prof, 'deals')) {
-          const body = matches.length + ' new off-market deal' + (matches.length === 1 ? '' : 's') + ' match your criteria on AXESS:\n\n' +
-            top.map(pmDigestLine).join('\n') + (matches.length > top.length ? ('\n…and ' + (matches.length - top.length) + ' more') : '') +
-            '\n\nSee them and request intros: ' + PM_BASE + '/app.html\n\nToo many or too few? Tune your buy box and alert settings in AXESS → Notifications.';
-          try { await pmSendEmail(prof.email, 'AXESS · ' + matches.length + ' new deal' + (matches.length === 1 ? '' : 's') + ' match you', body); sent++; } catch (e) {}
-        }
-        prof.lastDigestAt = now;
-      }
-    }
-    if (!dry) { await pmSave('pm_profiles', profs); await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns); }
-    res.json({ ok: true, dry, days, recipients: results.length, emailsSent: sent, notifsCreated: notifs, breakdown: results.slice(0, 100) });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  try { res.json(Object.assign({ ok: true }, await pmRunDigest(q.days || b.days, String(q.dry || b.dry || '') === '1'))); }
+  catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 // Member requests a Proof-of-Funds badge (buy-side credibility). Stores amount +
 // optional doc; goes to 'pending' for admin review. Doc is never exposed publicly.
@@ -1182,6 +1183,19 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
     // 3) Send the sign-in link now so they can log in right away.
     let linkSent = false;
     try { linkSent = await authMod.sendMagicLink(email, BASE_URL || 'https://axessre.com'); } catch (e) {}
+    // Welcome email for brand-new members (separate from the sign-in link) — orients them on day one.
+    if (pIdx < 0) {
+      try {
+        await pmSendEmail(email, 'Welcome to AXESS',
+          'Welcome to AXESS, ' + (name || 'there') + '!\n\n' +
+          'You\'re in — AXESS is the invite-only, agent-to-agent network for off-market deals in Massachusetts.\n\n' +
+          'Two things to do first:\n' +
+          '1) Post a deal — share an off-market property in about 30 seconds. Keep it broad, or mark it private so you approve who sees the address.\n' +
+          '2) Post a client need — tell the network what your buyers want, and get matched automatically the moment a deal fits.\n\n' +
+          'Sign in anytime: ' + (BASE_URL || 'https://axessre.com') + '/app.html\n\n' +
+          'Deals move quietly between agents here — glad to have you in the room.\n— AXESS');
+      } catch (e) {}
+    }
     if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member joined', name + ' joined AXESS (auto-approved on licensure attestation).\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nManage members — including removing anyone — in the AXESS admin panel (Members tab).'); } catch (e) {} }
     res.json({ ok: true, linkSent });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -1548,6 +1562,20 @@ app.all('/api/pm/cron', async (req, res) => {
 });
 setTimeout(() => { pmRunRenewals().catch(() => {}); }, 30000);
 setInterval(() => { pmRunRenewals().catch(() => {}); }, 12 * 3600 * 1000);
+// Weekly deal-match digest, run from this in-process scheduler and guarded by a
+// stored timestamp so a restart can't re-fire it early. First encounter just
+// initializes the clock (no blast); the first real digest goes out ~7 days later.
+async function pmMaybeRunDigest() {
+  try {
+    const s = await pmSettings();
+    if (!s.lastDigestRun) { s.lastDigestRun = new Date().toISOString(); await pmSaveSettings(s); return; }
+    if (Date.now() - new Date(s.lastDigestRun).getTime() < 7 * 86400000) return;
+    await pmRunDigest(7, false);
+    const s2 = await pmSettings(); s2.lastDigestRun = new Date().toISOString(); await pmSaveSettings(s2);
+  } catch (e) {}
+}
+setTimeout(() => { pmMaybeRunDigest().catch(() => {}); }, 90000);
+setInterval(() => { pmMaybeRunDigest().catch(() => {}); }, 6 * 3600 * 1000);
 
 // ── pages ─────────────────────────────────────────────────────────────────
 // The members app needs the signed-in identity the old hub used to inject.
