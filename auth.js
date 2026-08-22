@@ -69,7 +69,27 @@ async function takeToken(token) {
   } catch (e) { return null; }
 }
 
+// CAN-SPAM-compliant footer appended to every AXESS email: brand, social links,
+// physical mailing address, and a one-click unsubscribe (token = HMAC of the email).
+const _APP_URL = (process.env.BASE_URL || 'https://axessre.com').replace(/\/$/, '');
+function _unsubToken(email) {
+  return crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.DIGEST_KEY || 'axess-unsub')
+    .update(String(email || '').toLowerCase()).digest('hex').slice(0, 24);
+}
+function emailFooter(to) {
+  const u = _APP_URL + '/api/pm/unsub?e=' + encodeURIComponent(String(to || '').toLowerCase()) + '&k=' + _unsubToken(to);
+  const a = 'style="color:#0064e5;text-decoration:none;margin-right:14px"';
+  return '<div style="margin-top:28px;padding-top:16px;border-top:1px solid #e4e7ed;font:13px/1.55 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#8a909c">'
+    + '<div style="font-weight:800;letter-spacing:.16em;color:#14171d;font-size:14px">AXESS</div>'
+    + '<div style="margin:8px 0"><a href="https://www.linkedin.com/company/143427047" ' + a + '>LinkedIn</a>'
+    + '<a href="https://www.instagram.com/axess_re/" ' + a + '>Instagram</a>'
+    + '<a href="https://www.facebook.com/profile.php?id=61593706915375" ' + a + '>Facebook</a></div>'
+    + '<div style="margin:8px 0">AXESS RE LLC · 423 West Broadway, Unit 203, South Boston, MA 02127</div>'
+    + '<div>You\'re receiving this as an AXESS member. <a href="' + u + '" style="color:#8a909c;text-decoration:underline">Unsubscribe from marketing emails</a>.</div>'
+    + '</div>';
+}
 async function sendEmail(to, subject, html) {
+  html = String(html || '') + emailFooter(to);
   const key = process.env.RESEND_API_KEY;
   if (!key) { console.log('[ACCESS email — no RESEND_API_KEY, logging]\nTo:', to, '\nSubject:', subject, '\n', html); return true; }
   try {

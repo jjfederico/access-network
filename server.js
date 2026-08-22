@@ -1273,6 +1273,22 @@ app.post('/api/pm/admin/invite', ensureAuth, pmGate, async (req, res) => {
     res.json({ ok: true });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
+// One-click unsubscribe from marketing emails (CAN-SPAM). Token = HMAC of the
+// email, matching auth.js's emailFooter — no login required so it works straight
+// from an email. Flips marketingOptIn off; transactional emails still send.
+app.get('/api/pm/unsub', async (req, res) => {
+  const crypto = require('crypto');
+  const email = _lc(req.query.e || ''), k = String(req.query.k || '');
+  const good = crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.DIGEST_KEY || 'axess-unsub').update(email).digest('hex').slice(0, 24);
+  const page = (title, msg) => '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div style="font:16px/1.6 -apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:460px;margin:12vh auto;padding:0 24px;text-align:center;color:#14171d"><div style="font-weight:800;letter-spacing:.16em;color:#0064e5;margin-bottom:18px">AXESS</div><h1 style="font-size:22px;margin:0 0 10px">' + title + '</h1><p style="color:#565c68">' + msg + '</p></div>';
+  if (!email || k !== good) return res.status(400).send(page('Invalid link', 'This unsubscribe link isn\'t valid. If you\'d like to opt out, reply to any AXESS email and we\'ll take care of it.'));
+  try {
+    const profs = await pmLoad('pm_profiles');
+    const idx = profs.findIndex(p => p && _lc(p.email) === email);
+    if (idx >= 0) { profs[idx].marketingOptIn = false; profs[idx].marketingUnsubAt = new Date().toISOString(); await pmSave('pm_profiles', profs); }
+    res.send(page('You\'re unsubscribed', 'You won\'t receive marketing emails from AXESS anymore. You\'ll still get essential account emails like sign-in links and intro requests on your deals.'));
+  } catch (e) { res.status(500).send(page('Something went wrong', 'Please try again, or reply to any AXESS email to opt out.')); }
+});
 // Owner: list invites sent, with whether each person has signed up yet.
 app.get('/api/pm/admin/invites', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
