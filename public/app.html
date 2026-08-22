@@ -145,6 +145,17 @@ body.mlock{overflow:hidden}
 .f .hint{font-size:11px;color:var(--mut2)}
 .priv{font-size:11px;color:var(--gold);font-weight:700}
 .mact{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+/* compact the Post-a-deal modal so the extra fields don't make it a tall scroll */
+#mSubmit .mhead{padding:14px 18px 0}
+#mSubmit .mbody{padding:8px 18px 14px}
+#mSubmit .fgrid{gap:6px 10px}
+#mSubmit .f{margin-bottom:6px;gap:2px}
+#mSubmit .f.full{margin-bottom:7px}
+#mSubmit .f input,#mSubmit .f select,#mSubmit .f textarea{padding:6px 10px;border-radius:8px}
+#mSubmit .f label{font-size:10px}
+#mSubmit textarea{min-height:0}
+#mSubmit .phdrop{padding:12px}
+#mSubmit .mact{margin-top:4px}
 .msg{font-size:12.5px;color:var(--mut);align-self:center;margin-right:auto}
 /* detail sheet */
 .drow{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
@@ -725,6 +736,8 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
       <div class="f"><label>Units</label><input id="sUnits" inputmode="numeric" placeholder="0"></div>
       <div class="f"><label>Cap rate (%)</label><input id="sCap" inputmode="decimal" placeholder="0"></div>
       <div class="f"><label>NOI ($)</label><input id="sNoi" inputmode="decimal" placeholder="0"></div>
+      <div class="f"><label>Gross yearly income ($)</label><input id="sGross" inputmode="decimal" placeholder="0"></div>
+      <div class="f"><label>Yearly expenses ($)</label><input id="sExp" inputmode="decimal" placeholder="0"></div>
       <div class="f"><label>Square feet</label><input id="sSf" inputmode="numeric" placeholder="0"></div>
       <div class="f"><label>Beds</label><input id="sBeds" inputmode="numeric" placeholder="0"></div>
       <div class="f"><label>Baths</label><input id="sBaths" inputmode="decimal" placeholder="0"></div>
@@ -870,16 +883,16 @@ var SUBMARKETS=['South Boston','Dorchester','Roxbury','Jamaica Plain','East Bost
 
 /* ── Post a deal: fields that don't apply to certain asset types ── */
 var DEAL_HIDE={
-  'Single-family':['sUnits','sNoi','sCap'],
-  'Condo / Conversion':['sUnits','sNoi','sCap'],
-  'Land':['sUnits','sNoi','sCap','sSf','sBeds','sBaths','sYb'],
-  'Development site':['sNoi','sCap','sBeds','sBaths','sYb'],
+  'Single-family':['sUnits','sNoi','sCap','sGross','sExp'],
+  'Condo / Conversion':['sUnits','sNoi','sCap','sGross','sExp'],
+  'Land':['sUnits','sNoi','sCap','sGross','sExp','sSf','sBeds','sBaths','sYb'],
+  'Development site':['sNoi','sCap','sGross','sExp','sBeds','sBaths','sYb'],
   'Retail / Commercial':['sBeds','sBaths'],
   'Industrial':['sBeds','sBaths'],
   'Storage / Warehouse':['sBeds','sBaths'],
   'Mobile Home Park':['sBeds','sBaths']
 };
-var DEAL_TOGGLE=['sUnits','sNoi','sCap','sSf','sBeds','sBaths','sYb'];
+var DEAL_TOGGLE=['sUnits','sNoi','sCap','sGross','sExp','sSf','sBeds','sBaths','sYb'];
 function syncDealFields(){var t=($('sType')&&$('sType').value)||'';var hide=DEAL_HIDE[t]||[];DEAL_TOGGLE.forEach(function(id){var el=$(id);if(!el)return;var w=el.closest('.f');var h=hide.indexOf(id)>=0;if(w)w.style.display=h?'none':'';if(h)el.value='';});}
 
 /* ── Google Maps: address autocomplete on all .gaddr inputs ── */
@@ -1570,6 +1583,7 @@ function submitDeal(){
   var body={address:($('sAddr').value||'').trim(),area:($('sSub').value||'').trim(),propType:$('sType').value,
     ownerName:ME.name||(PROFILE&&PROFILE.name)||'',price:noComma('sPrice'),commissionPct:($('sComm').value||'').trim(),
     units:($('sUnits').value||'').trim(),capRate:($('sCap').value||'').trim(),noi:noComma('sNoi'),
+    grossIncome:noComma('sGross'),expenses:noComma('sExp'),
     sqft:noComma('sSf'),beds:($('sBeds').value||'').trim(),baths:($('sBaths').value||'').trim(),yearBuilt:($('sYb').value||'').trim(),
     notes:($('sDesc').value||'').trim(),dist:$('sDist').value,status:keepStatus,
     hideAddress:$('sHideAddr').checked,docs:SUBMIT_DOCS,photos:SUBMIT_PHOTOS,
@@ -2066,14 +2080,14 @@ function open_(id){$(id).classList.add('on');document.body.classList.add('mlock'
 function close_(id){var m=$(id);if(m)m.classList.remove('on');if(!document.querySelector('.mbg.on'))document.body.classList.remove('mlock');}
 var EDIT_ID=null;
 function resetSubmitForm(){
-  ['sAddr','sSub','sPrice','sComm','sUnits','sCap','sNoi','sSf','sBeds','sBaths','sYb','sDesc'].forEach(function(id){var el=$(id);if(el)el.value='';});
+  ['sAddr','sSub','sPrice','sComm','sUnits','sCap','sNoi','sGross','sExp','sSf','sBeds','sBaths','sYb','sDesc'].forEach(function(id){var el=$(id);if(el)el.value='';});
   if($('sHideAddr'))$('sHideAddr').checked=false;
   if($('sType'))$('sType').value=(TYPES[0]||'');
   if($('sDist'))$('sDist').value='broad';
   SUBMIT_DOCS=[];SUBMIT_PHOTOS=[];SUBMIT_COORDS=null;SUBMIT_STATE='';
 }
 function openSubmit(){EDIT_ID=null;resetSubmitForm();if($('sTitle'))$('sTitle').textContent='Post a deal';if($('sBtn'))$('sBtn').textContent='Post deal';if($('sMsg'))$('sMsg').textContent='';
-  fillFilters();attachMoney(['sPrice','sNoi','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();open_('mSubmit');}
+  fillFilters();attachMoney(['sPrice','sNoi','sGross','sExp','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();open_('mSubmit');}
 // Edit an existing deal — same form, prefilled, saved back to the same id.
 function openEdit(id){
   var d=LISTINGS.find(function(x){return x.id===id;});if(!d)return;
@@ -2084,6 +2098,7 @@ function openEdit(id){
   set('sAddr',d.addr);set('sSub',d.submarket||d.area);set('sType',d.type||'');
   set('sPrice',fmtMoneyStr(d.price));set('sComm',d.commission);
   set('sUnits',d.units);set('sCap',d.cap);set('sNoi',fmtMoneyStr(d.noi));
+  set('sGross',fmtMoneyStr(d.gross));set('sExp',fmtMoneyStr(d.exp));
   set('sSf',fmtMoneyStr(d.sf));set('sBeds',d.beds);set('sBaths',d.baths);set('sYb',d.yb);
   set('sDesc',d.desc);if($('sDist'))$('sDist').value=(d.dist||'broad');
   if($('sHideAddr'))$('sHideAddr').checked=!!d.hideAddress;
@@ -2091,7 +2106,7 @@ function openEdit(id){
   SUBMIT_PHOTOS=Array.isArray(d.photos)?d.photos.slice():[];
   SUBMIT_COORDS=(d.lat&&d.lng)?{lat:d.lat,lng:d.lng}:null;SUBMIT_STATE=String(d.state||'').toUpperCase();
   if($('sTitle'))$('sTitle').textContent='Edit deal';if($('sBtn'))$('sBtn').textContent='Save changes';if($('sMsg'))$('sMsg').textContent='';
-  attachMoney(['sPrice','sNoi','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();open_('mSubmit');
+  attachMoney(['sPrice','sNoi','sGross','sExp','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();open_('mSubmit');
 }
 function checkedVals(wrapId){var w=$(wrapId);if(!w)return [];return Array.prototype.slice.call(w.querySelectorAll('input:checked')).map(function(i){return i.value;});}
 function buildChecks(wrapId,opts,preSel){var w=$(wrapId);if(!w)return;var pre=String(preSel||'').toLowerCase();w.innerHTML=opts.map(function(o){var on=pre&&pre.indexOf(o.toLowerCase())>=0?' checked':'';return '<label class="ck" style="font-size:12.5px"><input type="checkbox" value="'+esc(o)+'"'+on+'>'+esc(o)+'</label>';}).join('');}
