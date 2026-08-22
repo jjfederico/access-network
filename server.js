@@ -198,7 +198,7 @@ function pmPublicView(l, full, gated) {
     commissionPct: l.commissionPct || '', commissionNotes: l.commissionNotes || '',
     notes: l.notes || '', docCount: Array.isArray(l.docs) ? l.docs.length : 0, views: l.views || 0,
     photoCount: Array.isArray(l.photos) ? l.photos.length : 0,
-    hideAddress: !!l.hideAddress, addressHidden: !showAddr,
+    hideAddress: !!l.hideAddress, addressHidden: !showAddr, comingSoon: !!l.comingSoon,
     closedAt: l.closedAt || '', closePrice: l.closePrice || ''
   };
   if (showAddr) {
@@ -386,7 +386,7 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
       grossIncome: S(b.grossIncome, 24), expenses: S(b.expenses, 24),
       vacancy: S(b.vacancy, 24), taxes: S(b.taxes, 24),
       commissionPct: S(b.commissionPct, 16), commissionNotes: S(b.commissionNotes, 300),
-      notes: S(b.notes, 3000), docs: docsIn, photos: photosIn
+      notes: S(b.notes, 3000), comingSoon: b.comingSoon === true, docs: docsIn, photos: photosIn
     };
     // A Private/Pocket deal must never expose its address, regardless of the
     // hide-address checkbox — force it hidden at write time.
