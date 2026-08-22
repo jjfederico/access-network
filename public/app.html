@@ -445,6 +445,31 @@ html.dark .finstate.op{color:#57ECC2;background:rgba(87,236,194,.1);border-color
 .fin-cta{display:block;width:100%;text-align:center;border-radius:9px;padding:11px;font-weight:700;font-size:13.5px;border:0;cursor:pointer;font-family:inherit}
 .fin-cta.go{background:var(--acc);color:#fff}
 .fin-cta.pend{background:var(--card2);color:var(--mut);border:1px solid var(--line2);cursor:default}
+#mMarket .modal{max-width:840px}
+.mp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.mp-tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px 9px;box-shadow:0 1px 2px rgba(20,25,40,.04),0 10px 26px -18px rgba(20,25,40,.22)}
+.mp-tile .k{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut2)}
+.mp-tile .v{font-weight:800;font-size:23px;letter-spacing:-.02em;margin-top:4px;line-height:1}
+.mp-tile .r{display:flex;align-items:center;justify-content:space-between;margin-top:7px;min-height:26px;gap:8px}
+.mp-tile .d{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:var(--ok);white-space:nowrap}
+.mp-tile .d.flat{color:var(--mut2)}
+.mp-row{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:12px}
+.mp-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px}
+.mp-card .ch{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px}
+.mp-card h4{font-size:13.5px;font-weight:800;letter-spacing:-.01em}
+.mp-card .hint{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:.07em}
+.mp-empty{color:var(--mut);font-size:12.5px;padding:26px 4px;text-align:center}
+.mp-bar{display:grid;grid-template-columns:92px 1fr 28px;align-items:center;gap:9px;margin-top:9px}
+.mp-bar .lb{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-bar .tr{height:8px;background:var(--card2);border-radius:5px;overflow:hidden}
+.mp-bar .fl{height:100%;border-radius:5px}
+.mp-bar .nv{font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:right;color:var(--mut)}
+.clg2{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.clg2:last-child{border-bottom:0}
+.clg2 .l small{display:block;color:var(--mut2);font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;margin-top:1px}
+.clg2 .p{font-weight:600}
+.pill2{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;color:var(--ok);background:rgba(28,122,78,.1);border:1px solid rgba(28,122,78,.28);border-radius:100px;padding:2px 6px;text-transform:uppercase;letter-spacing:.04em}
+@media(max-width:640px){.mp-kpis{grid-template-columns:1fr 1fr}.mp-row{grid-template-columns:1fr}}
 </style>
 <style id="ax-dark-fix">
 /* AXESS dark palette — redefine the design tokens so the whole app flips, not just patches */
@@ -2119,30 +2144,77 @@ function openNotifs(){var _n=$('mNotifs');if(_n){_n.innerHTML='<div class="modal
 });}
 
 /* ── market pulse ── */
-function openMarket(){var _mk=$('mMarket');if(_mk){_mk.innerHTML='<div class="modal wide"><div class="mhead"><h3>Market pulse</h3><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mMarket');}
-  Promise.all([apiT('/api/pm/market'),apiT('/api/pm/closings')]).then(function(r){var j=r[0]||{},cj=r[1]||{};if((j&&j.timeout)||(cj&&cj.timeout)){var _b=_mk&&_mk.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}var m=(j&&j.market)||{};
-  function stat(v,k){return '<div style="background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:15px 16px"><div style="font-family:\'Big Shoulders Display\',system-ui,sans-serif;font-size:25px;font-weight:800">'+v+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-top:3px">'+k+'</div></div>';}
-  // closed-deal proof block
-  var lb=(cj.leaderboard||[]);var lbRows=lb.length?lb.map(function(x,i){return '<div class="drow"><span>'+(i<3?['🥇','🥈','🥉'][i]:(i+1)+'.')+' '+esc(x.ownerName||x.email)+'</span><b class="mono">'+x.count+' deal'+(x.count===1?'':'s')+(num(x.volume)?(' · '+money(x.volume)):'')+'</b></div>';}).join(''):'<div style="color:var(--mut);font-size:13px">No closings logged yet — mark a deal “closed” to start the board.</div>';
-  var closRecent=(cj.recent||[]);var closRows=closRecent.length?closRecent.map(function(c){return '<div class="drow"><span>🎉 '+esc(c.propType||'Deal')+' in '+esc(c.area||'—')+(c.ownerName?(' <span style="color:var(--mut2)">· '+esc(c.ownerName)+'</span>'):'')+'</span><b class="mono">'+(num(c.price)?money(c.price):'—')+'</b></div>';}).join(''):'';
-  var closedBlock='<div style="background:linear-gradient(120deg,rgba(30,122,82,.1),var(--card2));border:1px solid rgba(30,122,82,.3);border-radius:14px;padding:16px 18px;margin-bottom:18px">'
-    +'<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><div style="font-family:\'Big Shoulders Display\',system-ui,sans-serif;font-size:30px;font-weight:800;color:#1E7A52">'+money(cj.totalVolume||0)+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)">closed through AXESS · '+(cj.totalCount||0)+' deal'+((cj.totalCount||0)===1?'':'s')+'</div></div>'
-    +(lb.length?('<div style="margin-top:12px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:4px">Top closers</div>'+lbRows+'</div>'):'')
-    +(closRows?('<div style="margin-top:12px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:4px">Recently closed</div>'+closRows+'</div>'):'')
+function mpSpark(data,w,h,color){
+  if(!data||data.length<2)data=[0,0];
+  var min=Math.min.apply(null,data),max=Math.max.apply(null,data),pad=2,xs=(w-pad*2)/(data.length-1);
+  var pts=data.map(function(v,i){return [pad+i*xs, pad+(h-pad*2)*(1-(v-min)/((max-min)||1))];});
+  var d=pts.map(function(pp,i){return (i?'L':'M')+pp[0].toFixed(1)+' '+pp[1].toFixed(1);}).join(' ');
+  var l=pts[pts.length-1];
+  return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="'+l[0].toFixed(1)+'" cy="'+l[1].toFixed(1)+'" r="2.6" fill="'+color+'"/></svg>';
+}
+function mpMoneyShort(v){v=+v||0;if(v>=1e6)return '$'+(v/1e6).toFixed(v>=1e7?0:1)+'M';if(v>=1e3)return '$'+Math.round(v/1e3)+'k';return '$'+Math.round(v);}
+// Trend series computed from the listings the app already has (viewer-visible, live).
+function mpSeries(weeks){
+  var L=(window.LISTINGS||[]).filter(function(d){return d&&d.at&&feedVisible(d);});
+  var now=Date.now(),wk=6048e5;
+  var sorted=L.slice().sort(function(a,b){return new Date(a.at)-new Date(b.at);});
+  var cumCount=[],cumVal=[],cumCap=[],cumComm=[],perCount=new Array(weeks).fill(0);
+  var runVal=0,runN=0,capSum=0,capN=0,commSum=0,commN=0,ptr=0;
+  for(var w=0;w<weeks;w++){
+    var end=now-(weeks-1-w)*wk,start=end-wk;
+    while(ptr<sorted.length){var t=new Date(sorted[ptr].at).getTime(); if(t>end)break; var d=sorted[ptr]; runVal+=num(d.price);runN++; if(num(d.cap)>0){capSum+=num(d.cap);capN++;} if(num(d.commission)>0){commSum+=num(d.commission);commN++;} if(t>start)perCount[w]++; ptr++;}
+    cumCount.push(runN);cumVal.push(runVal);cumCap.push(capN?capSum/capN:0);cumComm.push(commN?commSum/commN:0);
+  }
+  return {cumCount:cumCount,cumVal:cumVal,cumCap:cumCap,cumComm:cumComm,perCount:perCount,weeksWithData:perCount.filter(function(x){return x>0;}).length};
+}
+function mpArea(data,endLabel){
+  var W=560,H=180,pl=36,pr=8,pt=12,pb=18,n=data.length;
+  var max=(Math.max.apply(null,data)||1)*1.12,min=0,xs=(W-pl-pr)/((n-1)||1);
+  var Y=function(v){return pt+(H-pt-pb)*(1-(v-min)/((max-min)||1));};
+  var pts=data.map(function(v,i){return [pl+i*xs,Y(v)];});
+  var line=pts.map(function(pp,i){return (i?'L':'M')+pp[0].toFixed(1)+' '+pp[1].toFixed(1);}).join(' ');
+  var area=line+' L'+pts[n-1][0].toFixed(1)+' '+(H-pb)+' L'+pts[0][0].toFixed(1)+' '+(H-pb)+' Z';
+  var grid='';for(var g=0;g<=3;g++){var v=max*g/3,y=Y(v);grid+='<line x1="'+pl+'" y1="'+y.toFixed(1)+'" x2="'+(W-pr)+'" y2="'+y.toFixed(1)+'" stroke="var(--line)" stroke-width="1"/><text x="4" y="'+(y+3).toFixed(1)+'" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="var(--mut2)">'+mpMoneyShort(v)+'</text>';}
+  var last=pts[n-1];
+  return '<svg width="100%" viewBox="0 0 '+W+' '+H+'"><defs><linearGradient id="mpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--acc)" stop-opacity="0.20"/><stop offset="1" stop-color="var(--acc)" stop-opacity="0.02"/></linearGradient></defs>'+grid+'<path d="'+area+'" fill="url(#mpg)"/><path d="'+line+'" fill="none" stroke="var(--acc)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="4" fill="var(--acc)" stroke="#fff" stroke-width="2"/><text x="'+(last[0]-6).toFixed(1)+'" y="'+(last[1]-9).toFixed(1)+'" font-family="IBM Plex Mono,monospace" font-size="10.5" font-weight="600" fill="var(--tx)" text-anchor="end">'+endLabel+'</text></svg>';
+}
+function mpCols(data){
+  var W=560,H=120,pl=6,pr=6,pt=8,pb=6,n=data.length,step=(W-pl-pr)/n,bw=step*0.62,mx=Math.max.apply(null,data)||1,s='';
+  data.forEach(function(v,i){var h=(H-pt-pb)*(v/mx),x=pl+i*step+(step-bw)/2,y=(H-pb)-h,c=(i===n-1)?'var(--acc)':'#C4D6F0';s+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(h,1).toFixed(1)+'" rx="3" fill="'+c+'"/>';});
+  return '<svg width="100%" viewBox="0 0 '+W+' '+H+'">'+s+'</svg>';
+}
+function openMarket(){var _mk=$('mMarket');if(_mk){_mk.innerHTML='<div class="modal wide"><div class="mhead"><h3>Market Pulse</h3><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mMarket');}
+  Promise.all([apiT('/api/pm/market'),apiT('/api/pm/closings')]).then(function(r){var j=r[0]||{},cj=r[1]||{};if((j&&j.timeout)||(cj&&cj.timeout)){var _b=_mk&&_mk.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}renderMarket((j&&j.market)||{},cj||{});});}
+function renderMarket(m,cj){
+  var S=mpSeries(12);
+  var tile=function(k,v,spark,delta){return '<div class="mp-tile"><div class="k">'+k+'</div><div class="v">'+v+'</div><div class="r"><span class="d'+(delta?'':' flat')+'">'+(delta||'—')+'</span>'+spark+'</div></div>';};
+  var newThisWk=S.perCount[S.perCount.length-1]||0;
+  var kpis='<div class="mp-kpis">'
+    +tile('Live deals',(m.liveDeals||0),mpSpark(S.cumCount,72,26,'#0064E5'),newThisWk?('▲ +'+newThisWk+' this wk'):'')
+    +tile('Total off-market value',money(m.totalValue||0),mpSpark(S.cumVal,72,26,'#B4882E'),'')
+    +tile('Avg cap rate',(m.avgCap||0).toFixed(1)+'%',mpSpark(S.cumCap,72,26,'#1C7A4E'),'')
+    +tile('Avg commission',(m.avgCommission||0).toFixed(1)+'%',mpSpark(S.cumComm,72,26,'#6D5AA8'),'')
     +'</div>';
-  var areas=m.byArea||{};var areaRows=Object.keys(areas).sort(function(a,b){return areas[b]-areas[a];}).slice(0,8).map(function(a){return '<div class="drow"><span>'+esc(a)+'</span><b>'+areas[a]+'</b></div>';}).join('')||'<div style="color:var(--mut);font-size:13px">No live deals yet.</div>';
-  var recent=(m.recent||[]).map(function(r){return '<div class="reqrow" style="cursor:pointer" onclick="close_(\'mMarket\');openDetail(\''+esc(r.id)+'\')"><div class="grow"><b>'+esc(r.area||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(r.propType||'')+' · '+money(r.price)+'</span></div><span style="color:var(--mut2);font-size:12px">'+ago(r.createdAt)+'</span></div>';}).join('')||'<div class="empty">No deals yet.</div>';
-  $('mMarket').innerHTML='<div class="modal wide"><div class="mhead"><h3>Market pulse</h3><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody">'
-    +closedBlock
-    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px">'
-    +stat(m.liveDeals||0,'Live deals')+stat(money(m.totalValue||0),'Total value')+stat(m.buyboxes||0,'Client needs')
-    +stat((m.avgCommission||0).toFixed(1)+'%','Avg commission')+stat((m.avgCap||0).toFixed(1)+'%','Avg cap rate')+stat(m.offMarket||0,'Off-market')
-    +'</div>'
-    +'<div class="shead" style="margin:6px 0 6px"><h2 style="font-size:15px">By submarket</h2></div>'+areaRows
-    +'<div class="shead" style="margin:18px 0 6px"><h2 style="font-size:15px">Newest deals</h2></div>'+recent
+  var byC={};(window.LISTINGS||[]).filter(feedVisible).forEach(function(d){var t=d.type||'Other';byC[t]=(byC[t]||0)+1;});
+  var cKeys=Object.keys(byC).sort(function(a,b){return byC[b]-byC[a];}).slice(0,6),cmx=cKeys.length?byC[cKeys[0]]:1;
+  var bars=cKeys.length?cKeys.map(function(t){return '<div class="mp-bar"><span class="lb">'+esc(t)+'</span><div class="tr"><div class="fl" style="width:'+(byC[t]/cmx*100)+'%;background:'+typeColor(t)+'"></div></div><span class="nv">'+byC[t]+'</span></div>';}).join(''):'<div class="mp-empty">No live deals yet.</div>';
+  var hasTrend=S.weeksWithData>=3;
+  var areaCard='<div class="mp-card"><div class="ch"><h4>Off-market value on the network</h4><span class="hint">12 wks</span></div>'+(hasTrend?mpArea(S.cumVal,money(m.totalValue||0)):'<div class="mp-empty">Trend builds as more deals post.</div>')+'</div>';
+  var barsCard='<div class="mp-card"><div class="ch"><h4>Deals by asset class</h4><span class="hint">live</span></div><div style="margin-top:2px">'+bars+'</div></div>';
+  var colsCard='<div class="mp-card"><div class="ch"><h4>New deals / week</h4><span class="hint">12 wks</span></div>'+(hasTrend?mpCols(S.perCount):'<div class="mp-empty">Weekly activity appears as deals accumulate.</div>')+'</div>';
+  var closRecent=(cj.recent||[]);
+  var closRows=closRecent.length?closRecent.slice(0,5).map(function(c){return '<div class="clg2"><div class="l">'+esc(c.area||'Deal')+' <small>'+esc(c.propType||'')+'</small></div><div style="text-align:right"><div class="p mono">'+(num(c.price)?money(c.price):'—')+'</div><span class="pill2">Closed</span></div></div>';}).join(''):'<div class="mp-empty">No closings logged yet.</div>';
+  var closCard='<div class="mp-card"><div class="ch"><h4>Recent closings</h4><span class="hint">through AXESS</span></div><div style="margin-top:2px">'+closRows+'</div></div>';
+  var lb=(cj.leaderboard||[]);var lbRows=lb.length?lb.slice(0,5).map(function(x,i){return '<div class="drow"><span>'+(i<3?['🥇','🥈','🥉'][i]:(i+1)+'.')+' '+esc(x.ownerName||x.email)+'</span><b class="mono">'+x.count+' · '+(num(x.volume)?money(x.volume):'—')+'</b></div>';}).join(''):'';
+  var closedBanner=(cj.totalCount)?'<div class="mp-card" style="margin-top:0;background:linear-gradient(120deg,rgba(28,122,78,.08),var(--card))"><div class="ch"><h4 style="color:#1C7A4E">'+money(cj.totalVolume||0)+' closed through AXESS</h4><span class="hint">'+(cj.totalCount||0)+' deals</span></div>'+(lbRows?('<div style="margin-top:6px"><div class="hint" style="margin-bottom:4px">Top closers</div>'+lbRows+'</div>'):'')+'</div>':'';
+  $('mMarket').innerHTML='<div class="modal wide"><div class="mhead"><div><h3>Market Pulse</h3><div style="color:var(--mut);font-size:12px;margin-top:2px">Off-market activity across '+esc((MARKETS[MARKET]||MARKETS.MA).name)+'</div></div><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody">'
+    +kpis
+    +'<div class="mp-row">'+areaCard+barsCard+'</div>'
+    +'<div class="mp-row">'+colsCard+closCard+'</div>'
+    +closedBanner
     +'</div></div>';
   open_('mMarket');
-});}
+}
 
 /* ── broadcast board ── */
 function openBoard(){var _bd=$('mBoard');if(_bd){_bd.innerHTML='<div class="modal wide"><div class="mhead"><h3>Board</h3><button class="x" onclick="close_(\'mBoard\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mBoard');}
@@ -2249,7 +2321,7 @@ var TOUR=[
  {title:'You’re all set',body:'Post a deal, save a search, and start connecting. Need this again? Hit the “?” in the top bar anytime.'}
 ];
 var TOURI=-1, _autoTourDone=false;
-function startTour(force){TOURI=0;$('tourWrap').classList.add('on');document.body.style.overflow='hidden';tourShow(0);try{localStorage.setItem('doors_tour_v1','1');}catch(e){}}
+function startTour(force){TOURI=0;$('tourWrap').classList.add('on');document.body.style.overflow='hidden';tourShow(0);}
 function endTour(){$('tourWrap').classList.remove('on');document.body.style.overflow='';try{localStorage.setItem('doors_tour_v1','1');}catch(e){}}
 function tourGo(d){var n=TOURI+d;if(n<0)return;if(n>=TOUR.length){endTour();return;}tourShow(n);}
 function tourShow(i){
@@ -2276,7 +2348,7 @@ function tourPlace(el,place){
   else{top=r.bottom+gap;}
   card.style.left=left+'px';card.style.top=Math.max(12,top)+'px';
 }
-function maybeAutoTour(){if(_autoTourDone)return;_autoTourDone=true;if(window.innerWidth<=560)return;var seen;try{seen=localStorage.getItem('doors_tour_v1');}catch(e){seen='1';}if(!seen)setTimeout(function(){startTour(false);},700);}
+function maybeAutoTour(){if(_autoTourDone)return;_autoTourDone=true;if(window.innerWidth<=560)return;var n=0;try{n=parseInt(localStorage.getItem('axess_tour_n')||'0',10)||0;}catch(e){n=99;}if(n<3){try{localStorage.setItem('axess_tour_n',String(n+1));}catch(e){}setTimeout(function(){startTour(false);},700);}}
 window.addEventListener('resize',function(){if($('tourWrap')&&$('tourWrap').classList.contains('on')&&TOURI>=0){var s=TOUR[TOURI],el=s.el?document.querySelector(s.el):null;if(el)tourPlace(el,s.place||'bottom');}});
 document.addEventListener('keydown',function(e){if($('tourWrap')&&$('tourWrap').classList.contains('on')){if(e.key==='Escape')endTour();else if(e.key==='ArrowRight')tourGo(1);else if(e.key==='ArrowLeft')tourGo(-1);}});
 
