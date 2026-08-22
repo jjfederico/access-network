@@ -414,6 +414,14 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
   .hero .stats .s .k{font-size:9.5px;letter-spacing:.05em;margin-top:1px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+.sk{position:relative;overflow:hidden;background:var(--card2);border-radius:8px}
+.sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:sksheen 1.25s ease-in-out infinite}
+html.dark .sk::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}
+@keyframes sksheen{100%{transform:translateX(100%)}}
+.skcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px}
+.skcard .skrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;border-top:1px solid var(--line);padding-top:10px;margin-top:1px}
+.skcard .skfoot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:10px}
+.skpad{padding:6px 2px}
 </style>
 <style id="ax-dark-fix">
 /* AXESS dark palette — redefine the design tokens so the whole app flips, not just patches */
@@ -580,7 +588,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
           <button class="btn ghost sm" onclick="loadAll()" title="Refresh">↻</button>
         </div>
       </div>
-      <div class="grid" id="grid"><div class="empty">Loading deals…</div></div>
+      <div class="grid" id="grid"></div>
     </main>
   </div>
 </div></section>
@@ -925,6 +933,7 @@ var PROFILE=null, APPROVED=true, BBMATCHES=[], PAYCFG={enabled:false,membership:
 // and freeze the page. Always resolves.
 function apiT(path,ms){return Promise.race([api(path),new Promise(function(r){setTimeout(function(){r({ok:false,timeout:true});},ms||9000);})]);}
 function loadAll(){
+  renderFeedSkeleton();
   // Load the deal feed FIRST and render it right away. Everything else (intros,
   // client-needs, profile, pay status) loads in the background — Google Apps Script
   // hangs when hit with 5 parallel reads, so we never make the deals wait on them.
@@ -1273,6 +1282,15 @@ function feedVisible(d){
   if(!marketMatch(d))return false;                                    // only the selected state-market
   return true;
 }
+function skCard(){return '<div class="skcard">'
+  +'<div class="sk" style="height:11px;width:38%"></div>'
+  +'<div class="sk" style="height:18px;width:68%"></div>'
+  +'<div class="sk" style="height:10px;width:46%"></div>'
+  +'<div class="skrow"><div class="sk" style="height:30px"></div><div class="sk" style="height:30px"></div><div class="sk" style="height:30px"></div></div>'
+  +'<div class="skfoot"><div class="sk" style="height:20px;width:34%"></div><div class="sk" style="height:16px;width:22%"></div></div>'
+  +'</div>';}
+function renderFeedSkeleton(){var g=$('grid');if(!g)return;var v=(typeof DEALVIEW!=='undefined'?DEALVIEW:'list');if(v==='map')return;g.className='grid view-'+v;var h='';for(var i=0;i<6;i++)h+=skCard();g.innerHTML=h;}
+function skLines(n){var h='';n=n||5;for(var i=0;i<n;i++){var w=58+((i*17+29)%38);h+='<div class="sk" style="height:14px;width:'+w+'%;margin:11px 0"></div>';}return '<div class="skpad">'+h+'</div>';}
 function render(){
   var g=$('grid'); if(!g)return;
   var q=($('fSearch').value||'').toLowerCase(), sort=$('fSort').value;
@@ -1880,7 +1898,7 @@ function openReferral(){
   });
 }
 function copyRef(){var i=$('refLink');if(!i)return;try{i.select();document.execCommand('copy');}catch(e){}if(navigator.clipboard){navigator.clipboard.writeText(i.value).catch(function(){});}var c=$('refCopied');if(c)c.style.display='block';}
-function openDirectory(){var _dr=$('mDirectory');if(_dr){_dr.innerHTML='<div class="modal wide"><div class="mhead"><h3>Member directory</h3><button class="x" onclick="close_(\'mDirectory\')">×</button></div><div class="mbody"><div class="empty">Loading…</div></div></div>';open_('mDirectory');}
+function openDirectory(){var _dr=$('mDirectory');if(_dr){_dr.innerHTML='<div class="modal wide"><div class="mhead"><h3>Member directory</h3><button class="x" onclick="close_(\'mDirectory\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mDirectory');}
   apiT('/api/pm/directory').then(function(j){
     if(j&&j.timeout){var _b=_dr&&_dr.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}
     if(j&&j.error==='not_approved'){alert('The member directory unlocks once your membership is approved.');return;}
@@ -1963,7 +1981,7 @@ function setIntro(id,status){api('/api/pm/intro/decide',{introId:id,decision:sta
 var THREADS=[];
 function loadThreads(cb){apiT('/api/pm/threads').then(function(j){THREADS=(j&&j.threads)||[];updateMsgDot();cb&&cb();});}
 function updateMsgDot(){var un=THREADS.some(function(t){return t.unread>0;});var d=$('msgDot');if(d)d.style.display=un?'':'none';}
-function openMsgs(){var _m=$('mMsgs');if(_m){_m.innerHTML='<div class="modal wide"><div class="mhead"><h3>Messages</h3><button class="x" onclick="close_(\'mMsgs\')">×</button></div><div class="mbody"><div class="empty">Loading…</div></div></div>';open_('mMsgs');}loadThreads(function(){renderThreads();open_('mMsgs');});}
+function openMsgs(){var _m=$('mMsgs');if(_m){_m.innerHTML='<div class="modal wide"><div class="mhead"><h3>Messages</h3><button class="x" onclick="close_(\'mMsgs\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mMsgs');}loadThreads(function(){renderThreads();open_('mMsgs');});}
 function renderThreads(){
   var body=THREADS.length?THREADS.map(function(t){
     var sub=t.listing?(esc(t.listing.area||'Deal')+' · '+money(t.listing.price)):'Direct message';
@@ -2021,7 +2039,7 @@ function sendContact(listingId,toEmail){
 /* ── alerts / notifications (the bell) ── */
 var NOTIFS=[];
 function loadNotifs(cb){apiT('/api/pm/notifs').then(function(j){NOTIFS=(j&&j.notifs)||[];var un=(j&&j.unread)||0;var b=$('notifBadge');if(b){b.style.display=un?'':'none';b.textContent=un;}cb&&cb();});}
-function openNotifs(){var _n=$('mNotifs');if(_n){_n.innerHTML='<div class="modal wide"><div class="mhead"><h3>Alerts</h3><button class="x" onclick="close_(\'mNotifs\')">×</button></div><div class="mbody"><div class="empty">Loading…</div></div></div>';open_('mNotifs');}loadNotifs(function(){
+function openNotifs(){var _n=$('mNotifs');if(_n){_n.innerHTML='<div class="modal wide"><div class="mhead"><h3>Alerts</h3><button class="x" onclick="close_(\'mNotifs\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mNotifs');}loadNotifs(function(){
   var body=NOTIFS.length?NOTIFS.map(function(n){return '<div class="reqrow"'+(n.listingId?(' style="cursor:pointer" onclick="close_(\'mNotifs\');openDetail(\''+esc(n.listingId)+'\')"'):'')+'><div class="grow"><b'+(n.read?'':' style="color:var(--gold)"')+'>'+esc(n.text)+'</b><div style="color:var(--mut2);font-size:12px;margin-top:2px">'+ago(n.at)+'</div></div></div>';}).join(''):'<div class="empty">No alerts yet. When a new deal matches a client need you posted, it shows up here.</div>';
   $('mNotifs').innerHTML='<div class="modal wide"><div class="mhead"><h3>Alerts</h3><button class="x" onclick="close_(\'mNotifs\')">×</button></div><div class="mbody">'+body+'</div></div>';
   open_('mNotifs');
@@ -2029,7 +2047,7 @@ function openNotifs(){var _n=$('mNotifs');if(_n){_n.innerHTML='<div class="modal
 });}
 
 /* ── market pulse ── */
-function openMarket(){var _mk=$('mMarket');if(_mk){_mk.innerHTML='<div class="modal wide"><div class="mhead"><h3>Market pulse</h3><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody"><div class="empty">Loading…</div></div></div>';open_('mMarket');}
+function openMarket(){var _mk=$('mMarket');if(_mk){_mk.innerHTML='<div class="modal wide"><div class="mhead"><h3>Market pulse</h3><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mMarket');}
   Promise.all([apiT('/api/pm/market'),apiT('/api/pm/closings')]).then(function(r){var j=r[0]||{},cj=r[1]||{};if((j&&j.timeout)||(cj&&cj.timeout)){var _b=_mk&&_mk.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}var m=(j&&j.market)||{};
   function stat(v,k){return '<div style="background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:15px 16px"><div style="font-family:\'Big Shoulders Display\',system-ui,sans-serif;font-size:25px;font-weight:800">'+v+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-top:3px">'+k+'</div></div>';}
   // closed-deal proof block
@@ -2055,7 +2073,7 @@ function openMarket(){var _mk=$('mMarket');if(_mk){_mk.innerHTML='<div class="mo
 });}
 
 /* ── broadcast board ── */
-function openBoard(){var _bd=$('mBoard');if(_bd){_bd.innerHTML='<div class="modal wide"><div class="mhead"><h3>Board</h3><button class="x" onclick="close_(\'mBoard\')">×</button></div><div class="mbody"><div class="empty">Loading…</div></div></div>';open_('mBoard');}
+function openBoard(){var _bd=$('mBoard');if(_bd){_bd.innerHTML='<div class="modal wide"><div class="mhead"><h3>Board</h3><button class="x" onclick="close_(\'mBoard\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mBoard');}
   apiT('/api/pm/broadcasts').then(function(j){if(j&&j.timeout){var _b=_bd&&_bd.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}var bs=(j&&j.broadcasts)||[];
   var posts=bs.length?bs.map(function(b){return '<div class="reqrow" style="align-items:flex-start"><div class="grow"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em">'+esc(b.category||'Misc')+'</div><b style="display:block;margin:2px 0">'+esc(b.title||'(no title)')+'</b><div style="color:var(--mut);font-size:13px;white-space:pre-wrap">'+esc((b.body||'').slice(0,600))+'</div><div style="color:var(--mut2);font-size:12px;margin-top:6px">'+esc(b.fromName||b.from)+' · '+ago(b.at)+'</div></div></div>';}).join(''):'<div class="empty">No posts yet. Start the board — post an ISO, an off-market list, or an announcement.</div>';
   $('mBoard').innerHTML='<div class="modal wide"><div class="mhead"><h3>Board</h3><button class="x" onclick="close_(\'mBoard\')">×</button></div><div class="mbody">'
