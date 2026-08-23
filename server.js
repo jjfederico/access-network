@@ -1501,7 +1501,7 @@ app.post('/api/pm/upload', rateLimit('upload', 60, 60 * 1000), ensureAuth, pmGat
 // ── AI rent-roll / OM extraction: read an uploaded rent roll or operating
 // statement and return the numbers pre-filled for the deal form. Requires an
 // ANTHROPIC_API_KEY in the environment; degrades gracefully when it's absent.
-const EXTRACT_MODEL = process.env.PM_EXTRACT_MODEL || 'claude-3-5-sonnet-latest';
+const EXTRACT_MODEL = process.env.PM_EXTRACT_MODEL || 'claude-sonnet-5';
 app.post('/api/pm/extract', rateLimit('extract', 20, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const data = String(b.data || ''); const mime = String(b.mime || '').toLowerCase();
