@@ -33,12 +33,12 @@ app.use(express.urlencoded({ extended: true }));
 // now (CSP_ENFORCE=1 flips it to enforcing) so it can never break a live flow.
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://maps.googleapis.com https://challenges.cloudflare.com",
+  "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com https://js.stripe.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
-  "img-src 'self' data: https:",
-  "connect-src 'self' https://accounts.google.com https://apis.google.com https://maps.googleapis.com https://challenges.cloudflare.com",
-  "frame-src 'self' https://accounts.google.com https://challenges.cloudflare.com https://www.google.com https://maps.google.com",
+  "img-src 'self' data: blob: https:",
+  "connect-src 'self' https://accounts.google.com https://apis.google.com https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com https://api.stripe.com",
+  "frame-src 'self' https://accounts.google.com https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://js.stripe.com https://checkout.stripe.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -49,6 +49,7 @@ app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  if (IS_DEPLOYED) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader(process.env.CSP_ENFORCE ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only', CSP);
   next();
 });
