@@ -1077,7 +1077,7 @@ function loadAll(){
     apiT('/api/pm/pay/status').then(function(pay){if(pay&&pay.ok){PAYCFG={enabled:!!pay.enabled,membership:!!pay.membership,prices:pay.prices||PAYCFG.prices};render();}});
     apiT('/api/pm/intros').then(function(intr){intr=intr||{};SENT=intr.asBuyer||[];INBOUND=intr.asSeller||[];render();updateReqDot();});
     apiT('/api/pm/buybox').then(function(bb){bb=bb||{};BUYBOX=bb.buybox||null;BBMATCHES=(bb.matches||[]).map(nL).filter(Boolean);});
-    apiT('/api/pm/profile').then(function(pf){pf=pf||{};PROFILE=pf.profile||null;APPROVED=(pf.approved!==false);renderGate();maybeNotifNudge();});
+    apiT('/api/pm/profile').then(function(pf){pf=pf||{};PROFILE=pf.profile||null;APPROVED=(pf.approved!==false);renderGate();render();maybeNotifNudge();});
     loadThreads(function(){});loadNotifs(function(){});
   });
 }
