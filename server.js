@@ -187,7 +187,7 @@ function pmPublicView(l, full, gated) {
     status: l.status || 'active', mlsAt: l.mlsAt || '', featured: !!l.featured,
     city: l.city || '', area: l.area || '', state: l.state || '',
     zipPrefix: zip ? zip.slice(0, 3) : '',
-    propType: l.propType || '', dist: l.dist || 'broad',
+    propType: l.propType || '', dist: l.dist || 'broad', priceBasis: l.priceBasis || 'sale',
     units: l.units || '', sqft: l.sqft || '',
     beds: l.beds || '', baths: l.baths || '', yearBuilt: l.yearBuilt || '',
     price: l.price || '', capRate: l.capRate || '',
@@ -419,7 +419,7 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
       grossIncome: S(b.grossIncome, 24), expenses: S(b.expenses, 24),
       vacancy: S(b.vacancy, 24), taxes: S(b.taxes, 24),
       commissionPct: S(b.commissionPct, 16), commissionNotes: S(b.commissionNotes, 300),
-      notes: S(b.notes, 3000), comingSoon: b.comingSoon === true, docs: docsIn, photos: photosIn
+      notes: S(b.notes, 3000), comingSoon: b.comingSoon === true, priceBasis: (['rent_mo','rent_psf','sale'].indexOf(String(b.priceBasis)) >= 0 ? String(b.priceBasis) : 'sale'), docs: docsIn, photos: photosIn
     };
     // A Private/Pocket deal must never expose its address, regardless of the
     // hide-address checkbox — force it hidden at write time.
@@ -1494,6 +1494,43 @@ app.post('/api/pm/upload', rateLimit('upload', 60, 60 * 1000), ensureAuth, pmGat
     // Inline data URL — same-origin, no external service. Swap for S3/R2 later.
     const url = 'data:' + mime + ';base64,' + data;
     res.json({ ok: true, url, name });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
+
+// ── AI rent-roll / OM extraction: read an uploaded rent roll or operating
+// statement and return the numbers pre-filled for the deal form. Requires an
+// ANTHROPIC_API_KEY in the environment; degrades gracefully when it's absent.
+const EXTRACT_MODEL = process.env.PM_EXTRACT_MODEL || 'claude-3-5-sonnet-latest';
+app.post('/api/pm/extract', rateLimit('extract', 20, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
+  const b = req.body || {};
+  const data = String(b.data || ''); const mime = String(b.mime || '').toLowerCase();
+  if (!data) return res.status(400).json({ ok: false, error: 'no_file' });
+  const KEY = process.env.ANTHROPIC_API_KEY || '';
+  if (!KEY) return res.status(200).json({ ok: false, error: 'not_configured', message: 'AI auto-fill isn’t switched on yet. Add an ANTHROPIC_API_KEY in your host settings to enable it.' });
+  try {
+    if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
+    const approxBytes = Math.floor(data.length * 0.75);
+    if (approxBytes > 8 * 1024 * 1024) return res.status(413).json({ ok: false, error: 'too_big', message: 'File too large — keep the rent roll under ~8MB.' });
+    const prompt = 'You are reading a real estate rent roll and/or operating statement to pre-fill a listing form. '
+      + 'Return ONLY a compact JSON object (no prose, no code fences) with these keys — numbers only, no $ or commas, use "" when unknown, and NEVER invent values: '
+      + '{"units": <total unit count>, "grossIncome": <annual gross rental/scheduled income>, "expenses": <annual operating expenses>, "noi": <net operating income if stated>, "sqft": <total building square feet>, "price": <asking/list price if present>, "summary": "<one line <=120 chars describing the property/income>"}.';
+    let content;
+    if (/pdf/.test(mime)) content = [{ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } }, { type: 'text', text: prompt }];
+    else if (/^image\//.test(mime)) content = [{ type: 'image', source: { type: 'base64', media_type: (mime.split(';')[0] || 'image/png') } }, { type: 'text', text: prompt }], content[0].source.data = data;
+    else { let txt = ''; try { txt = Buffer.from(data, 'base64').toString('utf8').slice(0, 60000); } catch (e) {} content = [{ type: 'text', text: prompt + '\n\nRENT ROLL / STATEMENT:\n' + txt }]; }
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: EXTRACT_MODEL, max_tokens: 500, messages: [{ role: 'user', content }] })
+    });
+    if (!r.ok) { const t = await r.text().catch(() => ''); return res.status(502).json({ ok: false, error: 'ai_error', message: 'Extraction service error (' + r.status + ').' + (r.status === 401 ? ' Check the API key.' : ''), detail: t.slice(0, 300) }); }
+    const j = await r.json();
+    const text = ((j.content || []).map(c => c.text || '').join('')).trim();
+    const m = text.match(/\{[\s\S]*\}/); if (!m) return res.status(200).json({ ok: false, error: 'no_data', message: 'Couldn’t read numbers from that file — try a clearer rent roll.' });
+    let parsed = {}; try { parsed = JSON.parse(m[0]); } catch (e) { return res.status(200).json({ ok: false, error: 'parse', message: 'Couldn’t parse the extracted data — try again.' }); }
+    const numOnly = v => { const s = String(v == null ? '' : v).replace(/[^0-9.]/g, ''); return s || ''; };
+    const fields = { units: numOnly(parsed.units), grossIncome: numOnly(parsed.grossIncome), expenses: numOnly(parsed.expenses), noi: numOnly(parsed.noi), sqft: numOnly(parsed.sqft), price: numOnly(parsed.price), summary: String(parsed.summary || '').slice(0, 200) };
+    res.json({ ok: true, fields });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
