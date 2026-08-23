@@ -1771,7 +1771,7 @@ function uploadPhotos(files){
       var b64=String(dataUrl).replace(/^data:[^,]*,/,'');
       api('/api/pm/upload',{name:f.name,mime:'image/jpeg',size:b64.length,data:b64}).then(function(j){
         done++;
-        if(j&&j.ok&&j.url)SUBMIT_PHOTOS.push({name:(f.name||'photo').replace(/\.[^.]+$/,''),url:j.url});
+        if(j&&j.ok&&j.url)SUBMIT_PHOTOS.push({name:(f.name||'photo').replace(/\.[^.]+$/,''),url:j.url,key:j.key||''});
         else if(j&&j.message)$('sMsg').textContent=j.message;
         renderPhotoList();
         if(done===files.length){if(SUBMIT_PHOTOS.length)$('sMsg').textContent='Photos added ✓';setTimeout(function(){if($('sMsg').textContent==='Photos added ✓')$('sMsg').textContent='';},1400);}
@@ -1832,7 +1832,7 @@ function uploadDocs(){
       var data=String(rd.result||'').replace(/^data:[^,]*,/,'');
       api('/api/pm/upload',{name:f.name,mime:f.type,size:f.size,data:data}).then(function(j){
         done++;
-        if(j&&j.ok&&j.url)SUBMIT_DOCS.push({name:j.name||f.name,url:j.url});
+        if(j&&j.ok&&j.url)SUBMIT_DOCS.push({name:j.name||f.name,url:j.url,key:j.key||''});
         renderDocList();
         if(done===files.length){$('sMsg').textContent=SUBMIT_DOCS.length?'Documents attached ✓':'Upload failed';setTimeout(function(){$('sMsg').textContent='';},1500);}
       });
