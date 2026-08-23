@@ -220,8 +220,12 @@ function pmPublicView(l, full, gated) {
   return out;
 }
 const _emailEsc = s => String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+// Make bare URLs in a plaintext body clickable (navy), so email links look intentional.
+const _emailLinkify = html => String(html).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#0A3D8F;word-break:break-all">$1</a>');
+// Every transactional email now renders inside the branded AXESS shell (navy header
+// + white card) instead of raw <pre> text, with newlines and links preserved.
 const pmSendEmail = (to, subject, body) =>
-  authMod.sendEmail(to, subject, `<pre style="font:inherit;white-space:pre-wrap">${_emailEsc(body)}</pre>`);
+  authMod.sendEmail(to, subject, authMod.emailShell('<div>' + _emailLinkify(_emailEsc(body)).replace(/\n/g, '<br>') + '</div>'));
 function pmNum(v) { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.]/g, '')); return isFinite(n) ? n : 0; }
 const pmFocus = v => (['residential', 'commercial', 'both'].indexOf(String(v || '').toLowerCase().trim()) >= 0 ? String(v).toLowerCase().trim() : '');
 // Category grouping (mirrors the app). Crossover types (2–4 unit, land, multifamily)
@@ -1336,10 +1340,10 @@ app.post('/api/pm/admin/invite', ensureAuth, pmGate, async (req, res) => {
     const now = new Date().toISOString();
     // Log the invite (for a simple record / de-dupe view later).
     try { const invs = await pmLoad('pm_invites'); invs.push({ email, by: pmEmail(req.user), at: now }); await pmSave('pm_invites', invs.length > 3000 ? invs.slice(-3000) : invs); } catch (e) {}
-    const html = '<div style="font-family:Inter,Arial,sans-serif;max-width:480px">'
-      + '<p style="font-size:16px">You\'re invited to <b>AXESS</b> — a private, invite-only network where licensed agents move off-market real estate deals agent-to-agent.</p>'
-      + '<p><a href="' + link + '" style="display:inline-block;background:#0064E5;color:#fff;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:8px">Accept your invite &amp; sign up →</a></p>'
-      + '<p style="color:#5B6472;font-size:13px">Founding members join free. You\'ll just confirm your license — takes about a minute. If the button doesn\'t work, paste this link:<br>' + link + '</p></div>';
+    const html = authMod.emailShell(
+      '<p style="margin:0 0 4px;font-size:16px">You\'re invited to <b>AXESS</b> — a private, invite-only network where licensed agents move off-market real estate deals agent-to-agent.</p>'
+      + authMod.emailBtn('Accept your invite &amp; sign up →', link)
+      + '<p style="color:#5B6472;font-size:13px;margin:16px 0 0">Founding members join free. You\'ll just confirm your license — takes about a minute. If the button doesn\'t work, paste this link:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>');
     const sent = await authMod.sendEmail(email, 'Your invite to AXESS', html);
     if (sent === false) return res.status(502).json({ ok: false, error: 'send_failed', message: 'Could not send the email — check email settings.' });
     res.json({ ok: true });

@@ -76,10 +76,25 @@ function _unsubToken(email) {
   return crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.DIGEST_KEY || 'axess-unsub')
     .update(String(email || '').toLowerCase()).digest('hex').slice(0, 24);
 }
+// Branded HTML shell wrapped around member-facing emails: a navy AXESS header
+// band over a clean white card. sendEmail() appends the standard footer beneath.
+function emailShell(inner) {
+  return '<div style="max-width:520px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#2b2f36">'
+    + '<div style="background:#0A3D8F;padding:20px 26px;border-radius:14px 14px 0 0">'
+    + '<div style="font-weight:800;letter-spacing:.28em;color:#ffffff;font-size:18px">AXESS</div>'
+    + '<div style="color:#b9c9e6;font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-top:4px">Off-market · agent to agent</div>'
+    + '</div>'
+    + '<div style="padding:26px;font-size:15px;line-height:1.6;border:1px solid #e4e7ed;border-top:none;border-radius:0 0 14px 14px">' + inner + '</div>'
+    + '</div>';
+}
+// A navy call-to-action button for the marquee member emails (sign-in, invite).
+function emailBtn(label, url) {
+  return '<p style="margin:22px 0 6px"><a href="' + url + '" style="display:inline-block;background:#0A3D8F;color:#ffffff;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:15px">' + label + '</a></p>';
+}
 function emailFooter(to) {
   const u = _APP_URL + '/api/pm/unsub?e=' + encodeURIComponent(String(to || '').toLowerCase()) + '&k=' + _unsubToken(to);
-  const a = 'style="color:#0064e5;text-decoration:none;margin-right:14px"';
-  return '<div style="margin-top:28px;padding-top:16px;border-top:1px solid #e4e7ed;font:13px/1.55 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#8a909c">'
+  const a = 'style="color:#0A3D8F;text-decoration:none;margin-right:14px"';
+  return '<div style="max-width:520px;margin:20px auto 0;padding:16px 26px 26px;border-top:1px solid #e4e7ed;font:13px/1.55 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#8a909c">'
     + '<div style="font-weight:800;letter-spacing:.16em;color:#14171d;font-size:14px">AXESS</div>'
     + '<div style="margin:8px 0"><a href="https://www.linkedin.com/company/143427047" ' + a + '>LinkedIn</a>'
     + '<a href="https://www.instagram.com/axess_re/" ' + a + '>Instagram</a>'
@@ -128,7 +143,9 @@ async function sendMagicLink(email, baseUrl) {
   await putToken(token, e);
   const link = (baseUrl || 'https://access-network.onrender.com') + '/auth/verify?token=' + token;
   const sent = await sendEmail(e, 'Your AXESS sign-in link',
-    `<p>Welcome to AXESS — tap to sign in:</p><p><a href="${link}">Sign in</a></p><p>This link expires in 30 minutes.</p>`);
+    emailShell('<p style="margin:0 0 4px;font-size:16px">Welcome to AXESS — you’re one tap from signing in.</p>'
+      + emailBtn('Sign in to AXESS', link)
+      + '<p style="margin:14px 0 0;color:#8a909c;font-size:13px">This link expires in 30 minutes. If the button doesn’t work, paste this into your browser:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>'));
   if (!sent) console.error('[ACCESS] signup sign-in email FAILED for', e);
   return sent !== false;
 }
@@ -144,7 +161,9 @@ function mount(app, baseUrl) {
     await putToken(token, email);
     const link = (baseUrl || 'https://axessre.com') + '/auth/verify?token=' + token;
     const sent = await sendEmail(email, 'Your AXESS sign-in link',
-      `<p>Tap to sign in to AXESS:</p><p><a href="${link}">Sign in</a></p><p>This link expires in 30 minutes.</p>`);
+      emailShell('<p style="margin:0 0 4px;font-size:16px">Tap to sign in to AXESS.</p>'
+        + emailBtn('Sign in', link)
+        + '<p style="margin:14px 0 0;color:#8a909c;font-size:13px">This link expires in 30 minutes. If the button doesn’t work, paste this into your browser:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>'));
     // Don't leak whether an address exists, but DO record a real send failure so
     // a silent delivery problem is diagnosable instead of looking like success.
     if (!sent) console.error('[ACCESS] sign-in email send FAILED for', email, '(check RESEND_API_KEY / verified domain / rate limits)');
@@ -186,4 +205,4 @@ function ensureAuth(req, res, next) {
   return res.status(401).json({ ok: false, error: 'auth' });
 }
 
-module.exports = { mount, attachUser, ensureAuth, userFor, profileFor, sendEmail, sendMagicLink, ADMIN, ADMINS, lc };
+module.exports = { mount, attachUser, ensureAuth, userFor, profileFor, sendEmail, sendMagicLink, emailShell, emailBtn, ADMIN, ADMINS, lc };
