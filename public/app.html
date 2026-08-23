@@ -2234,7 +2234,7 @@ function extractRentRoll(file){
         function put(id,v,lbl){var e=$(id);if(v&&e){e.value=''+v;try{e.dispatchEvent(new Event('input',{bubbles:true}));}catch(_){}filled.push(lbl);}}
         put('sUnits',f.units,'units');put('sGross',f.grossIncome,'gross income');put('sExp',f.expenses,'expenses');put('sNoi',f.noi,'NOI');put('sSf',f.sqft,'sq ft');
         if(f.price&&$('sPrice')&&!$('sPrice').value)put('sPrice',f.price,'price');
-        if(f.summary&&$('sDesc')&&!$('sDesc').value){$('sDesc').value=f.summary;filled.push('description');}
+        var desc=f.description||f.summary;if(desc&&$('sDesc')&&!$('sDesc').value){$('sDesc').value=desc;filled.push('description');}
         show(filled.length?('✓ Filled: '+filled.join(', ')+'. Please review every number before posting.'):'Read the file, but found no numbers to fill.','var(--acc)');
       } else { show((j&&j.message)||'Couldn’t read that file — try a clearer rent roll.','var(--bad)'); }
     });
