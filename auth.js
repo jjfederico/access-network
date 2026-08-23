@@ -80,9 +80,8 @@ function _unsubToken(email) {
 // band over a clean white card. sendEmail() appends the standard footer beneath.
 function emailShell(inner) {
   return '<div style="max-width:520px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#2b2f36">'
-    + '<div style="background:#0A3D8F;padding:20px 26px;border-radius:14px 14px 0 0">'
-    + '<div style="font-weight:800;letter-spacing:.28em;color:#ffffff;font-size:18px">AXESS</div>'
-    + '<div style="color:#b9c9e6;font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-top:4px">Off-market · agent to agent</div>'
+    + '<div style="background:#0A3D8F;padding:22px 26px;border-radius:14px 14px 0 0">'
+    + '<img src="' + _APP_URL + '/email-logo.png" width="200" height="46" alt="AXESS — A Real Estate Network" style="display:block;border:0;width:200px;height:auto;max-width:200px">'
     + '</div>'
     + '<div style="padding:26px;font-size:15px;line-height:1.6;border:1px solid #e4e7ed;border-top:none;border-radius:0 0 14px 14px">' + inner + '</div>'
     + '</div>';
