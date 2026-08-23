@@ -1480,7 +1480,7 @@ app.get('/api/pm/teaser', async (req, res) => {
 });
 
 // ── document upload (small files stored inline until object storage is added) ─
-const PM_UPLOAD_MAX = Number(process.env.PM_UPLOAD_MAX || 3 * 1024 * 1024); // 3MB inline cap
+const PM_UPLOAD_MAX = Number(process.env.PM_UPLOAD_MAX || 15 * 1024 * 1024); // 15MB inline cap (OMs run large)
 app.post('/api/pm/upload', rateLimit('upload', 60, 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const data = String(b.data || '');
@@ -1511,7 +1511,7 @@ app.post('/api/pm/extract', rateLimit('extract', 20, 10 * 60 * 1000), ensureAuth
   try {
     if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
     const approxBytes = Math.floor(data.length * 0.75);
-    if (approxBytes > 8 * 1024 * 1024) return res.status(413).json({ ok: false, error: 'too_big', message: 'File too large — keep the rent roll under ~8MB.' });
+    if (approxBytes > 20 * 1024 * 1024) return res.status(413).json({ ok: false, error: 'too_big', message: 'File too large — keep it under ~20MB (or upload just the rent-roll / financials pages).' });
     const prompt = 'You are reading a real estate rent roll and/or operating statement to pre-fill a listing form. '
       + 'Return ONLY a compact JSON object (no prose, no code fences) with these keys — numbers only, no $ or commas, use "" when unknown, and NEVER invent values: '
       + '{"units": <total unit count>, "grossIncome": <annual gross rental/scheduled income>, "expenses": <annual operating expenses>, "noi": <net operating income if stated>, "sqft": <total building square feet>, "price": <asking/list price if present>, "summary": "<one line <=120 chars describing the property/income>"}.';
