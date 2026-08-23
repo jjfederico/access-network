@@ -341,6 +341,23 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
       .filter(l => (l.dist || 'broad') !== 'pocket' || mine(l) || isOwner)
       .map(l => attachOwner(pmPublicView(l, entitled(l), gated && !mine(l)), l.owner))
       .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
+    // Server-side give-to-get: a member who has never contributed (ignoring the
+    // grace window) gets NO deal rows at all — only aggregate counts for the
+    // stat tiles. The board data never leaves the server for a lurker.
+    const mustPost = recip.enforce && !recip.exempt && !recip.hasDeal && !recip.hasNeed && !isOwner;
+    if (mustPost) {
+      const _n = v => { const x = Number(String(v == null ? '' : v).replace(/[^0-9.]/g, '')); return isNaN(x) ? 0 : x; };
+      const subs = {}; rows.forEach(r => { if (r && r.submarket) subs[r.submarket] = 1; });
+      const comms = rows.map(r => _n(r && r.commission)).filter(x => x > 0);
+      return res.json({
+        ok: true, listings: [], gated: true,
+        gatedCount: rows.length,
+        gatedValue: rows.reduce((a, r) => a + _n(r && r.price), 0),
+        gatedSubmarkets: Object.keys(subs).length,
+        gatedAvgComm: comms.length ? (comms.reduce((a, b) => a + b, 0) / comms.length) : 0,
+        me: { email: req.user.email, role: req.user.role, focus: meProf.focus || '', reciprocity: recip }
+      });
+    }
     res.json({ ok: true, listings: rows, me: { email: req.user.email, role: req.user.role, focus: meProf.focus || '', reciprocity: recip } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
