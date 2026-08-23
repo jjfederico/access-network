@@ -226,6 +226,19 @@ const _emailLinkify = html => String(html).replace(/(https?:\/\/[^\s<]+)/g, '<a 
 // + white card) instead of raw <pre> text, with newlines and links preserved.
 const pmSendEmail = (to, subject, body) =>
   authMod.sendEmail(to, subject, authMod.emailShell('<div>' + _emailLinkify(_emailEsc(body)).replace(/\n/g, '<br>') + '</div>'));
+// Richer member email: a headline, one or more paragraphs, an optional CTA button,
+// and an optional signature line. Dynamic values in paras/heading/sign must be
+// escaped by the caller (they are inserted as HTML). Used for the lifecycle emails
+// people actually read — request received, approval, founding welcome.
+function pmRich(o) {
+  o = o || {};
+  const H = o.heading ? '<div style="font-size:19px;font-weight:700;color:#14171d;margin:0 0 14px">' + o.heading + '</div>' : '';
+  const P = (o.paras || []).map(t => '<p style="margin:0 0 14px">' + t + '</p>').join('');
+  const B = (o.cta && o.cta.url) ? authMod.emailBtn(o.cta.label || 'Open AXESS', o.cta.url) : '';
+  const S = o.sign ? '<p style="margin:20px 0 0;color:#5b6472;font-size:14px">' + o.sign + '</p>' : '';
+  return authMod.emailShell(H + P + B + S);
+}
+const pmSendRich = (to, subject, o) => authMod.sendEmail(to, subject, pmRich(o));
 function pmNum(v) { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.]/g, '')); return isFinite(n) ? n : 0; }
 const pmFocus = v => (['residential', 'commercial', 'both'].indexOf(String(v || '').toLowerCase().trim()) >= 0 ? String(v).toLowerCase().trim() : '');
 // Category grouping (mirrors the app). Crossover types (2–4 unit, land, multifamily)
@@ -1150,7 +1163,17 @@ app.post('/api/pm/admin/approve', ensureAuth, pmGate, async (req, res) => {
       profs[idx].verified = true; profs[idx].verifiedAt = profs[idx].verifiedAt || profs[idx].decidedAt; // license checked → Verified badge
     }
     await pmSave('pm_profiles', profs);
-    try { await pmSendEmail(email, 'AXESS · your membership was ' + decision, decision === 'approved' ? 'You\'re verified and in. Sign in to AXESS to post deals, request intros, and message members.' : 'Your AXESS application was not approved at this time.'); } catch (e) {}
+    try {
+      if (decision === 'approved') await pmSendRich(email, 'AXESS · your membership was approved', {
+        heading: 'You’re verified and in',
+        paras: ['Your license checked out — welcome to AXESS.', 'Sign in to post deals, request intros, and message other verified agents.'],
+        cta: { label: 'Sign in to AXESS', url: PM_BASE + '/app.html' }
+      });
+      else await pmSendRich(email, 'AXESS · your membership was not approved', {
+        heading: 'Membership update',
+        paras: ['Thanks for your interest in AXESS. We’re not able to approve your request at this time.']
+      });
+    } catch (e) {}
     res.json({ ok: true, email, status: decision });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -1297,12 +1320,16 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
     // Welcome email for brand-new members (separate from the sign-in link) — orients them on day one.
     if (pIdx < 0) {
       try {
-        await pmSendEmail(email, 'AXESS · we got your request — verifying your license',
-          'Thanks for requesting access to AXESS, ' + (name || 'there') + '.\n\n' +
-          'AXESS is an invite-only, agent-to-agent network for off-market deals in Massachusetts — and every member is a verified, licensed agent. We\'re confirming your real estate license now (usually within a day).\n\n' +
-          'The moment you\'re approved, you\'ll get an email and full access to post deals, request intros, and message members.\n\n' +
-          'Reply to this email anytime; it comes straight to me.\n\n' +
-          '— John, Founder · AXESS\ninfo@axessre.com');
+        await pmSendRich(email, 'AXESS · we got your request — verifying your license', {
+          heading: 'We got your request',
+          paras: [
+            'Thanks for requesting access to AXESS, ' + _emailEsc(name || 'there') + '.',
+            'AXESS is an invite-only, agent-to-agent network for off-market deals in Massachusetts — and every member is a verified, licensed agent. We’re confirming your real estate license now (usually within a day).',
+            'The moment you’re approved, you’ll get an email and full access to post deals, request intros, and message members.',
+            'Reply to this email anytime; it comes straight to me.'
+          ],
+          sign: '— John, Founder · AXESS<br>info@axessre.com'
+        });
       } catch (e) {}
     }
     if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member awaiting your approval', name + ' requested access and is awaiting license verification.\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nVerify their license and approve (or reject) them in the AXESS admin panel → Requests tab.'); } catch (e) {} }
@@ -1423,9 +1450,19 @@ app.post('/api/pm/admin/request/decide', ensureAuth, pmGate, async (req, res) =>
         }
         await pmSave('pm_profiles', profs);
       } catch (e) {}
-      try { await pmSendEmail(r.email, 'AXESS · you\'re approved to join', 'Good news — you\'re approved as a founding member of AXESS.\n\nYour access is free while we build out the network. Membership will be $50/month afterward, and we\'ll always give you notice before anything is ever charged.\n\nSign in at ' + PM_BASE + '/app.html to start posting deals and connecting with members.'); } catch (e) {}
+      try { await pmSendRich(r.email, 'AXESS · you\'re approved to join', {
+        heading: 'You’re in — welcome, founding member',
+        paras: [
+          'Good news — you’re approved as a founding member of AXESS.',
+          'Your access is free while we build out the network. Membership will be $50/month afterward, and we’ll always give you notice before anything is ever charged.'
+        ],
+        cta: { label: 'Sign in to AXESS', url: PM_BASE + '/app.html' }
+      }); } catch (e) {}
     } else {
-      try { await pmSendEmail(r.email, 'AXESS · membership request', 'Thanks for your interest in AXESS. We\'re not able to approve your request at this time.'); } catch (e) {}
+      try { await pmSendRich(r.email, 'AXESS · membership request', {
+        heading: 'Membership update',
+        paras: ['Thanks for your interest in AXESS. We’re not able to approve your request at this time.']
+      }); } catch (e) {}
     }
     res.json({ ok: true, id, status: decision });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
