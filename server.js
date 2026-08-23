@@ -204,9 +204,11 @@ function pmPublicView(l, full, gated) {
   };
   if (showAddr) {
     out.address = l.address || ''; out.zip = zip;
-    out.photos = Array.isArray(l.photos) ? l.photos : [];
+    // Keyed files (R2) become permission-checked /api/pm/file URLs; legacy inline URLs pass through.
+    const fileUrl = (x) => (x && x.key) ? { name: x.name || '', key: x.key, url: '/api/pm/file?lid=' + encodeURIComponent(l.id) + '&k=' + encodeURIComponent(x.key) } : x;
+    out.photos = (Array.isArray(l.photos) ? l.photos : []).map(fileUrl);
     // Documents (OMs, financials) contain the address & full details — only entitled viewers get them.
-    out.docs = Array.isArray(l.docs) ? l.docs : [];
+    out.docs = (Array.isArray(l.docs) ? l.docs : []).map(fileUrl);
     if (l.lat && l.lng) { out.lat = l.lat; out.lng = l.lng; } // exact pin only for entitled viewers
   }
   // Full operating statement unlocks only for entitled viewers (owner / own listing /
@@ -404,8 +406,9 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
     const listings = await pmLoad(PM_KEYS.listings);
     const id = S(b.id, 40);
     const now = new Date().toISOString();
-    const docsIn = Array.isArray(b.docs) ? b.docs.slice(0, 20).map(d => ({ name: S(d && d.name, 160), url: pmSafeUrl(S(d && d.url, 900)) })).filter(d => d.url) : [];
-    const photosIn = Array.isArray(b.photos) ? b.photos.slice(0, 24).map(p => ({ name: String((p && p.name) || '').slice(0, 120), url: pmSafeUrl(String((p && p.url) || '')) })).filter(p => p.url && p.url.length < 6000000) : [];
+    // Prefer the object-storage key (R2); fall back to an inline/data URL for legacy or no-R2.
+    const docsIn = Array.isArray(b.docs) ? b.docs.slice(0, 20).map(d => { const k = cleanKey(d && d.key); return k ? { name: S(d && d.name, 160), key: k } : { name: S(d && d.name, 160), url: pmSafeUrl(S(d && d.url, 900)) }; }).filter(d => d.key || d.url) : [];
+    const photosIn = Array.isArray(b.photos) ? b.photos.slice(0, 24).map(p => { const k = cleanKey(p && p.key); return k ? { name: String((p && p.name) || '').slice(0, 120), key: k } : { name: String((p && p.name) || '').slice(0, 120), url: pmSafeUrl(String((p && p.url) || '')) }; }).filter(p => p.key || (p.url && p.url.length < 6000000)) : [];
     const fields = {
       ownerName: S(b.ownerName, 80),
       status: (b.status === 'off' ? 'off' : b.status === 'mls' ? 'mls' : 'active'),
@@ -1479,8 +1482,20 @@ app.get('/api/pm/teaser', async (req, res) => {
   } catch (e) { res.json({ ok: true, deals: [] }); }
 });
 
-// ── document upload (small files stored inline until object storage is added) ─
-const PM_UPLOAD_MAX = Number(process.env.PM_UPLOAD_MAX || 15 * 1024 * 1024); // 15MB inline cap (OMs run large)
+// ── object storage (Cloudflare R2 / S3-compatible) ──────────────────────────
+// Files live in a PRIVATE bucket. The listing stores only the object key; entitled
+// viewers get a short-lived signed URL through /api/pm/file, re-checked per request.
+// If R2 isn't configured, we fall back to inline data-URLs so nothing breaks.
+const R2 = { account: process.env.R2_ACCOUNT_ID || '', bucket: process.env.R2_BUCKET || '', akey: process.env.R2_ACCESS_KEY_ID || '', skey: process.env.R2_SECRET_ACCESS_KEY || '' };
+const R2_ENABLED = !!(R2.account && R2.bucket && R2.akey && R2.skey);
+let _s3 = null;
+function s3client() { if (_s3) return _s3; const { S3Client } = require('@aws-sdk/client-s3'); _s3 = new S3Client({ region: 'auto', endpoint: 'https://' + R2.account + '.r2.cloudflarestorage.com', credentials: { accessKeyId: R2.akey, secretAccessKey: R2.skey } }); return _s3; }
+async function r2Put(key, buf, mime) { const { PutObjectCommand } = require('@aws-sdk/client-s3'); await s3client().send(new PutObjectCommand({ Bucket: R2.bucket, Key: key, Body: buf, ContentType: mime })); }
+async function r2SignedGet(key, ttl) { const { GetObjectCommand } = require('@aws-sdk/client-s3'); const { getSignedUrl } = require('@aws-sdk/s3-request-presigner'); return getSignedUrl(s3client(), new GetObjectCommand({ Bucket: R2.bucket, Key: key }), { expiresIn: ttl || 3600 }); }
+function _ext(mime) { return ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/heic': 'heic', 'application/pdf': 'pdf', 'text/csv': 'csv', 'text/plain': 'txt' })[mime] || 'bin'; }
+function cleanKey(v) { return String(v == null ? '' : v).replace(/[^a-zA-Z0-9/_.\-]/g, '').slice(0, 300); }
+
+const PM_UPLOAD_MAX = Number(process.env.PM_UPLOAD_MAX || 15 * 1024 * 1024); // 15MB (base64 fits the 25MB JSON body)
 app.post('/api/pm/upload', rateLimit('upload', 60, 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const data = String(b.data || '');
@@ -1488,14 +1503,39 @@ app.post('/api/pm/upload', rateLimit('upload', 60, 60 * 1000), ensureAuth, pmGat
   try {
     if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
     const approxBytes = Math.floor(data.length * 0.75);
-    if (approxBytes > PM_UPLOAD_MAX) return res.status(413).json({ ok: false, error: 'too_big', message: 'File too large — max ' + Math.round(PM_UPLOAD_MAX / 1e6) + 'MB for now (object storage coming).' });
+    if (approxBytes > PM_UPLOAD_MAX) return res.status(413).json({ ok: false, error: 'too_big', message: 'File too large — max ' + Math.round(PM_UPLOAD_MAX / 1e6) + 'MB.' });
     const mime = String(b.mime || 'application/octet-stream').slice(0, 120).toLowerCase();
     if (!/^(image\/(png|jpe?g|gif|webp|heic)|application\/pdf|application\/vnd\.openxmlformats|application\/msword|application\/vnd\.ms-excel|text\/(csv|plain))/.test(mime)) return res.status(415).json({ ok: false, error: 'bad_type', message: 'Unsupported file type — images, PDF, or Office documents only.' });
     const name = String(b.name || 'file').slice(0, 200);
-    // Inline data URL — same-origin, no external service. Swap for S3/R2 later.
-    const url = 'data:' + mime + ';base64,' + data;
+    if (R2_ENABLED) {
+      const crypto = require('crypto');
+      const key = 'u/' + crypto.createHash('sha1').update(pmEmail(req.user)).digest('hex').slice(0, 10) + '/' + Date.now().toString(36) + crypto.randomBytes(6).toString('hex') + '.' + _ext(mime);
+      await r2Put(key, Buffer.from(data, 'base64'), mime);
+      const url = await r2SignedGet(key, 3600); // preview URL for the submit form
+      return res.json({ ok: true, url, key, name });
+    }
+    const url = 'data:' + mime + ';base64,' + data; // fallback until R2 is configured
     res.json({ ok: true, url, name });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
+
+// Serve a stored file to an ENTITLED viewer via a fresh signed URL (302). Permission
+// is re-checked on every request, so a leaked link is useless to a non-entitled user.
+app.get('/api/pm/file', ensureAuth, pmGate, async (req, res) => {
+  const lid = String(req.query.lid || ''), key = cleanKey(req.query.k);
+  if (!lid || !key || !R2_ENABLED) return res.status(404).send('not found');
+  try {
+    const [listings, intros] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros)]);
+    const l = listings.find(x => x && x.id === lid);
+    if (!l) return res.status(404).send('not found');
+    const me = pmEmail(req.user);
+    const entitled = _lc(l.owner) === me || req.user.role === 'owner' || intros.some(i => i && i.listingId === lid && _lc(i.buyer) === me && i.status === 'approved');
+    if (!entitled) return res.status(403).send('forbidden');
+    const keys = [].concat(l.photos || [], l.docs || []).map(x => x && x.key).filter(Boolean);
+    if (keys.indexOf(key) < 0) return res.status(404).send('not found');
+    res.setHeader('Cache-Control', 'private, max-age=1500');
+    res.redirect(302, await r2SignedGet(key, 3600));
+  } catch (e) { res.status(502).send('error'); }
 });
 
 // ── AI rent-roll / OM extraction: read an uploaded rent roll or operating
