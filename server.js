@@ -278,12 +278,15 @@ const MARKET_REGIONS = {
   'north shore': ['lynn','salem','peabody','beverly','saugus','revere','chelsea','everett','malden','medford','somerville','gloucester','marblehead','swampscott','danvers','melrose','stoneham','winthrop'],
   'merrimack valley': ['lowell','lawrence','haverhill','methuen','andover','tewksbury','dracut','chelmsford','billerica'],
   'south shore': ['quincy','weymouth','braintree','randolph','milton','brockton','hingham','plymouth','marshfield','abington','rockland','holbrook','canton','stoughton'],
-  'southeast': ['fall river','new bedford','taunton','dartmouth','somerset','swansea','attleboro','raynham','middleboro'],
+  'fall river / new bedford': ['fall river','new bedford','taunton','dartmouth','somerset','swansea','attleboro','raynham','middleboro','fairhaven','acushnet','westport'],
   'metrowest': ['framingham','natick','waltham','marlborough','newton','needham','wellesley','ashland','hudson','milford','watertown','dedham'],
   'worcester': ['worcester','fitchburg','leominster','shrewsbury','auburn','millbury','gardner','clinton','westborough','grafton'],
   'western ma': ['springfield','chicopee','holyoke','westfield','pittsfield','northampton','amherst','agawam','west springfield','ludlow'],
   'cape cod & islands': ['barnstable','hyannis','falmouth','sandwich','bourne','mashpee','yarmouth','dennis','harwich','chatham','orleans','brewster','eastham','wellfleet','truro','provincetown','cape cod','nantucket','edgartown','oak bluffs','tisbury','vineyard haven','marthas vineyard','marion','wareham']
 };
+// Opaque, non-reversible handle for a member's client need — lets other agents
+// message the poster through AXESS without ever exposing their email address.
+function pmNeedTok(email){ return require('crypto').createHmac('sha256', process.env.SESSION_SECRET || process.env.DIGEST_KEY || 'axess-needs').update(_lc(email || '')).digest('base64url').slice(0, 18); }
 function pmMatch(l, box) {
   if (!l || !box) return false;
   const price = pmNum(l.price), minP = pmNum(box.minPrice), maxP = pmNum(box.maxPrice);
@@ -692,6 +695,41 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
       } catch (e) { /* best-effort */ }
     }
     res.json({ ok: true, buybox: rec });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
+
+// ── Client-needs board: every member's live client need, visible to the network ─
+// so a listing agent can see live demand and reach out with a matching deal.
+// Contact is mediated — name + firm shown, email hidden; messages route by token.
+app.get('/api/pm/needs', ensureAuth, pmGate, async (req, res) => {
+  try {
+    if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
+    const [boxes, profs] = await Promise.all([pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles')]);
+    const me = pmEmail(req.user);
+    const pby = {}; profs.forEach(p => { if (p && p.email) pby[_lc(p.email)] = p; });
+    const needs = boxes.filter(Boolean).map(bx => { const p = pby[_lc(bx.owner)] || {};
+      return { tok: pmNeedTok(bx.owner), mine: _lc(bx.owner) === me, ownerName: p.name || bx.ownerName || 'A member', firm: p.brokerage || '', verified: !!p.verified,
+        markets: bx.markets || '', propType: bx.propType || '', minPrice: bx.minPrice || '', maxPrice: bx.maxPrice || '', minUnits: bx.minUnits || '', maxUnits: bx.maxUnits || '', minCap: bx.minCap || '', notes: bx.notes || '', at: bx.updatedAt || bx.createdAt || '' }; })
+      .filter(n => n.markets || n.propType || pmNum(n.minPrice) || pmNum(n.maxPrice) || (n.notes || '').trim())
+      .sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    res.json({ ok: true, needs });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
+// Message a client-need poster by their opaque token (email never exposed).
+app.post('/api/pm/needs/message', rateLimit('message', 40, 60 * 1000), ensureAuth, pmGate, async (req, res) => {
+  const b = req.body || {}; const tok = String(b.tok || ''); const body = String(b.body || '').slice(0, 4000).trim();
+  if (!tok || !body) return res.status(400).json({ ok: false, error: 'bad_request' });
+  try {
+    if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
+    const boxes = await pmLoad(PM_KEYS.buyboxes);
+    const target = boxes.find(x => x && pmNeedTok(x.owner) === tok);
+    if (!target) return res.status(404).json({ ok: false, error: 'not_found' });
+    const to = _lc(target.owner);
+    if (to === pmEmail(req.user)) return res.status(400).json({ ok: false, error: 'cannot_message_self' });
+    const rec = { id: pmId('M'), key: pmThreadKey(req.user.email, to, ''), from: req.user.email, fromName: String(req.user.name || '').slice(0, 80), to, listingId: '', body: ('[Re: your client need] ' + body).slice(0, 4000), att: null, at: new Date().toISOString(), readBy: [pmEmail(req.user)] };
+    await pmMutate('pm_messages', arr => { arr.push(rec); return { save: arr }; });
+    try { await pmSendEmail(to, 'AXESS · an agent has a deal for your client need', (req.user.name || 'An agent') + ' saw your client need on AXESS and sent you a message. Sign in to read and reply.'); } catch (e) {}
+    res.json({ ok: true });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
