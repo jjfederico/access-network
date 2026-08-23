@@ -848,7 +848,7 @@ html.dark .bdg.lease{color:#D9B368!important;background:rgba(180,136,46,.14)!imp
   <div class="mbody">
     <div class="rrbar" id="rrBar">
       <div class="rr-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></div>
-      <div class="rr-tx"><b>Auto-fill from a rent roll</b><span>Upload a rent roll or operating statement (PDF, image, or CSV) — we’ll read the numbers and fill the form.</span></div>
+      <div class="rr-tx"><b>Auto-fill from a rent roll or OM</b><span>Upload a rent roll, operating statement, or OM (PDF, image, or CSV) — AI reads the numbers and fills the form. (This is the AI step — the Documents field below just attaches files.)</span></div>
       <input type="file" id="rrFile" accept=".pdf,.png,.jpg,.jpeg,.csv,.txt,image/*,application/pdf" style="display:none" onchange="extractRentRoll(this.files&&this.files[0])">
       <button type="button" class="btn acc sm" onclick="$('rrFile').click()">Upload &amp; extract</button>
     </div>
@@ -2223,7 +2223,7 @@ function extractRentRoll(file){
   if(!file)return;
   var msg=$('rrMsg');
   function show(t,c){if(msg){msg.style.display='';msg.style.color=c||'var(--mut)';msg.innerHTML=t;}}
-  if(file.size>8*1024*1024){show('That file is too large — keep it under ~8MB.','var(--bad)');return;}
+  if(file.size>20*1024*1024){show('That file is too large — keep it under ~20MB (or upload just the financials pages).','var(--bad)');return;}
   show('⏳ Reading your rent roll…','var(--acc)');
   var rd=new FileReader();
   rd.onload=function(){
