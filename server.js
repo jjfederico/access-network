@@ -1542,16 +1542,53 @@ app.get('/api/pm/file', ensureAuth, pmGate, async (req, res) => {
 // statement and return the numbers pre-filled for the deal form. Requires an
 // ANTHROPIC_API_KEY in the environment; degrades gracefully when it's absent.
 const EXTRACT_MODEL = process.env.PM_EXTRACT_MODEL || 'claude-sonnet-5';
+// AI-spend guardrails: a per-member daily cap and a network-wide monthly cap on
+// extraction calls, so no single member (or abuser) can run up the Anthropic
+// bill. Counters live in one pm_ai_usage row and roll over automatically at the
+// day / month boundary (UTC). Tune via env without a redeploy of the code.
+const EXTRACT_DAILY_PER_USER = Number(process.env.PM_EXTRACT_DAILY_PER_USER || 15);
+const EXTRACT_MONTHLY_TOTAL = Number(process.env.PM_EXTRACT_MONTHLY_TOTAL || 500);
+async function extractQuotaConsume(email) {
+  const day = new Date().toISOString().slice(0, 10);   // YYYY-MM-DD
+  const month = day.slice(0, 7);                        // YYYY-MM
+  return pmMutate('pm_ai_usage', arr => {
+    let u = arr[0]; if (!u || typeof u !== 'object') { u = {}; arr[0] = u; }
+    if (u.day !== day) { u.day = day; u.users = {}; }
+    if (u.month !== month) { u.month = month; u.total = 0; }
+    u.users = u.users || {}; u.total = u.total || 0;
+    const used = u.users[email] || 0;
+    if (u.total >= EXTRACT_MONTHLY_TOTAL) return { save: arr, result: { ok: false, scope: 'global' } };
+    if (used >= EXTRACT_DAILY_PER_USER) return { save: arr, result: { ok: false, scope: 'user' } };
+    u.users[email] = used + 1; u.total = u.total + 1;
+    return { save: arr, result: { ok: true } };
+  });
+}
+async function extractQuotaRefund(email) { // give a unit back when the AI call fails through no fault of the member
+  const day = new Date().toISOString().slice(0, 10), month = day.slice(0, 7);
+  return pmMutate('pm_ai_usage', arr => {
+    const u = arr[0]; if (!u) return { save: arr };
+    if (u.day === day && u.users && u.users[email] > 0) u.users[email]--;
+    if (u.month === month && u.total > 0) u.total--;
+    return { save: arr };
+  });
+}
 app.post('/api/pm/extract', rateLimit('extract', 20, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const data = String(b.data || ''); const mime = String(b.mime || '').toLowerCase();
   if (!data) return res.status(400).json({ ok: false, error: 'no_file' });
   const KEY = process.env.ANTHROPIC_API_KEY || '';
   if (!KEY) return res.status(200).json({ ok: false, error: 'not_configured', message: 'AI auto-fill isn’t switched on yet. Add an ANTHROPIC_API_KEY in your host settings to enable it.' });
+  let consumed = false;
   try {
     if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
     const approxBytes = Math.floor(data.length * 0.75);
     if (approxBytes > 20 * 1024 * 1024) return res.status(413).json({ ok: false, error: 'too_big', message: 'File too large — keep it under ~20MB (or upload just the rent-roll / financials pages).' });
+    const me = pmEmail(req.user);
+    const quota = await extractQuotaConsume(me);
+    if (!quota.ok) return res.status(429).json({ ok: false, error: 'quota', message: quota.scope === 'global'
+      ? 'AI auto-fill has reached its monthly limit for the network — it resets next month. You can still fill the form in by hand.'
+      : 'You’ve reached today’s AI auto-fill limit (' + EXTRACT_DAILY_PER_USER + '/day). It resets tomorrow — fill the form in by hand for now.' });
+    consumed = true;
     const prompt = 'You are reading a real estate rent roll, operating statement, and/or offering memorandum (OM) to pre-fill an off-market listing form for other licensed agents. '
       + 'Return ONLY a compact JSON object (no prose, no code fences). For the numeric keys use numbers only — no $ or commas — and use "" when unknown; NEVER invent values. Keys: '
       + '{"units": <total unit count>, "grossIncome": <annual gross rental/scheduled income>, "expenses": <annual operating expenses>, "noi": <net operating income if stated>, "sqft": <total building square feet>, "price": <asking/list price if present>, '
@@ -1566,7 +1603,7 @@ app.post('/api/pm/extract', rateLimit('extract', 20, 10 * 60 * 1000), ensureAuth
       headers: { 'content-type': 'application/json', 'x-api-key': KEY, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({ model: EXTRACT_MODEL, max_tokens: 500, messages: [{ role: 'user', content }] })
     });
-    if (!r.ok) { const t = await r.text().catch(() => ''); return res.status(502).json({ ok: false, error: 'ai_error', message: 'Extraction service error (' + r.status + ').' + (r.status === 401 ? ' Check the API key.' : ''), detail: t.slice(0, 300) }); }
+    if (!r.ok) { const t = await r.text().catch(() => ''); await extractQuotaRefund(me); return res.status(502).json({ ok: false, error: 'ai_error', message: 'Extraction service error (' + r.status + ').' + (r.status === 401 ? ' Check the API key.' : ''), detail: t.slice(0, 300) }); }
     const j = await r.json();
     const text = ((j.content || []).map(c => c.text || '').join('')).trim();
     const m = text.match(/\{[\s\S]*\}/); if (!m) return res.status(200).json({ ok: false, error: 'no_data', message: 'Couldn’t read numbers from that file — try a clearer rent roll.' });
@@ -1574,7 +1611,7 @@ app.post('/api/pm/extract', rateLimit('extract', 20, 10 * 60 * 1000), ensureAuth
     const numOnly = v => { const s = String(v == null ? '' : v).replace(/[^0-9.]/g, ''); return s || ''; };
     const fields = { units: numOnly(parsed.units), grossIncome: numOnly(parsed.grossIncome), expenses: numOnly(parsed.expenses), noi: numOnly(parsed.noi), sqft: numOnly(parsed.sqft), price: numOnly(parsed.price), summary: String(parsed.summary || '').slice(0, 200), description: String(parsed.description || '').slice(0, 1200) };
     res.json({ ok: true, fields });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { if (consumed) { try { await extractQuotaRefund(pmEmail(req.user)); } catch (_) {} } res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
 // ── Stripe: renew ($10), feature ($25), membership (subscription) ────────────
