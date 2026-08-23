@@ -1512,9 +1512,11 @@ app.post('/api/pm/extract', rateLimit('extract', 20, 10 * 60 * 1000), ensureAuth
     if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
     const approxBytes = Math.floor(data.length * 0.75);
     if (approxBytes > 20 * 1024 * 1024) return res.status(413).json({ ok: false, error: 'too_big', message: 'File too large — keep it under ~20MB (or upload just the rent-roll / financials pages).' });
-    const prompt = 'You are reading a real estate rent roll and/or operating statement to pre-fill a listing form. '
-      + 'Return ONLY a compact JSON object (no prose, no code fences) with these keys — numbers only, no $ or commas, use "" when unknown, and NEVER invent values: '
-      + '{"units": <total unit count>, "grossIncome": <annual gross rental/scheduled income>, "expenses": <annual operating expenses>, "noi": <net operating income if stated>, "sqft": <total building square feet>, "price": <asking/list price if present>, "summary": "<one line <=120 chars describing the property/income>"}.';
+    const prompt = 'You are reading a real estate rent roll, operating statement, and/or offering memorandum (OM) to pre-fill an off-market listing form for other licensed agents. '
+      + 'Return ONLY a compact JSON object (no prose, no code fences). For the numeric keys use numbers only — no $ or commas — and use "" when unknown; NEVER invent values. Keys: '
+      + '{"units": <total unit count>, "grossIncome": <annual gross rental/scheduled income>, "expenses": <annual operating expenses>, "noi": <net operating income if stated>, "sqft": <total building square feet>, "price": <asking/list price if present>, '
+      + '"summary": "<one line <=120 chars>", '
+      + '"description": "<2-4 sentence public marketing description for the listing feed: highlight the asset type, unit mix, income/cap, condition, and any upside or value-add. Factual only — no invented details. Do NOT include the exact street address or the seller/owner name (those stay private); a general town/submarket is fine>"}.';
     let content;
     if (/pdf/.test(mime)) content = [{ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } }, { type: 'text', text: prompt }];
     else if (/^image\//.test(mime)) content = [{ type: 'image', source: { type: 'base64', media_type: (mime.split(';')[0] || 'image/png') } }, { type: 'text', text: prompt }], content[0].source.data = data;
@@ -1530,7 +1532,7 @@ app.post('/api/pm/extract', rateLimit('extract', 20, 10 * 60 * 1000), ensureAuth
     const m = text.match(/\{[\s\S]*\}/); if (!m) return res.status(200).json({ ok: false, error: 'no_data', message: 'Couldn’t read numbers from that file — try a clearer rent roll.' });
     let parsed = {}; try { parsed = JSON.parse(m[0]); } catch (e) { return res.status(200).json({ ok: false, error: 'parse', message: 'Couldn’t parse the extracted data — try again.' }); }
     const numOnly = v => { const s = String(v == null ? '' : v).replace(/[^0-9.]/g, ''); return s || ''; };
-    const fields = { units: numOnly(parsed.units), grossIncome: numOnly(parsed.grossIncome), expenses: numOnly(parsed.expenses), noi: numOnly(parsed.noi), sqft: numOnly(parsed.sqft), price: numOnly(parsed.price), summary: String(parsed.summary || '').slice(0, 200) };
+    const fields = { units: numOnly(parsed.units), grossIncome: numOnly(parsed.grossIncome), expenses: numOnly(parsed.expenses), noi: numOnly(parsed.noi), sqft: numOnly(parsed.sqft), price: numOnly(parsed.price), summary: String(parsed.summary || '').slice(0, 200), description: String(parsed.description || '').slice(0, 1200) };
     res.json({ ok: true, fields });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
