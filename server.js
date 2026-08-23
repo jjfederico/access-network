@@ -271,6 +271,19 @@ function pmCredLine(prof) {
   if (pof.status === 'verified') bits.push('proof-of-funds verified' + (pof.amount ? (' up to ' + pof.amount) : ''));
   return bits.length ? ('Buyer: ' + bits.join(' · ')) : '';
 }
+// Market regions (mirror of the app's region chips) → the towns they cover, so a
+// buy box that targets a whole market ("South Shore") matches deals in its towns.
+const MARKET_REGIONS = {
+  'boston': ['boston','south boston','dorchester','roxbury','jamaica plain','east boston','charlestown','roslindale','hyde park','mattapan','allston','brighton','south end','fenway','back bay','downtown','west roxbury'],
+  'north shore': ['lynn','salem','peabody','beverly','saugus','revere','chelsea','everett','malden','medford','somerville','gloucester','marblehead','swampscott','danvers','melrose','stoneham','winthrop'],
+  'merrimack valley': ['lowell','lawrence','haverhill','methuen','andover','tewksbury','dracut','chelmsford','billerica'],
+  'south shore': ['quincy','weymouth','braintree','randolph','milton','brockton','hingham','plymouth','marshfield','abington','rockland','holbrook','canton','stoughton'],
+  'southeast': ['fall river','new bedford','taunton','dartmouth','somerset','swansea','attleboro','raynham','middleboro'],
+  'metrowest': ['framingham','natick','waltham','marlborough','newton','needham','wellesley','ashland','hudson','milford','watertown','dedham'],
+  'worcester': ['worcester','fitchburg','leominster','shrewsbury','auburn','millbury','gardner','clinton','westborough','grafton'],
+  'western ma': ['springfield','chicopee','holyoke','westfield','pittsfield','northampton','amherst','agawam','west springfield','ludlow'],
+  'cape cod & islands': ['barnstable','hyannis','falmouth','sandwich','bourne','mashpee','yarmouth','dennis','harwich','chatham','orleans','brewster','eastham','wellfleet','truro','provincetown','cape cod','nantucket','edgartown','oak bluffs','tisbury','vineyard haven','marthas vineyard','marion','wareham']
+};
 function pmMatch(l, box) {
   if (!l || !box) return false;
   const price = pmNum(l.price), minP = pmNum(box.minPrice), maxP = pmNum(box.maxPrice);
@@ -282,7 +295,7 @@ function pmMatch(l, box) {
   const cap = pmNum(l.capRate), minC = pmNum(box.minCap);
   if (minC && cap && cap < minC) return false;
   const bm = String(box.markets || '').toLowerCase().trim();
-  if (bm) { const loc = (String(l.area || '') + ' ' + String(l.city || '') + ' ' + String(l.state || '')).toLowerCase(); let any = false; bm.split(/[,;/]+/).forEach(m => { m = m.trim(); if (m && loc.indexOf(m) >= 0) any = true; }); if (!any) return false; }
+  if (bm) { const loc = (String(l.area || '') + ' ' + String(l.city || '') + ' ' + String(l.submarket || '') + ' ' + String(l.state || '')).toLowerCase(); let any = false; bm.split(/[,;]+/).forEach(m => { m = m.trim(); if (!m) return; if (loc.indexOf(m) >= 0) { any = true; return; } const cities = MARKET_REGIONS[m]; if (cities && cities.some(c => loc.indexOf(c) >= 0)) any = true; }); if (!any) return false; }
   const bt = String(box.propType || '').toLowerCase().trim();
   if (bt) { const lt = String(l.propType || '').toLowerCase(); if (lt) { let any2 = false; bt.split(/[,;/ ]+/).forEach(w => { if (w && w.length > 2 && lt.indexOf(w) >= 0) any2 = true; }); if (!any2) return false; } }
   return true;
@@ -776,8 +789,10 @@ app.get('/api/pm/matches/:listingId', ensureAuth, pmGate, async (req, res) => {
 app.get('/api/pm/market', ensureAuth, pmGate, async (req, res) => {
   try {
     const [listings, boxes] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.buyboxes)]);
-    const live = listings.filter(l => l && (l.status || 'active') !== 'off');
-    const off = listings.filter(l => l && (l.status || 'active') === 'off');
+    const _now = new Date();
+    const _liveStatus = l => l && !l.sample && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !(l.expiresAt && new Date(l.expiresAt) < _now);
+    const live = listings.filter(_liveStatus);
+    const off = listings.filter(l => l && !l.sample && (l.status || 'active') === 'off');
     const val = live.reduce((a, l) => a + pmNum(l.price), 0);
     const comms = live.map(l => pmNum(l.commissionPct)).filter(x => x > 0);
     const caps = live.map(l => pmNum(l.capRate)).filter(x => x > 0);
@@ -1201,14 +1216,14 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
       // A removed/deactivated member cannot silently re-approve themselves by
       // re-submitting the join form — keep them out and flag the owner.
       const banned = !!cur.deactivated || cur.status === 'rejected' || cur.status === 'denied';
-      profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: cur.state || 'MA', attestation, marketingOptIn: (b.marketingOptIn !== false), marketingConsentAt: (b.marketingOptIn !== false ? now : (cur.marketingConsentAt || '')), updatedAt: now, status: banned ? cur.status : 'approved', deactivated: banned ? cur.deactivated : false });
+      profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: cur.state || 'MA', attestation, marketingOptIn: (b.marketingOptIn !== false), marketingConsentAt: (b.marketingOptIn !== false ? now : (cur.marketingConsentAt || '')), updatedAt: now, status: banned ? cur.status : (cur.status === 'approved' ? 'approved' : 'pending'), deactivated: banned ? cur.deactivated : false });
       if (banned) {
         await pmSave('pm_profiles', profs);
         if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · removed member tried to rejoin', (name || email) + ' (' + email + ') re-submitted the join form but is deactivated/removed — kept out.'); } catch (e) {} }
         return res.json({ ok: true, linkSent: false });
       }
     } else {
-      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'approved', attestation, foundingRate: isFounder, memberNo: priorMembers + 1, marketingOptIn: b.marketingOptIn !== false, marketingConsentAt: now, createdAt: now, updatedAt: now });
+      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'pending', attestation, foundingRate: isFounder, memberNo: priorMembers + 1, marketingOptIn: b.marketingOptIn !== false, marketingConsentAt: now, createdAt: now, updatedAt: now });
     }
     // Credit the referrer (if any), now that the member is in.
     try {
@@ -1224,10 +1239,10 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
       }
     } catch (e) {}
     await pmSave('pm_profiles', profs);
-    // 2) Keep a request record for the audit log (already auto-approved).
+    // 2) Keep a PENDING request record — the owner approves it in the admin panel.
     const reqs = await pmLoad('pm_requests');
     if (!reqs.some(r => r && _lc(r.email) === email && r.status !== 'denied')) {
-      reqs.push({ id: pmId('R'), email, name, license, brokerage, phone, markets: S(b.markets, 200), focus: pmFocus(b.focus), note: S(b.note, 1000), referredBy: refCode, status: 'approved', auto: true, at: now, decidedAt: now });
+      reqs.push({ id: pmId('R'), email, name, license, brokerage, phone, markets: S(b.markets, 200), focus: pmFocus(b.focus), note: S(b.note, 1000), referredBy: refCode, status: 'pending', auto: false, at: now, decidedAt: '' });
       await pmSave('pm_requests', reqs.length > 2000 ? reqs.slice(-2000) : reqs);
     }
     // 3) Send the sign-in link now so they can log in right away.
@@ -1236,19 +1251,15 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
     // Welcome email for brand-new members (separate from the sign-in link) — orients them on day one.
     if (pIdx < 0) {
       try {
-        await pmSendEmail(email, 'You\'re in — welcome to AXESS',
-          'Welcome to AXESS, ' + (name || 'there') + '!\n\n' +
-          'You\'re in — AXESS is the invite-only, agent-to-agent network for off-market deals in Massachusetts.\n\n' +
-          'Three quick things to get value on day one:\n' +
-          '1) Post a deal — share an off-market property in about 30 seconds. Keep it broad, or mark it private so you approve who sees the address and financials.\n' +
-          '2) Post a client need — tell the network what your buyers are hunting for, and get matched automatically the moment a deal fits.\n' +
-          '3) Set your alerts — pick your property types and markets so you only hear about deals in your lane.\n\n' +
-          'Sign in anytime: ' + (BASE_URL || 'https://axessre.com') + '/app.html\n\n' +
-          'Deals move quietly between agents here — glad to have you in the room. Reply to this email anytime; it comes straight to me.\n\n' +
+        await pmSendEmail(email, 'AXESS · we got your request — verifying your license',
+          'Thanks for requesting access to AXESS, ' + (name || 'there') + '.\n\n' +
+          'AXESS is an invite-only, agent-to-agent network for off-market deals in Massachusetts — and every member is a verified, licensed agent. We\'re confirming your real estate license now (usually within a day).\n\n' +
+          'The moment you\'re approved, you\'ll get an email and full access to post deals, request intros, and message members.\n\n' +
+          'Reply to this email anytime; it comes straight to me.\n\n' +
           '— John, Founder · AXESS\ninfo@axessre.com');
       } catch (e) {}
     }
-    if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member joined', name + ' joined AXESS (auto-approved on licensure attestation).\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nManage members — including removing anyone — in the AXESS admin panel (Members tab).'); } catch (e) {} }
+    if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member awaiting your approval', name + ' requested access and is awaiting license verification.\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nVerify their license and approve (or reject) them in the AXESS admin panel → Requests tab.'); } catch (e) {} }
     res.json({ ok: true, linkSent });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -1352,7 +1363,7 @@ app.post('/api/pm/admin/request/decide', ensureAuth, pmGate, async (req, res) =>
       try {
         const profs = await pmLoad('pm_profiles');
         const p = profs.find(x => x && _lc(x.email) === _lc(r.email));
-        if (p) { p.status = 'approved'; if (!p.focus && r.focus) p.focus = r.focus; }
+        if (p) { p.status = 'approved'; if (!p.approvedAt) p.approvedAt = new Date().toISOString(); p.verified = true; if (!p.verifiedAt) p.verifiedAt = p.approvedAt; if (!p.focus && r.focus) p.focus = r.focus; }
         else profs.push({ email: r.email, name: r.name || '', license: r.license || '', brokerage: r.brokerage || '', phone: r.phone || '', markets: r.markets || '', focus: r.focus || '', status: 'approved', createdAt: new Date().toISOString() });
         if (r.referredBy) {
           const ref = profs.find(x => x && x.email && pmRefCode(x.email) === r.referredBy);
