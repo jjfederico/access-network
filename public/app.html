@@ -95,9 +95,9 @@ section{padding:40px 0}
 .deal .type{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--acc);padding-top:3px}
 .deal .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .bdg{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px;border-radius:6px;background:var(--card2);border:1px solid var(--line2);color:var(--mut);white-space:nowrap}
-.bdg.broad{color:var(--acc);border-color:rgba(0,100,229,.28)}
-.bdg.private{color:var(--gold);border-color:rgba(180,136,46,.42)}
-.bdg.pocket{color:var(--acc);border-color:rgba(0,100,229,.28)}
+.bdg.broad{color:var(--mut2);border-color:var(--line2)}
+.bdg.private{color:var(--mut2);border-color:var(--line2)}
+.bdg.pocket{color:var(--mut2);border-color:var(--line2)}
 .bdg.feat{color:#8A6A12;background:rgba(180,136,46,.14);border-color:rgba(180,136,46,.42)}
 html.dark .bdg.feat{color:#E7C374!important;background:rgba(231,195,116,.14)!important;border-color:rgba(231,195,116,.4)!important}
 .bdg.mine{color:var(--acc);border-color:rgba(0,100,229,.28)}
@@ -214,9 +214,9 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .deal .lock,.bdg{background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .deal .lock{color:var(--mut)}
 .bdg{color:var(--tx);border-color:var(--line2)}
-.bdg.broad{color:var(--acc);border-color:rgba(0,100,229,.35)}
-.bdg.private{color:var(--gold);border-color:rgba(180,136,46,.45)}
-.bdg.pocket{color:var(--acc);border-color:rgba(0,100,229,.30)}
+.bdg.broad{color:var(--mut2);border-color:var(--line2)}
+.bdg.private{color:var(--mut2);border-color:var(--line2)}
+.bdg.pocket{color:var(--mut2);border-color:var(--line2)}
 .mbg{background:rgba(12,16,26,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .modal{box-shadow:0 24px 64px -16px rgba(10,15,30,.45),0 0 0 1px rgba(10,15,30,.06)}
 .reveal{background:var(--accdim);border-color:rgba(0,100,229,.28)}
@@ -272,14 +272,10 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .apphead .ah-l .sub{display:none}
 @media(max-width:560px){.hero .in{padding:18px 16px 16px}.apphead .ah-r{width:100%}.apphead .ah-r .btn{flex:1}}
 /* ── color the tiles: tinted stat cards + type-coded deal spines ── */
-.hero .stats .s:nth-child(1){background:#EAF0FB}
-.hero .stats .s:nth-child(2){background:#FAF3E4}
-.hero .stats .s:nth-child(3){background:#E8F5EF}
-.hero .stats .s:nth-child(4){background:#EFEDFA}
-.hero .stats .s:nth-child(1) .v{color:#0064E5}
-.hero .stats .s:nth-child(2) .v{color:#9A7423}
-.hero .stats .s:nth-child(3) .v{color:#2E7D63}
-.hero .stats .s:nth-child(4) .v{color:#5B54A8}
+/* stat strip: one neutral surface, ink numbers, gold reserved for Total value */
+.hero .stats .s{background:var(--bg2)}
+.hero .stats .s .v{color:var(--tx)}
+.hero .stats .s:nth-child(2) .v{color:var(--gold)}
 .deal::before{opacity:.9;background:var(--tc,var(--acc))}
 .deal:hover::before{opacity:1}
 .deal.feat::before{background:var(--gold);opacity:1}
@@ -1166,7 +1162,7 @@ function goHome(){
 }
 // The property-type checkboxes only list the types in the current category.
 function fillTypeChecks(){var tc=$('typeChecks');if(!tc)return;
-  function row(t){return '<label class="ck"><input type="checkbox" value="'+esc(t)+'" onchange="render()">'+esc(t)+'<span class="sw" style="background:'+typeColor(t)+'"></span></label>';}
+  function row(t){return '<label class="ck"><input type="checkbox" value="'+esc(t)+'" onchange="render()">'+esc(t)+'</label>';}
   function grp(label,arr){return arr.length?('<div class="ckgrp">'+esc(label)+'</div>'+arr.map(row).join('')):'';}
   var allowed=catTypes(CAT);
   var resi=RESI_TYPES.filter(function(t){return allowed.indexOf(t)>=0;});
