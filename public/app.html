@@ -966,7 +966,7 @@ function attachMoney(ids){ids.forEach(function(id){var el=$(id);if(el&&!el._mone
 function noComma(id){return (($(id)&&$(id).value)||'').replace(/,/g,'').trim();}
 
 /* ── submarkets for client-need checkboxes ── */
-var SUBMARKETS=['South Boston','Dorchester','Roxbury','Jamaica Plain','East Boston','Charlestown','Roslindale','West Roxbury','Hyde Park','Mattapan','Allston / Brighton','Back Bay','South End','Cambridge','Somerville','Quincy','Malden','Medford','Everett','Chelsea','Revere','Lynn','Brockton','Worcester','Springfield','Lowell','Lawrence','New Bedford','Fall River','Framingham','Newton','Waltham'];
+var SUBMARKETS=['South Boston','Dorchester','Roxbury','Jamaica Plain','East Boston','Charlestown','Roslindale','West Roxbury','Hyde Park','Mattapan','Allston / Brighton','Back Bay','South End','Cambridge','Somerville','Quincy','Malden','Medford','Everett','Chelsea','Revere','Lynn','Brockton','Worcester','Springfield','Lowell','Lawrence','New Bedford','Fall River','Framingham','Newton','Waltham','Hyannis / Barnstable','Falmouth','Sandwich','Mashpee','Yarmouth','Dennis','Provincetown','Nantucket','Oak Bluffs','Edgartown'];
 
 /* ── Post a deal: fields that don't apply to certain asset types ── */
 var DEAL_HIDE={
@@ -1159,7 +1159,8 @@ var MARKETS={
    {k:'southeast',name:'Southeast',cities:['fall river','new bedford','taunton','dartmouth','somerset','swansea','attleboro','raynham','middleboro']},
    {k:'metrowest',name:'MetroWest',cities:['framingham','natick','waltham','marlborough','newton','needham','wellesley','ashland','hudson','milford','watertown','dedham']},
    {k:'worcester',name:'Worcester',cities:['worcester','fitchburg','leominster','shrewsbury','auburn','millbury','gardner','clinton','westborough','grafton']},
-   {k:'western',name:'Western MA',cities:['springfield','chicopee','holyoke','westfield','pittsfield','northampton','amherst','agawam','west springfield','ludlow']}
+   {k:'western',name:'Western MA',cities:['springfield','chicopee','holyoke','westfield','pittsfield','northampton','amherst','agawam','west springfield','ludlow']},
+   {k:'cape',name:'Cape Cod & Islands',cities:['barnstable','hyannis','falmouth','sandwich','bourne','mashpee','yarmouth','dennis','harwich','chatham','orleans','brewster','eastham','wellfleet','truro','provincetown','cape cod','nantucket','edgartown','oak bluffs','tisbury','vineyard haven','west tisbury','chilmark','aquinnah','marthas vineyard','marion','wareham']}
  ]},
  NH:{name:'New Hampshire',regions:[
    {k:'all',name:'All NH',cities:null},
