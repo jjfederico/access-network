@@ -81,7 +81,7 @@ function _unsubToken(email) {
 function emailShell(inner) {
   return '<div style="max-width:520px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#2b2f36">'
     + '<div style="background:#0A3D8F;padding:22px 26px;border-radius:14px 14px 0 0">'
-    + '<img src="' + _APP_URL + '/email-logo.png" width="200" height="46" alt="AXESS — A Real Estate Network" style="display:block;border:0;width:200px;height:auto;max-width:200px">'
+    + '<img src="' + _APP_URL + '/email-logo.png" width="300" height="69" alt="AXESS — A Real Estate Network" style="display:block;border:0;width:300px;height:auto;max-width:300px">'
     + '</div>'
     + '<div style="padding:26px;font-size:15px;line-height:1.6;border:1px solid #e4e7ed;border-top:none;border-radius:0 0 14px 14px">' + inner + '</div>'
     + '</div>';
