@@ -103,8 +103,8 @@ html.dark .bdg.feat{color:#E7C374!important;background:rgba(231,195,116,.14)!imp
 .bdg.mine{color:var(--acc);border-color:rgba(0,100,229,.28)}
 .bdg.ver{color:#1E7A52;border-color:rgba(30,122,82,.32);background:rgba(30,122,82,.08)}
 .bdg.pof{color:#8A6A12;border-color:rgba(138,106,18,.32);background:rgba(180,136,46,.12)}
-.bdg.prod{color:#7A4FCC;border-color:rgba(122,79,204,.34);background:rgba(122,79,204,.1)}
-html.dark .bdg.prod{color:#B2ABF0!important;border-color:rgba(178,171,240,.34)!important;background:rgba(178,171,240,.12)!important}
+.bdg.prod{color:var(--mut2);border-color:var(--line2);background:var(--card2)}
+html.dark .bdg.prod{color:#AEB6C4!important;border-color:#333B47!important;background:#1C222B!important}
 html.dark .bdg.ver{color:#57ECC2!important;border-color:rgba(87,236,194,.3)!important;background:rgba(87,236,194,.1)!important}
 html.dark .bdg.pof{color:#E7C374!important;border-color:rgba(231,195,116,.32)!important;background:rgba(231,195,116,.12)!important}
 .deal .sub{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14.5px;font-weight:700;line-height:1.2;letter-spacing:0}
@@ -276,11 +276,11 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .hero .stats .s{background:var(--bg2)}
 .hero .stats .s .v{color:var(--tx)}
 .hero .stats .s:nth-child(2) .v{color:var(--gold)}
-.deal::before{opacity:.9;background:var(--tc,var(--acc))}
+.deal::before{background:var(--acc)}
 .deal:hover::before{opacity:1}
 .deal.feat::before{background:var(--gold);opacity:1}
 .deal .type{color:var(--tc,var(--acc))}
-.deal .comm{color:var(--tc,var(--acc));background:color-mix(in srgb,var(--tc,var(--acc)) 8%,transparent);border-color:color-mix(in srgb,var(--tc,var(--acc)) 22%,transparent)}
+.deal .comm{color:var(--mut);background:var(--card2);border-color:var(--line2)}
 /* ── marketplace browse layout ── */
 .mktbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 0 11px;border-bottom:1px solid var(--line);margin-bottom:14px}
 .mksel{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
@@ -291,12 +291,12 @@ body{font-family:'Public Sans',system-ui,-apple-system,sans-serif}
 .mtab .ct{color:var(--mut2);font-size:11px;font-weight:700}
 .mtab.on{background:var(--acc);border-color:var(--acc);color:#fff}
 .mtab.on .ct{color:rgba(255,255,255,.75)}
-.soonpill{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:linear-gradient(100deg,var(--acc),var(--acc2));border:none;border-radius:100px;padding:9px 18px;display:inline-flex;align-items:center;gap:9px;box-shadow:0 6px 20px -6px rgba(0,100,229,.55)}
+.soonpill{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);background:var(--card);border:1px solid var(--line2);border-radius:100px;padding:7px 14px;display:inline-flex;align-items:center;gap:8px;box-shadow:none}
 .soonpill .lbl{opacity:.85}
 .soonpill b{color:#fff;font-weight:800;letter-spacing:.02em}
 .soonpill .city{display:inline-block;animation:soonfade .5s ease}
 @keyframes soonfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-.soonpill .dot{width:9px;height:9px;border-radius:50%;background:#fff;box-shadow:0 0 0 0 rgba(255,255,255,.7);animation:soonpulse 1.6s infinite}
+.soonpill .dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 0 rgba(255,255,255,.7);animation:soonpulse 1.6s infinite}
 @keyframes soonpulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.6)}70%{box-shadow:0 0 0 9px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
 @media(max-width:640px){.soonpill{margin-left:0;font-size:11.5px;padding:8px 14px}}
 .mktlayout{display:grid;grid-template-columns:250px 1fr;gap:22px;align-items:start}
@@ -578,12 +578,12 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
   <!-- quick actions — the calm, do-this-first entry point -->
   <div class="qa" id="quickActions">
     <div class="qa-tile" onclick="openSubmit()" role="button" tabindex="0">
-      <div class="qa-ic">🔑</div>
+      <div class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3"/><path d="M16.5 6.5 19 9"/><path d="M14.5 8.5 17 11"/></svg></div>
       <div class="qa-tx"><b>Post a deal</b><span>Share an off-market property with the network.</span></div>
       <div class="qa-go">＋</div>
     </div>
     <div class="qa-tile" onclick="openBuyBox()" role="button" tabindex="0">
-      <div class="qa-ic">🎯</div>
+      <div class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg></div>
       <div class="qa-tx"><b>Post a client need</b><span>Tell the network what your buyer is hunting for.</span></div>
       <div class="qa-go">＋</div>
     </div>
@@ -676,7 +676,8 @@ html.dark .ggbar{background:#33291180;border-color:#6E571E}
 .qa{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .qa-tile{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;cursor:pointer;transition:border-color .14s,transform .12s,box-shadow .2s;box-shadow:0 6px 18px rgba(20,25,40,.04)}
 .qa-tile:hover{border-color:var(--acc);transform:translateY(-1px);box-shadow:0 12px 28px rgba(0,100,229,.12)}
-.qa-tile .qa-ic{font-size:30px;line-height:1;flex:none}
+.qa-tile .qa-ic{width:44px;height:44px;border-radius:11px;background:var(--accdim);color:var(--acc);display:flex;align-items:center;justify-content:center;flex:none}
+.qa-tile .qa-ic svg{width:22px;height:22px;display:block}
 .qa-tile .qa-tx{flex:1;min-width:0}
 .qa-tile .qa-tx b{display:block;font-size:16.5px;font-weight:800;letter-spacing:-.01em}
 .qa-tile .qa-tx span{display:block;color:var(--mut);font-size:12.5px;line-height:1.4;margin-top:2px}
