@@ -784,6 +784,19 @@ html.dark .ggbar .ggtx b{color:#F0D89A}
 .btn.acc.sm{background:#1E4FA8!important}
 .btn.acc.sm:hover{background:#2C5FBF!important}
 html.dark .nav{background:#0C1526!important}
+/* ── give-to-get feed gate (blurred teaser + unlock card) ── */
+.feedlock{position:relative;min-height:520px}
+.fl-cards{filter:blur(7px) saturate(.85);opacity:.5;pointer-events:none;user-select:none;max-height:660px;overflow:hidden}
+.fl-cards::after{content:"";position:absolute;left:0;right:0;bottom:0;height:180px;background:linear-gradient(to bottom,transparent,var(--bg))}
+.fl-gate{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding:54px 16px}
+.fl-card{max-width:460px;width:100%;background:var(--card);border:1px solid var(--line2);border-radius:14px;box-shadow:0 26px 70px rgba(10,20,40,.22);padding:30px 28px;text-align:center}
+.fl-card .fl-ic{width:52px;height:52px;border-radius:14px;background:var(--accdim);color:var(--acc);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.fl-card h3{font-size:20px;margin:0 0 8px;letter-spacing:-.01em}
+.fl-card p{color:var(--mut);font-size:14px;line-height:1.55;margin:0 0 8px}
+.fl-count{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.04em;color:var(--acc);background:var(--accdim);display:inline-block;padding:6px 12px;border-radius:100px;margin:6px 0 18px}
+.fl-card .fl-act{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.fl-note{color:var(--mut2);font-size:12px;margin-top:14px;line-height:1.5}
+@media(max-width:560px){.fl-gate{padding:24px 12px}.fl-card{padding:24px 20px}}
 </style>
 
 <!-- SUBMIT DEAL -->
@@ -1056,6 +1069,21 @@ function renderGiveGet(){
   } else { el.style.display='none'; }
 }
 function ggLocked(){return ME.reciprocity&&ME.reciprocity.enforce&&!ME.reciprocity.active&&ME.role!=='owner';}
+// Feed gate: a member who has never contributed sees a blurred teaser + unlock card
+// (ignores the grace window — you post to see the board, from day one).
+function ggMustPost(){var r=ME.reciprocity;return !!(r&&r.enforce&&!r.exempt&&!r.hasDeal&&!r.hasNeed&&ME.role!=='owner');}
+function ggGateCard(n){
+  var count=n?('<div class="fl-count">🔒 '+n+' live deal'+(n===1?'':'s')+' moving right now — hidden until you post</div>'):'';
+  return '<div class="fl-card">'
+    +'<div class="fl-ic"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></div>'
+    +'<h3>An active-agent network</h3>'
+    +'<p><b>Everyone on AXESS contributes — that’s the whole point.</b> You share off-market inventory or a live client need, and in return you see everyone else’s. It’s what keeps this a room of real, active agents moving deals — not a crowd of lurkers watching the board.</p>'
+    +count
+    +'<p style="margin-bottom:16px">Post <b>one deal</b> or a <b>live client need</b> and the entire board unlocks — instantly. Your listings stay private: no one sees your address or numbers unless <b>you</b> approve them.</p>'
+    +'<div class="fl-act"><button class="btn acc" onclick="openSubmit()">＋ Post a deal</button><button class="btn ghost" onclick="openBuyBox()">Post a client need</button></div>'
+    +'<div class="fl-note">Takes about 30 seconds. No listing yet? A client need counts.</div>'
+    +'</div>';
+}
 // Friendly first-run card: shown to a new member who hasn't posted yet and is
 // still unlocked (grace). Teaches the Post → Match → Connect loop in plain words.
 function welcomeDismissed(){try{return localStorage.getItem('access_welcome')==='done';}catch(e){return false;}}
@@ -1392,6 +1420,16 @@ function render(){
   else list.sort(function(a,b){return fs(a,b)||new Date(b.at)-new Date(a.at);});
   if($('rCount'))$('rCount').textContent=list.length;
   if($('rLabel'))$('rLabel').textContent=(list.length===1?'deal':'deals')+' in '+(REGION==='all'?(MARKETS[MARKET]||MARKETS.MA).name:((curRegions().filter(function(r){return r.k===REGION;})[0]||{}).name||'MA'));
+  // Give-to-get: non-contributors see a blurred teaser behind an unlock gate.
+  if(ggMustPost()){
+    var n=list.length;
+    var teaser=n?(DEALVIEW==='list'?(listHeader()+list.slice(0,8).map(dealRow).join('')):list.slice(0,6).map(dealCard).join('')):'';
+    g.className='';
+    g.innerHTML='<div class="feedlock">'
+      +(teaser?('<div class="fl-cards grid view-'+(DEALVIEW==='map'?'grid':DEALVIEW)+'">'+teaser+'</div>'):'')
+      +'<div class="fl-gate">'+ggGateCard(n)+'</div></div>';
+    return;
+  }
   g.className='grid view-'+DEALVIEW;
   if(DEALVIEW==='map'){renderMap(list);return;}
   // Two empty states: nothing in this market yet (intentional/new) vs filtered-to-zero.
@@ -2057,7 +2095,7 @@ function submitBuyBox(){
   api('/api/pm/buybox',body).then(function(j){
     submitBuyBox._busy=false;
     $('bMsg').textContent=(j&&j.ok)?'Saved ✓':'Failed — retry';
-    if(j&&j.ok){BUYBOX=j.buybox||BUYBOX;renderStats();setTimeout(function(){close_('mBuy');$('bMsg').textContent='';},800);}
+    if(j&&j.ok){BUYBOX=j.buybox||BUYBOX;renderStats();setTimeout(function(){close_('mBuy');$('bMsg').textContent='';loadAll();},800);}
   });
 }
 
