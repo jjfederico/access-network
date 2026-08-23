@@ -516,14 +516,14 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
   <div class="brand" onclick="goHome()" role="button" tabindex="0" title="Back to dashboard — clears filters" style="cursor:pointer"><svg class="rb" viewBox="0 0 100 100" aria-label="AXESS" fill="currentColor"><path d="M50 0 100 100H74L50 30 26 100H0Z"/><rect x="22.4" y="56.6" width="30.3" height="14.5"/></svg><span class="wm">AXESS</span><small>A Real Estate Network</small></div>
   <div class="sp"></div>
   <span class="nlink hideM" onclick="scrollTo(0,document.getElementById('feed').offsetTop-70)">Deal feed</span>
-  <span class="nlink hideM" onclick="openBuyBox()">Client needs</span>
+  <span class="nlink hideM" onclick="openNeeds()">Client needs</span>
   <span class="nlink hideM" onclick="openMarket()">Market</span>
   <span class="nlink hideM" onclick="openBoard()">Board</span>
   <span class="nlink hideM ownerOnly" onclick="openDirectory()" style="display:none">Members</span>
   <div class="navmore" id="navmore"><button class="nlink ico" onclick="toggleNav(event)" title="Menu" aria-label="Menu" style="font-size:17px;line-height:1">☰</button>
     <div class="navMenu" id="navMenu">
       <a onclick="close_nav();scrollTo(0,(document.getElementById('feed').offsetTop-70))">Deal feed</a>
-      <a onclick="close_nav();openBuyBox()">Client needs</a>
+      <a onclick="close_nav();openNeeds()">Client needs</a>
       <a onclick="close_nav();openMarket()">Market</a>
       <a onclick="close_nav();openBoard()">Board</a>
       <a class="ownerOnly" onclick="close_nav();openDirectory()" style="display:none">Members</a>
@@ -2185,6 +2185,44 @@ function buyboxDone(){
     +'</div>';
   if(!m){m=document.createElement('div');m.className='mbg';m.id='mBuyDone';m.onclick=function(e){if(e.target===m)close_('mBuyDone');};document.body.appendChild(m);}
   m.innerHTML=html;open_('mBuyDone');
+}
+/* ── client-needs board ── */
+function needPrice(n){var lo=n.minPrice?money(n.minPrice):'',hi=n.maxPrice?money(n.maxPrice):'';if(lo&&hi)return lo+' – '+hi;if(hi)return 'Up to '+hi;if(lo)return lo+'+';return 'Any price';}
+function openNeeds(){
+  var m=$('mNeeds');
+  if(!m){m=document.createElement('div');m.className='mbg';m.id='mNeeds';m.onclick=function(e){if(e.target===m)close_('mNeeds');};document.body.appendChild(m);}
+  m.innerHTML='<div class="modal wide"><div class="mhead"><h3>Client needs</h3><button class="x" onclick="close_(\'mNeeds\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mNeeds');
+  apiT('/api/pm/needs').then(function(j){
+    var needs=(j&&j.needs)||[];
+    var head='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px"><p style="color:var(--mut);font-size:13.5px;margin:0;max-width:520px">What buyers across the network are hunting for. Have a deal that fits? Message the agent — your contact stays private until you connect.</p><button class="btn acc sm" onclick="close_(\'mNeeds\');openBuyBox()">＋ Post / edit my need</button></div>';
+    var rows=needs.length?needs.map(function(n){
+      var meta=[];if(n.minUnits||n.maxUnits)meta.push((n.minUnits||'0')+(n.maxUnits?('–'+n.maxUnits):'+')+' units');if(n.minCap)meta.push(n.minCap+'%+ cap');
+      var ver=n.verified?' <span title="License verified" style="color:var(--acc);font-weight:700;font-size:11px">✓</span>':'';
+      var act=n.mine?'<span class="pill appr" style="align-self:center">Your need</span>':'<button class="btn acc sm" onclick="needMsg(\''+escJS(n.tok)+'\',\''+escJS(n.ownerName)+'\')">I have a deal →</button>';
+      return '<div class="reqrow" style="align-items:flex-start"><div class="grow"><b>'+esc(n.propType||'Any type')+'</b> <span style="color:var(--mut)">· '+esc(needPrice(n))+(meta.length?(' · '+esc(meta.join(' · '))):'')+'</span>'
+        +(n.markets?('<div style="color:var(--acc2);font-size:12.5px;margin-top:3px">📍 '+esc(n.markets)+'</div>'):'')
+        +(n.notes?('<div style="color:var(--mut);font-size:13px;margin-top:5px;white-space:pre-wrap">'+esc(n.notes)+'</div>'):'')
+        +'<div style="color:var(--mut2);font-size:11.5px;margin-top:6px">— '+esc(n.ownerName||'A member')+(n.firm?(', '+esc(n.firm)):'')+ver+'</div></div>'+act+'</div>';
+    }).join(''):'<div class="empty">No client needs posted yet. <button class="btn link" onclick="close_(\'mNeeds\');openBuyBox()">Post the first →</button></div>';
+    var mb=document.querySelector('#mNeeds .mbody');if(mb)mb.innerHTML=head+rows;
+  });
+}
+function needMsg(tok,name){
+  var m=$('mNeedMsg');
+  var html='<div class="modal" style="max-width:460px"><div class="mhead"><h3>Message '+esc(name||'this agent')+'</h3><button class="x" onclick="close_(\'mNeedMsg\')">×</button></div><div class="mbody">'
+    +'<p style="color:var(--mut);font-size:13px;margin-bottom:10px">Tell them about your off-market deal that fits their client. They\'ll get a message on AXESS and can reply to you directly.</p>'
+    +'<textarea id="nmBody" rows="4" placeholder="I have an off-market multifamily in Worcester, 12 units, 6.2% cap — sounds like a fit for your buyer. Want the details?" style="width:100%;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:10px 11px;font:inherit;font-size:14px"></textarea>'
+    +'<div class="mact"><span class="msg" id="nmMsg"></span><button class="btn ghost" onclick="close_(\'mNeedMsg\')">Cancel</button><button class="btn acc" onclick="sendNeedMsg(\''+escJS(tok)+'\')">Send message</button></div></div></div>';
+  if(!m){m=document.createElement('div');m.className='mbg';m.id='mNeedMsg';m.onclick=function(e){if(e.target===m)close_('mNeedMsg');};document.body.appendChild(m);}
+  m.innerHTML=html;open_('mNeedMsg');setTimeout(function(){var t=$('nmBody');if(t)t.focus();},60);
+}
+function sendNeedMsg(tok){
+  var body=($('nmBody').value||'').trim();if(!body){$('nmMsg').textContent='Write a message first.';return;}
+  $('nmMsg').textContent='Sending…';
+  api('/api/pm/needs/message',{tok:tok,body:body}).then(function(j){
+    if(j&&j.ok){$('nmMsg').textContent='Sent ✓ — find the thread in Messages.';setTimeout(function(){close_('mNeedMsg');},1100);}
+    else{$('nmMsg').textContent=(j&&j.message)||'Could not send — try again.';}
+  });
 }
 /* ── activity ── */
 function updateReqDot(){var pending=INBOUND.some(function(x){return x.status==='pending';});$('reqDot').style.display=pending?'':'none';}
