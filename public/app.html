@@ -929,6 +929,7 @@ html.dark .nav{background:#0C1526!important}
 <script>
 var ME={role:'guest',email:'',name:''};
 var LISTINGS=[];
+var GATED=false,GATEDSTATS=null;
 var TYPES=['Single-family','Condo','Townhouse','Multifamily','Mixed-use','Retail / Commercial','Industrial','Land','Development site','Mobile Home Park','Storage / Warehouse'];
 // Property-type groups. Residential = owner/occupier assets; Investment = income
 // & commercial assets. The top toggle and the left filter both use these groups.
@@ -1024,6 +1025,7 @@ function loadAll(){
     if(feed.me){ME=Object.assign({},ME,feed.me);var w=$('who');if(ME.name||ME.email)w.innerHTML='<span class="av">'+initials(ME.name||ME.email)+'</span>';
       var gn=$('heroGreet');if(gn){var fn=String(ME.name||'').trim().split(/\s+/)[0];gn.textContent=fn?('Welcome back, '+fn+'.'):'Welcome back.';}}
     LISTINGS=(feed.listings||[]).map(nL).filter(Boolean);
+    GATED=!!feed.gated;GATEDSTATS=feed.gated?{count:feed.gatedCount||0,value:feed.gatedValue||0,subs:feed.gatedSubmarkets||0,avg:feed.gatedAvgComm||0}:null;
     $('adminLink').style.display=(ME.role==='owner')?'':'none';
     document.querySelectorAll('.ownerOnly').forEach(function(el){el.style.display=(ME.role==='owner')?'':'none';});
     var il=$('importLink');if(il)il.style.display=(ME.role==='owner')?'':'none';
@@ -1071,7 +1073,7 @@ function renderGiveGet(){
 function ggLocked(){return ME.reciprocity&&ME.reciprocity.enforce&&!ME.reciprocity.active&&ME.role!=='owner';}
 // Feed gate: a member who has never contributed sees a blurred teaser + unlock card
 // (ignores the grace window — you post to see the board, from day one).
-function ggMustPost(){var r=ME.reciprocity;return !!(r&&r.enforce&&!r.exempt&&!r.hasDeal&&!r.hasNeed&&ME.role!=='owner');}
+function ggMustPost(){if(GATED)return true;var r=ME.reciprocity;return !!(r&&r.enforce&&!r.exempt&&!r.hasDeal&&!r.hasNeed&&ME.role!=='owner');}
 function ggGateCard(n){
   var count=n?('<div class="fl-count">🔒 '+n+' live deal'+(n===1?'':'s')+' moving right now — hidden until you post</div>'):'';
   return '<div class="fl-card">'
@@ -1131,6 +1133,7 @@ function trustBadges(v,p,prod){return badgeProd(prod)+badgeVer(v)+badgePof(p);}
 
 /* ── stats ── */
 function renderStats(){
+  if(GATED&&GATEDSTATS){var s2=$('stats').querySelectorAll('.s .v');s2[0].textContent=GATEDSTATS.count;s2[1].textContent=money(GATEDSTATS.value);s2[2].textContent=GATEDSTATS.subs||'—';s2[3].textContent=GATEDSTATS.avg?GATEDSTATS.avg.toFixed(1)+'%':'—';return;}
   var live=LISTINGS.filter(function(d){return d.status!=='off'&&d.status!=='mls'&&d.status!=='closed'&&!d.expired;});
   var val=live.reduce(function(a,d){return a+num(d.price);},0);
   var comms=live.map(function(d){return num(d.commission);}).filter(function(x){return x>0;});
@@ -1422,11 +1425,15 @@ function render(){
   if($('rLabel'))$('rLabel').textContent=(list.length===1?'deal':'deals')+' in '+(REGION==='all'?(MARKETS[MARKET]||MARKETS.MA).name:((curRegions().filter(function(r){return r.k===REGION;})[0]||{}).name||'MA'));
   // Give-to-get: non-contributors see a blurred teaser behind an unlock gate.
   if(ggMustPost()){
-    var n=list.length;
-    var teaser=n?(DEALVIEW==='list'?(listHeader()+list.slice(0,8).map(dealRow).join('')):list.slice(0,6).map(dealCard).join('')):'';
+    // Deal rows are withheld server-side for lurkers — show blurred skeletons
+    // (pure decoration, no real data) behind the unlock gate.
+    var n=(GATEDSTATS&&GATEDSTATS.count)||list.length;
+    var vv=(DEALVIEW==='list')?'list':(DEALVIEW==='map'?'grid':DEALVIEW);
+    var teaser='';for(var i=0;i<6;i++)teaser+=skCard();
+    if($('rCount'))$('rCount').textContent=n;
     g.className='';
     g.innerHTML='<div class="feedlock">'
-      +(teaser?('<div class="fl-cards grid view-'+(DEALVIEW==='map'?'grid':DEALVIEW)+'">'+teaser+'</div>'):'')
+      +'<div class="fl-cards grid view-'+vv+'">'+teaser+'</div>'
       +'<div class="fl-gate">'+ggGateCard(n)+'</div></div>';
     return;
   }
