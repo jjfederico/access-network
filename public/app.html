@@ -1463,7 +1463,7 @@ function renderMap(list){
   g.innerHTML='<div id="dealMap" class="dealmap"></div>';
   loadMaps(function(){
     var el=$('dealMap');if(!el||!(window.google&&google.maps))return;
-    DEALMAP=new google.maps.Map(el,{center:{lat:42.33,lng:-71.09},zoom:10,mapTypeControl:false,streetViewControl:false,fullscreenControl:true,clickableIcons:false});
+    DEALMAP=new google.maps.Map(el,{center:{lat:42.33,lng:-71.09},zoom:10,mapTypeControl:true,streetViewControl:true,fullscreenControl:true,clickableIcons:false});
     if(!MAP_INFO)MAP_INFO=new google.maps.InfoWindow();
     MAP_MARKERS.forEach(function(m){m.setMap(null);});MAP_MARKERS=[];
     var bounds=new google.maps.LatLngBounds(),any=false;
@@ -1554,6 +1554,10 @@ function render(){
 
 /* ── detail ── */
 function mapEmbed(addr){var q=encodeURIComponent(addr);return '<iframe class="dmap" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q='+q+'&output=embed"></iframe>';}
+// Street View of the exact building — only for entitled viewers (we have real coords).
+// Uses the free Maps Embed API; returns nothing without coords so privacy holds.
+function streetEmbed(d){var la=parseFloat(d.lat),ln=parseFloat(d.lng);if(!MAPS_KEY||!isFinite(la)||!isFinite(ln)||la===0)return '';return '<div style="font-size:11.5px;color:var(--mut);margin:10px 0 4px">Street view</div><iframe class="dmap" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed/v1/streetview?key='+encodeURIComponent(MAPS_KEY)+'&location='+la+','+ln+'&fov=85"></iframe>';}
+function mapsLink(d){var q=encodeURIComponent(d.addr||((d.submarket||'')+', '+(d.state||'MA')));return '<a href="https://www.google.com/maps/search/?api=1&query='+q+'" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;color:var(--acc);font-weight:600;font-size:12.5px;text-decoration:none">Open in Google Maps ↗</a>';}
 // Investment analysis — derived ONLY from the figures the poster entered (never invented).
 // Shown for income/scale deals; hidden for a plain single-family or raw land.
 function analysisBlock(d){
@@ -1657,7 +1661,7 @@ function openDetail(id){
   var rows=[['Asset type',esc(d.type||'—')],['Submarket',esc(d.submarket||'—')],[isLease(d)?'Rent':'Asking price',isLease(d)?priceLabel(d):moneyFull(d.price)],['Units',num(d.units)||'—'],['Cap rate',num(d.cap)?num(d.cap).toFixed(2)+'%':'—'],['NOI',moneyFull(d.noi)],['Square feet',num(d.sf)?Math.round(num(d.sf)).toLocaleString('en-US'):'—'],['Beds',num(d.beds)||'—'],['Baths',num(d.baths)||'—'],['Year built',d.yb?esc(d.yb):'—'],['Buyer-broker commission',num(d.commission)?num(d.commission).toFixed(1)+'%':'—'],['Distribution',{broad:'Broad',private:'Private (approval)',pocket:'Pocket'}[d.dist]||'Broad'],['Posted',ago(d.at)+(d.by?(' · by '+esc(d.by)):'')]];
   rows=rows.filter(function(r){return !(['Units','Cap rate','NOI','Square feet','Beds','Baths','Year built'].indexOf(r[0])>=0 && (r[1]==='—'||r[1]===''));});
   var addrBlock = seeAddr
-    ? '<div class="reveal"><span style="color:var(--acc);vertical-align:-2px;margin-right:6px">'+addrIcon(true)+'</span><b>'+esc(d.addr||'(no address on file)')+'</b></div>'+(d.addr?mapEmbed(d.addr):(d.submarket?mapEmbed(d.submarket+', '+(d.state||'MA')):''))
+    ? '<div class="reveal"><span style="color:var(--acc);vertical-align:-2px;margin-right:6px">'+addrIcon(true)+'</span><b>'+esc(d.addr||'(no address on file)')+'</b></div>'+(d.addr?mapEmbed(d.addr):(d.submarket?mapEmbed(d.submarket+', '+(d.state||'MA')):''))+streetEmbed(d)+mapsLink(d)
     : '<div class="reveal" style="background:var(--card);border-color:var(--line2)"><span style="color:var(--gold);vertical-align:-2px;margin-right:6px">'+addrIcon(false)+'</span><b style="color:var(--gold)">Address unlocks after an approved intro.</b> Request an introduction — the listing agent approves before the exact address and documents are shared.</div>'+(d.submarket?'<div style="font-size:11.5px;color:var(--mut);margin:8px 0 4px">Approximate area · '+esc(d.submarket)+'</div>'+mapEmbed(d.submarket+', '+(d.state||'MA')):'');
   var renewLbl='↻ Renew 30 days'+(PAYCFG.enabled?(' ($'+PAYCFG.prices.renew+')'):'');
   var featBtn=PAYCFG.enabled?(d.featured?'<button class="btn ghost" disabled style="opacity:.6">★ Featured</button>':'<button class="btn acc" onclick="featureDeal(\''+d.id+'\')">★ Feature ($'+PAYCFG.prices.feature+')</button>'):'';
