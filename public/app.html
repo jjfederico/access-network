@@ -884,7 +884,7 @@ html.dark .bdg.lease{color:#D9B368!important;background:rgba(180,136,46,.14)!imp
       <div class="f"><label>Baths</label><input id="sBaths" inputmode="decimal" placeholder="0"></div>
       <div class="f"><label>Year built</label><input id="sYb" inputmode="numeric" placeholder="e.g. 1920"></div>
     </div>
-    <div class="f full"><label>Public description <span class="hint">— what everyone sees</span></label><textarea id="sDesc" rows="2" placeholder="6-unit value-add, all 2BRs, below-market rents, off-street parking…"></textarea></div>
+    <div class="f full"><label>Public description <span class="hint">— what everyone sees</span> <a id="aiDescBtn" onclick="aiDescribe()" style="cursor:pointer;color:var(--acc);font-weight:700;font-size:12px;margin-left:8px">✨ Draft with AI</a></label><textarea id="sDesc" rows="2" placeholder="6-unit value-add, all 2BRs, below-market rents, off-street parking…"></textarea></div>
     <div class="f full"><label>Photos <span class="hint">— optional · first photo is the cover</span></label>
       <div class="phdrop" id="phDrop" onclick="$('sPhotos').click()">
         <input type="file" id="sPhotos" accept="image/*" multiple hidden onchange="uploadPhotos(this.files);this.value='';">
@@ -1728,7 +1728,7 @@ function openIntro(id){_introDeal=id;close_('mDetail');
     +'<div class="mbody"><p style="color:var(--mut);font-size:13.5px;margin-bottom:12px">The listing broker sees your name &amp; note and approves before the address and documents are shared. No spam.</p>'
     +'<div class="f full"><label>Your name</label><input id="iName" value="'+esc(ME.name||'')+'"></div>'
     +'<div class="f full"><label>Firm</label><input id="iFirm" placeholder="Company"></div>'
-    +'<div class="f full"><label>A note to the broker — qualify your buyer for permission</label><textarea id="iMsg" rows="3" placeholder="Cash buyer, 1031, can close in 30 days. Interested in the numbers on this one."></textarea></div>'
+    +'<div class="f full"><label>A note to the broker — qualify your buyer for permission <a id="aiIntroBtn" onclick="aiIntro()" style="cursor:pointer;color:var(--acc);font-weight:700;font-size:12px;margin-left:8px">✍️ Draft with AI</a></label><textarea id="iMsg" rows="3" placeholder="Cash buyer, 1031, can close in 30 days. Interested in the numbers on this one."></textarea></div>'
     +'<div class="mact"><span class="msg" id="iMsgS"></span><button class="btn ghost" onclick="close_(\'mIntro\')">Cancel</button><button class="btn acc" onclick="sendIntro()">Send request</button></div></div>';
   var m=$('mIntro');if(!m){m=document.createElement('div');m.className='mbg';m.id='mIntro';m.onclick=function(e){if(e.target===m)close_('mIntro');};document.body.appendChild(m);}
   m.innerHTML='<div class="modal">'+html+'</div>';open_('mIntro');
@@ -1745,6 +1745,28 @@ function sendIntro(){
     if(j&&j.ok){$('iMsgS').textContent=j.already?'Request already sent ✓':'Sent ✓';setTimeout(function(){close_('mIntro');loadAll();},700);}
     else if(j&&j.error==='contribute_required'){close_('mIntro');ggPrompt();}
     else{$('iMsgS').textContent='Failed — retry';}
+  });
+}
+// ── AI helpers: cheap, on-demand drafts the member can edit before saving/sending ──
+function aiDescribe(){
+  var d=$('sDesc'); if(!d)return; var btn=$('aiDescBtn');
+  function gv(id){var e=$(id);return e?(e.value||''):'';}
+  var body={propType:gv('sType'),area:gv('sSub'),units:gv('sUnits'),sqft:gv('sSf'),price:gv('sPrice'),noi:gv('sNoi'),capRate:gv('sCap'),notes:d.value||''};
+  if(!body.propType && !body.price && !body.units && !d.value){ if($('sMsg'))$('sMsg').textContent='Add a few deal details first, then draft.'; return; }
+  if(btn){btn.textContent='✨ Drafting…';btn.style.pointerEvents='none';}
+  api('/api/pm/ai/describe',body).then(function(j){
+    if(btn){btn.textContent='✨ Draft with AI';btn.style.pointerEvents='';}
+    if(j&&j.ok&&j.text){ d.value=j.text; if($('sMsg'))$('sMsg').textContent='Drafted — edit as you like.'; }
+    else if($('sMsg')){ $('sMsg').textContent=(j&&j.message)||'AI couldn’t draft that — type it in.'; }
+  });
+}
+function aiIntro(){
+  var t=$('iMsg'); if(!t||!_introDeal)return; var btn=$('aiIntroBtn');
+  if(btn){btn.textContent='✍️ Drafting…';btn.style.pointerEvents='none';}
+  api('/api/pm/ai/intro',{listingId:_introDeal,hint:t.value||''}).then(function(j){
+    if(btn){btn.textContent='✍️ Draft with AI';btn.style.pointerEvents='';}
+    if(j&&j.ok&&j.text){ t.value=j.text; }
+    else if($('iMsgS')){ $('iMsgS').textContent=(j&&j.message)||'AI couldn’t draft that.'; }
   });
 }
 
