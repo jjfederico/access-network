@@ -118,6 +118,10 @@ const PM_KEYS = { listings: 'pm_listings', intros: 'pm_intros', buyboxes: 'pm_bu
 // Canonical licensure attestation — the exact text a member must accept at signup.
 // Stored verbatim on their profile with a timestamp + IP so acceptance is provable.
 const ATTEST_TEXT = "I certify that I am a currently licensed real estate agent in good standing, that my name, license number, brokerage, and all information I've provided are true and accurate, and that I am not misrepresenting my identity or licensure. I understand AXESS verifies licenses and that any false statement is grounds for immediate termination without refund.";
+// Confidentiality agreement accepted when requesting an intro — stored verbatim on the
+// intro record with a timestamp + IP so acceptance is provable. Protects the seller's
+// pocket listing and reinforces that these deals are private, not for public marketing.
+const CONF_TEXT = "I agree to keep this off-market deal and everything shared about it — including the address, financials, and any documents — strictly confidential. I will not market, forward, or disclose it to anyone without the listing agent's written permission, and I am requesting access on behalf of a genuine, ready buyer.";
 
 // ── give-to-get reciprocity ─────────────────────────────────────────────────
 // The network only works if members contribute. A member keeps FULL access
@@ -570,6 +574,7 @@ app.post('/api/pm/intro', rateLimit('intro', 30, 60 * 1000), ensureAuth, pmGate,
   const listingId = String(b.listingId || '');
   if (!listingId) return res.status(400).json({ ok: false, error: 'no_listing' });
   if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_verified', message: 'Contacting members unlocks once your license is verified.' });
+  if (b.confidential !== true) return res.status(400).json({ ok: false, error: 'confidentiality_required', message: 'Please accept the confidentiality agreement to request access.' });
   try {
     const listings = await pmLoad(PM_KEYS.listings);
     const l = listings.find(x => x && x.id === listingId);
@@ -590,6 +595,7 @@ app.post('/api/pm/intro', rateLimit('intro', 30, 60 * 1000), ensureAuth, pmGate,
     const rec = { id: pmId('I'), listingId, seller: l.owner, buyer: req.user.email,
       buyerName: String(b.buyerName || req.user.name || '').slice(0, 80), message: String(b.message || '').slice(0, 1000),
       buyerVerified: !!buyerProf.verified, buyerProducer: !!buyerProf.producer, buyerPof,
+      confidentiality: { accepted: true, at: new Date().toISOString(), ip: req.ip, text: CONF_TEXT },
       status: 'pending', createdAt: new Date().toISOString(), decidedAt: '' };
     await pmMutate(PM_KEYS.intros, arr => { arr.push(rec); return { save: arr }; });
     // In-app bell notification to the seller — reliable regardless of email prefs.
@@ -1092,14 +1098,35 @@ app.post('/api/pm/admin/producer', ensureAuth, pmGate, async (req, res) => {
     res.json({ ok: true, email, producer: !!profs[idx].producer });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
+// Reputation stats for a member, computed from REAL activity — never self-reported,
+// so it can't be gamed by editing a profile. This is the trust layer that sets AXESS
+// apart: agents can see who actually posts, closes, and responds before they engage.
+function pmMemberRep(email, listings, intros, prof) {
+  const e = _lc(email);
+  const mine = (listings || []).filter(l => l && !l.sample && _lc(l.owner) === e);
+  const closed = mine.filter(l => (l.status || '') === 'closed').length;
+  const live = mine.filter(l => { const s = l.status || 'active'; return s !== 'off' && s !== 'mls' && s !== 'closed' && !(l.expiresAt && new Date(l.expiresAt) < new Date()); }).length;
+  const recv = (intros || []).filter(i => i && _lc(i.seller) === e);
+  const decided = recv.filter(i => i.status === 'approved' || i.status === 'declined');
+  const responseRate = recv.length ? Math.round(100 * decided.length / recv.length) : null;
+  const times = decided.map(i => (i.decidedAt && i.createdAt) ? (new Date(i.decidedAt) - new Date(i.createdAt)) / 3600000 : null).filter(x => x != null && x >= 0);
+  const avgHrs = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : null;
+  const badges = [];
+  if (prof && prof.verified) badges.push('verified');
+  if (closed >= 1) badges.push('closer');
+  if (recv.length >= 3 && responseRate != null && responseRate >= 80) badges.push('responsive');
+  if (prof && prof.memberNo && prof.memberNo <= Number(process.env.PM_FOUNDING_CAP || 100)) badges.push('founding');
+  return { posted: mine.length, closed, live, introsReceived: recv.length, responseRate, avgResponseHrs: avgHrs, memberSince: (prof && prof.createdAt) || '', badges };
+}
 app.get('/api/pm/profile/:email', ensureAuth, pmGate, async (req, res) => {
   try {
-    const profs = await pmLoad('pm_profiles');
+    const [profs, listings, intros] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros)]);
     const p = profs.find(x => x && _lc(x.email) === _lc(req.params.email));
     if (!p) return res.json({ ok: true, profile: null });
     // Pending (unverified) viewers can see who an agent is, but not their contact details.
     const canContact = req.user.role === 'owner' || req.user.status === 'approved';
-    res.json({ ok: true, profile: { email: canContact ? p.email : '', name: p.name || '', brokerage: p.brokerage || '', license: canContact ? (p.license || '') : '', markets: p.markets || '', bio: p.bio || '', phone: canContact ? (p.phone || '') : '', linkedin: canContact ? (p.linkedin || '') : '', instagram: canContact ? (p.instagram || '') : '', facebook: canContact ? (p.facebook || '') : '', x: canContact ? (p.x || '') : '', website: canContact ? (p.website || '') : '', verified: !!p.verified, producer: !!p.producer, pof: pmPofPublic(p), status: p.status || 'pending' } });
+    const rep = pmMemberRep(p.email, listings, intros, p);
+    res.json({ ok: true, profile: { email: canContact ? p.email : '', name: p.name || '', brokerage: p.brokerage || '', license: canContact ? (p.license || '') : '', markets: p.markets || '', bio: p.bio || '', phone: canContact ? (p.phone || '') : '', linkedin: canContact ? (p.linkedin || '') : '', instagram: canContact ? (p.instagram || '') : '', facebook: canContact ? (p.facebook || '') : '', x: canContact ? (p.x || '') : '', website: canContact ? (p.website || '') : '', verified: !!p.verified, producer: !!p.producer, pof: pmPofPublic(p), status: p.status || 'pending', rep: rep } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.get('/api/pm/directory', ensureAuth, pmGate, async (req, res) => {
