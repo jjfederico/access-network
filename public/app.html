@@ -1229,6 +1229,21 @@ function toggleFilters(force){var r=document.getElementById('rail'),s=document.g
 function badgeVer(v){return v?'<span class="bdg ver" title="License verified">✓ Verified</span>':'';}
 function badgeProd(v){return v?'<span class="bdg prod" title="Curated producer — verified by AXESS">⭐ Producer</span>':'';}
 function badgePof(p){if(!p)return '';var ok=(p.status==='verified')||(p.status===undefined&&(p.amount!==undefined));if(!ok)return '';var amt=p.amount?(' '+esc(String(p.amount))):'';return '<span class="bdg pof" title="Proof of funds verified">💰 POF'+amt+'</span>';}
+// ── Reputation layer: earned badges + real activity stats (server-computed, never self-reported) ──
+function fmtSince(iso){if(!iso)return '';var d=new Date(iso);if(isNaN(d))return '';return d.toLocaleDateString('en-US',{month:'short',year:'numeric'});}
+function repBadges(rep){if(!rep)return '';var b=rep.badges||[],out='';
+  if(b.indexOf('closer')>=0)out+='<span class="bdg" style="background:#e7f6ec;color:#1a7f37" title="Has closed at least one deal through AXESS">🏆 Verified Closer</span> ';
+  if(b.indexOf('responsive')>=0)out+='<span class="bdg" style="background:#eaf1fb;color:#0A3D8F" title="Responds to intro requests quickly and consistently">⚡ Responsive</span> ';
+  if(b.indexOf('founding')>=0)out+='<span class="bdg" style="background:#fff4e5;color:#b25e09" title="One of the first 100 members">★ Founding</span> ';
+  return out;}
+function repStats(rep){if(!rep)return '';var parts=[];
+  if(rep.closed)parts.push('<b>'+rep.closed+'</b> closed');
+  if(rep.posted)parts.push('<b>'+rep.posted+'</b> posted'+(rep.live?(' · '+rep.live+' live'):''));
+  if(rep.avgResponseHrs!=null)parts.push('responds in ~'+(rep.avgResponseHrs<1?'<1h':(rep.avgResponseHrs<48?rep.avgResponseHrs+'h':Math.round(rep.avgResponseHrs/24)+'d')));
+  if(rep.responseRate!=null&&rep.introsReceived>=1)parts.push(rep.responseRate+'% reply rate');
+  var since=fmtSince(rep.memberSince);if(since)parts.push('member since '+since);
+  if(!parts.length)return '';
+  return '<div style="color:var(--mut);font-size:12px;margin-top:8px;line-height:1.6">'+parts.join(' &nbsp;·&nbsp; ')+'</div>';}
 function trustBadges(v,p,prod){return badgeProd(prod)+badgeVer(v)+badgePof(p);}
 
 /* ── stats ── */
@@ -1650,6 +1665,8 @@ function loadDealAgent(email,fallbackName){
       +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:6px">Listing agent</div>'
       +'<div style="font-weight:700;font-size:15px">'+esc(p.name||fallbackName||email)+' '+trustBadges(p.verified,p.pof,p.producer)+'</div>'
       +(sub?'<div style="color:var(--mut);font-size:13px;margin-top:2px">'+sub+'</div>':'')
+      +(repBadges(p.rep)?'<div style="margin-top:8px">'+repBadges(p.rep)+'</div>':'')
+      +repStats(p.rep)
       +socialLinks(p)
       +'</div>';
   }).catch(function(){box.innerHTML='';});
@@ -1733,7 +1750,8 @@ function openIntro(id){_introDeal=id;close_('mDetail');
     +'<div class="f full"><label>Your name</label><input id="iName" value="'+esc(ME.name||'')+'"></div>'
     +'<div class="f full"><label>Firm</label><input id="iFirm" placeholder="Company"></div>'
     +'<div class="f full"><label>A note to the broker — qualify your buyer for permission <a id="aiIntroBtn" onclick="aiIntro()" style="cursor:pointer;color:var(--acc);font-weight:700;font-size:12px;margin-left:8px">✍️ Draft with AI</a></label><textarea id="iMsg" rows="3" placeholder="Cash buyer, 1031, can close in 30 days. Interested in the numbers on this one."></textarea></div>'
-    +'<div class="mact"><span class="msg" id="iMsgS"></span><button class="btn ghost" onclick="close_(\'mIntro\')">Cancel</button><button class="btn acc" onclick="sendIntro()">Send request</button></div></div>';
+    +'<label class="ck" style="display:flex;gap:8px;align-items:flex-start;margin:2px 0 12px;font-size:12.5px;color:var(--mut);line-height:1.5;cursor:pointer"><input type="checkbox" id="iConf" style="margin-top:3px;flex:0 0 auto"><span>I agree to keep this off-market deal — the address, financials, and documents — <b>strictly confidential</b>, and not to market or share it without the listing agent\'s permission.</span></label>'
+    +'<div class="mact"><span class="msg" id="iMsgS"></span><button class="btn ghost" onclick="close_(\'mIntro\')">Cancel</button><button class="btn acc" onclick="sendIntro()">Agree &amp; send request</button></div></div>';
   var m=$('mIntro');if(!m){m=document.createElement('div');m.className='mbg';m.id='mIntro';m.onclick=function(e){if(e.target===m)close_('mIntro');};document.body.appendChild(m);}
   m.innerHTML='<div class="modal">'+html+'</div>';open_('mIntro');
 }
@@ -1741,10 +1759,11 @@ function sendIntro(){
   var d=LISTINGS.find(function(x){return x.id===_introDeal;});if(!d)return;
   var name=($('iName').value||ME.name||'').trim(),firm=($('iFirm').value||'').trim();
   if(!name){$('iMsgS').textContent='Add your name.';return;}
+  if(!($('iConf')&&$('iConf').checked)){$('iMsgS').textContent='Please accept the confidentiality agreement.';return;}
   var note=($('iMsg').value||'').trim();
   $('iMsgS').textContent='Sending…';
   if(sendIntro._busy)return; sendIntro._busy=true; setTimeout(function(){sendIntro._busy=false;},5000);
-  api('/api/pm/intro',{listingId:d.id,buyerName:name+(firm?(' · '+firm):''),message:note}).then(function(j){
+  api('/api/pm/intro',{listingId:d.id,buyerName:name+(firm?(' · '+firm):''),message:note,confidential:true}).then(function(j){
     sendIntro._busy=false;
     if(j&&j.ok){$('iMsgS').textContent=j.already?'Request already sent ✓':'Sent ✓';setTimeout(function(){close_('mIntro');loadAll();},700);}
     else if(j&&j.error==='contribute_required'){close_('mIntro');ggPrompt();}
