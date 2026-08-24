@@ -1866,6 +1866,66 @@ app.get('/app.html', ensureAuth, (req, res) => {
   if (req.user.role !== 'owner' && req.user.status !== 'approved') return res.redirect('/?pending=1');
   serveWithIdentity(res, 'app.html', req.user);
 });
+// ── Owner insights: the participation funnel — signups → approved → posted → intro.
+// Answers the question the give-to-get gate exists for: are members contributing?
+function pmInsightsHtml(S) {
+  const pct = S.activation;
+  const card = (n, label, sub) => '<div style="background:#fff;border:1px solid #e4e7ed;border-radius:12px;padding:16px 18px"><div style="font-size:30px;font-weight:800;color:#0A3D8F">' + n + '</div><div style="font-weight:600;margin-top:2px">' + label + '</div>' + (sub ? '<div style="color:#5b6472;font-size:12.5px;margin-top:2px">' + sub + '</div>' : '') + '</div>';
+  return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AXESS — Insights</title>'
+    + '<style>body{margin:0;background:#eef1f5;color:#14171d;font:15px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;padding:24px 16px}.wrap{max-width:820px;margin:0 auto}'
+    + 'h1{font-size:20px;margin:0 0 2px}.lead{color:#5b6472;font-size:13.5px;margin:0 0 18px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}'
+    + '.bar{background:#fff;border:1px solid #e4e7ed;border-radius:12px;padding:18px}.h2{font-weight:700;margin:0 0 12px}.track{background:#eef1f5;border-radius:8px;height:26px;overflow:hidden}'
+    + '.fill{background:#0A3D8F;height:100%;color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;padding-left:10px;border-radius:8px}'
+    + 'a.b{display:inline-block;margin-top:18px;color:#0A3D8F;text-decoration:none;font-weight:600}</style></head><body><div class="wrap">'
+    + '<h1>AXESS — Insights</h1><p class="lead">Your network at a glance. The number that matters most is <b>activation</b> — the share of approved members who actually posted a deal or a need.</p>'
+    + '<div class="grid">'
+    + card(S.membersTotal, 'Members', S.new7 + ' new this week · ' + S.new30 + ' this month')
+    + card(S.pending, 'Awaiting approval', 'in your Requests queue')
+    + card(S.approved, 'Approved & active', S.deactivated + ' deactivated')
+    + card(S.liveDeals, 'Live deals', S.deals7 + ' new this week · ' + S.deals30 + ' this month')
+    + card(S.needs, 'Client needs posted', 'active buy boxes')
+    + card(S.introsApproved + '/' + S.introsTotal, 'Intros approved', S.introsPending + ' pending')
+    + '</div>'
+    + '<div class="bar"><div class="h2">Activation — do members participate?</div>'
+    + '<div class="track"><div class="fill" style="width:' + Math.max(pct, 8) + '%">' + pct + '%</div></div>'
+    + '<div style="color:#5b6472;font-size:13px;margin-top:10px"><b>' + S.contributors + '</b> of your ' + S.approved + ' approved members have posted a deal or a need. <b>' + S.lurkers + '</b> haven\'t yet — the give-to-get gate is limiting their access until they do.</div>'
+    + '</div><a class="b" href="/app.html">← Back to AXESS</a></div></body></html>';
+}
+app.get('/insights', ensureAuth, async (req, res) => {
+  if (req.user.role !== 'owner') return res.redirect('/app.html');
+  try {
+    const [profs, listings, intros, boxes] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros), pmLoad(PM_KEYS.buyboxes)]);
+    const real = profs.filter(p => p && !p.sample);
+    const now = Date.now();
+    const daysAgo = iso => iso ? (now - new Date(iso).getTime()) / 864e5 : 1e9;
+    const isExpired = l => l.expiresAt && new Date(l.expiresAt) < new Date();
+    const st = l => (l.status || 'active');
+    const liveDeals = listings.filter(l => l && !l.sample && ['off', 'mls', 'closed'].indexOf(st(l)) < 0 && !isExpired(l));
+    const posters = new Set(listings.filter(l => l && !l.sample).map(l => _lc(l.owner)));
+    const needers = new Set(boxes.filter(Boolean).map(b => _lc(b.owner)));
+    const approved = real.filter(p => p.status === 'approved' && !p.deactivated);
+    const contributors = approved.filter(p => posters.has(_lc(p.email)) || needers.has(_lc(p.email)));
+    const S = {
+      membersTotal: real.length,
+      pending: real.filter(p => p.status === 'pending').length,
+      approved: approved.length,
+      deactivated: real.filter(p => p.deactivated).length,
+      new7: real.filter(p => daysAgo(p.createdAt) <= 7).length,
+      new30: real.filter(p => daysAgo(p.createdAt) <= 30).length,
+      contributors: contributors.length,
+      lurkers: approved.length - contributors.length,
+      activation: approved.length ? Math.round(100 * contributors.length / approved.length) : 0,
+      liveDeals: liveDeals.length,
+      deals7: listings.filter(l => l && !l.sample && daysAgo(l.createdAt) <= 7).length,
+      deals30: listings.filter(l => l && !l.sample && daysAgo(l.createdAt) <= 30).length,
+      needs: boxes.filter(Boolean).length,
+      introsTotal: intros.length,
+      introsApproved: intros.filter(i => i && i.status === 'approved').length,
+      introsPending: intros.filter(i => i && i.status === 'pending').length,
+    };
+    res.type('html').send(pmInsightsHtml(S));
+  } catch (e) { res.status(502).send('error'); }
+});
 // Legacy demo URL. A stale premarket-hub.html still lives in public/ from an
 // earlier build; this route shadows it (registered before express.static) so
 // the old link always serves the CURRENT app instead of the frozen copy.
