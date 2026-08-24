@@ -1261,6 +1261,13 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
   const phone = S(b.phone, 40), license = S(b.license, 60), brokerage = S(b.brokerage, 120);
   if (!name || !email || !/^[^@\s"'<>\\]+@[^@\s"'<>\\]+\.[^@\s"'<>\\]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Name and a valid email are required.' });
   if (!phone || !license || !brokerage) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Phone, license number, and brokerage are all required.' });
+  // License sanity check: a real MA real-estate license is 4–12 digits. This blocks
+  // blanks, "n/a", and typo'd junk before it ever reaches the owner's approval queue.
+  // (MA has no public verification API, so the owner still confirms on the state
+  // registry via the one-click lookup — this just filters the obvious fakes.)
+  const _licDigits = license.replace(/\D/g, '');
+  if (_licDigits.length < 4 || _licDigits.length > 12 || /^(n\/?a|none|test|unknown|pending)$/i.test(license.trim()))
+    return res.status(400).json({ ok: false, error: 'bad_license', message: 'Enter your real Massachusetts license number as it appears on the state registry (digits only).' });
   if (b.attest !== true) return res.status(400).json({ ok: false, error: 'attest_required', message: 'You must accept the licensure certification to join.' });
   const ip = req.ip;
   if (!(await verifyTurnstile(b.captcha, ip))) return res.status(400).json({ ok: false, error: 'captcha_failed', message: 'Please complete the verification and try again.' });
