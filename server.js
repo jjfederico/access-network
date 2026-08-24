@@ -1853,6 +1853,7 @@ async function pmMaybeRunDigest() {
     if (!s.lastDigestRun) { s.lastDigestRun = new Date().toISOString(); await pmSaveSettings(s); return; }
     if (Date.now() - new Date(s.lastDigestRun).getTime() < 7 * 86400000) return;
     await pmRunDigest(7, false);
+    try { await pmOwnerDigest(); } catch (e) {}
     const s2 = await pmSettings(); s2.lastDigestRun = new Date().toISOString(); await pmSaveSettings(s2);
   } catch (e) {}
 }
@@ -1898,41 +1899,58 @@ function pmInsightsHtml(S) {
     + '<div style="color:#5b6472;font-size:13px;margin-top:10px"><b>' + S.contributors + '</b> of your ' + S.approved + ' approved members have posted a deal or a need. <b>' + S.lurkers + '</b> haven\'t yet — the give-to-get gate is limiting their access until they do.</div>'
     + '</div><a class="b" href="/app.html">← Back to AXESS</a></div></body></html>';
 }
+async function pmInsightsData() {
+  const [profs, listings, intros, boxes] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros), pmLoad(PM_KEYS.buyboxes)]);
+  const real = profs.filter(p => p && !p.sample);
+  const now = Date.now();
+  const daysAgo = iso => iso ? (now - new Date(iso).getTime()) / 864e5 : 1e9;
+  const isExpired = l => l.expiresAt && new Date(l.expiresAt) < new Date();
+  const st = l => (l.status || 'active');
+  const liveDeals = listings.filter(l => l && !l.sample && ['off', 'mls', 'closed'].indexOf(st(l)) < 0 && !isExpired(l));
+  const posters = new Set(listings.filter(l => l && !l.sample).map(l => _lc(l.owner)));
+  const needers = new Set(boxes.filter(Boolean).map(b => _lc(b.owner)));
+  const approved = real.filter(p => p.status === 'approved' && !p.deactivated);
+  const contributors = approved.filter(p => posters.has(_lc(p.email)) || needers.has(_lc(p.email)));
+  return {
+    membersTotal: real.length,
+    pending: real.filter(p => p.status === 'pending').length,
+    approved: approved.length,
+    deactivated: real.filter(p => p.deactivated).length,
+    new7: real.filter(p => daysAgo(p.createdAt) <= 7).length,
+    new30: real.filter(p => daysAgo(p.createdAt) <= 30).length,
+    contributors: contributors.length,
+    lurkers: approved.length - contributors.length,
+    activation: approved.length ? Math.round(100 * contributors.length / approved.length) : 0,
+    liveDeals: liveDeals.length,
+    deals7: listings.filter(l => l && !l.sample && daysAgo(l.createdAt) <= 7).length,
+    deals30: listings.filter(l => l && !l.sample && daysAgo(l.createdAt) <= 30).length,
+    needs: boxes.filter(Boolean).length,
+    introsTotal: intros.length,
+    introsApproved: intros.filter(i => i && i.status === 'approved').length,
+    introsPending: intros.filter(i => i && i.status === 'pending').length,
+  };
+}
 app.get('/insights', ensureAuth, async (req, res) => {
   if (req.user.role !== 'owner') return res.redirect('/app.html');
-  try {
-    const [profs, listings, intros, boxes] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.intros), pmLoad(PM_KEYS.buyboxes)]);
-    const real = profs.filter(p => p && !p.sample);
-    const now = Date.now();
-    const daysAgo = iso => iso ? (now - new Date(iso).getTime()) / 864e5 : 1e9;
-    const isExpired = l => l.expiresAt && new Date(l.expiresAt) < new Date();
-    const st = l => (l.status || 'active');
-    const liveDeals = listings.filter(l => l && !l.sample && ['off', 'mls', 'closed'].indexOf(st(l)) < 0 && !isExpired(l));
-    const posters = new Set(listings.filter(l => l && !l.sample).map(l => _lc(l.owner)));
-    const needers = new Set(boxes.filter(Boolean).map(b => _lc(b.owner)));
-    const approved = real.filter(p => p.status === 'approved' && !p.deactivated);
-    const contributors = approved.filter(p => posters.has(_lc(p.email)) || needers.has(_lc(p.email)));
-    const S = {
-      membersTotal: real.length,
-      pending: real.filter(p => p.status === 'pending').length,
-      approved: approved.length,
-      deactivated: real.filter(p => p.deactivated).length,
-      new7: real.filter(p => daysAgo(p.createdAt) <= 7).length,
-      new30: real.filter(p => daysAgo(p.createdAt) <= 30).length,
-      contributors: contributors.length,
-      lurkers: approved.length - contributors.length,
-      activation: approved.length ? Math.round(100 * contributors.length / approved.length) : 0,
-      liveDeals: liveDeals.length,
-      deals7: listings.filter(l => l && !l.sample && daysAgo(l.createdAt) <= 7).length,
-      deals30: listings.filter(l => l && !l.sample && daysAgo(l.createdAt) <= 30).length,
-      needs: boxes.filter(Boolean).length,
-      introsTotal: intros.length,
-      introsApproved: intros.filter(i => i && i.status === 'approved').length,
-      introsPending: intros.filter(i => i && i.status === 'pending').length,
-    };
-    res.type('html').send(pmInsightsHtml(S));
-  } catch (e) { res.status(502).send('error'); }
+  try { res.type('html').send(pmInsightsHtml(await pmInsightsData())); }
+  catch (e) { res.status(502).send('error'); }
 });
+// Weekly owner digest — emails the funnel to every admin so they watch the network
+// without logging in. Runs inside the same weekly cycle as the member deal digest.
+async function pmOwnerDigest() {
+  if (!ADMINS.length) return;
+  const S = await pmInsightsData();
+  const body = 'Your AXESS week at a glance:\n\n'
+    + 'Members: ' + S.membersTotal + ' (' + S.new7 + ' new this week, ' + S.new30 + ' this month)\n'
+    + 'Awaiting your approval: ' + S.pending + '\n'
+    + 'Approved & active: ' + S.approved + (S.deactivated ? (' · ' + S.deactivated + ' deactivated') : '') + '\n'
+    + 'Live deals: ' + S.liveDeals + ' (' + S.deals7 + ' new this week)\n'
+    + 'Client needs posted: ' + S.needs + '\n'
+    + 'Intros: ' + S.introsApproved + ' approved / ' + S.introsTotal + ' total (' + S.introsPending + ' pending)\n\n'
+    + 'Activation: ' + S.activation + '% — ' + S.contributors + ' of ' + S.approved + ' approved members have posted a deal or need; ' + S.lurkers + ' haven’t yet.\n\n'
+    + 'Full dashboard: ' + PM_BASE + '/insights';
+  for (const a of ADMINS) { try { await pmSendEmail(a, 'AXESS · your weekly network summary', body); } catch (e) {} }
+}
 // Legacy demo URL. A stale premarket-hub.html still lives in public/ from an
 // earlier build; this route shadows it (registered before express.static) so
 // the old link always serves the CURRENT app instead of the frozen copy.
