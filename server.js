@@ -1,5 +1,5 @@
 // ── AXESS — standalone server ──────────────────────────────────────────────
-// Invite-only, agent-to-agent, off-market investment deal network.
+// Private agent-to-agent network for pre-market and seller-directed property.
 // Own repo · own Render service · own Postgres. Data layer: db.js
 // (pmLoad/pmSave over Postgres). Auth: auth.js (email magic-link).
 // The full /api/pm/* marketplace, ported from the Grove hub onto Postgres.
@@ -120,7 +120,7 @@ const PM_KEYS = { listings: 'pm_listings', intros: 'pm_intros', buyboxes: 'pm_bu
 const ATTEST_TEXT = "I certify that I am a currently licensed real estate agent in good standing, that my name, license number, brokerage, and all information I've provided are true and accurate, and that I am not misrepresenting my identity or licensure. I understand AXESS verifies licenses and that any false statement is grounds for immediate termination without refund.";
 // Confidentiality agreement accepted when requesting an intro — stored verbatim on the
 // intro record with a timestamp + IP so acceptance is provable. Protects the seller's
-// pocket listing and reinforces that these deals are private, not for public marketing.
+// private distribution and reinforces that these deals are pre-market, not for public marketing.
 const CONF_TEXT = "I agree to keep this off-market deal and everything shared about it — including the address, financials, and any documents — strictly confidential. I will not market, forward, or disclose it to anyone without the listing agent's written permission, and I am requesting access on behalf of a genuine, ready buyer.";
 
 // ── give-to-get reciprocity ─────────────────────────────────────────────────
@@ -153,7 +153,7 @@ function pmReciprocity(email, listings, boxes, profs) {
   };
 }
 
-// Gate: signed in AND (admin OR approved member). Invite-only — a pending or
+// Gate: signed in AND (admin OR approved member). Members only — a pending or
 // unknown session gets nothing from the API.
 // Signed-in gate. Owner + approved + PENDING members all pass (pending can browse
 // a limited feed and set up their profile). Write/contact actions separately
@@ -1358,7 +1358,7 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
           heading: 'We got your request',
           paras: [
             'Thanks for requesting access to AXESS, ' + _emailEsc(name || 'there') + '.',
-            'AXESS is an invite-only, agent-to-agent network for off-market deals in Massachusetts — and every member is a verified, licensed agent. We’re confirming your real estate license now (usually within a day).',
+            'AXESS is a private agent-to-agent network for pre-market and seller-directed property in Massachusetts, and every member holds a verified Massachusetts real estate license. We’re verifying your license against state records now (usually within a day).',
             'The moment you’re approved, you’ll get an email and full access to post deals, request intros, and message members.',
             'Reply to this email anytime; it comes straight to me.'
           ],
@@ -1402,7 +1402,7 @@ app.post('/api/pm/admin/invite', ensureAuth, pmGate, async (req, res) => {
     // Log the invite (for a simple record / de-dupe view later).
     try { const invs = await pmLoad('pm_invites'); invs.push({ email, by: pmEmail(req.user), at: now }); await pmSave('pm_invites', invs.length > 3000 ? invs.slice(-3000) : invs); } catch (e) {}
     const html = authMod.emailShell(
-      '<p style="margin:0 0 4px;font-size:16px">You\'re invited to <b>AXESS</b> — a private, invite-only network where licensed agents move off-market real estate deals agent-to-agent.</p>'
+      '<p style="margin:0 0 4px;font-size:16px">You\'re invited to <b>AXESS</b> — a private network where licensed Massachusetts agents share pre-market and seller-directed property, agent to agent.</p>'
       + authMod.emailBtn('Accept your invite &amp; sign up →', link)
       + '<p style="color:#5B6472;font-size:13px;margin:16px 0 0">Founding members join free. You\'ll just confirm your license — takes about a minute. If the button doesn\'t work, paste this link:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>');
     const sent = await authMod.sendEmail(email, 'Your invite to AXESS', html);

@@ -1,9 +1,9 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AXESS — off-market real estate, before the market</title>
-<meta name="description" content="AXESS — an invite-only, agent-to-agent network where Massachusetts agents quietly move off-market property of every kind: single-family, condos, multifamily, commercial, land, and more.">
+<meta name="description" content="AXESS — the pre-market network for licensed Massachusetts real estate agents. Members share seller-directed, off-market property of every kind: single-family, condos, multifamily, commercial, and land.">
 <meta property="og:title" content="AXESS — off-market real estate">
-<meta property="og:description" content="An invite-only, agent-to-agent network for off-market real estate across Massachusetts — residential and commercial, single-family to development.">
+<meta property="og:description" content="The pre-market, agent-to-agent network for licensed Massachusetts agents — residential and commercial, single-family to development.">
 <meta property="og:image" content="/brand/axess/social/avatar-1000-blue.png">
 <link rel="icon" type="image/svg+xml" href="/brand/axess/favicon/favicon.svg">
 <link rel="icon" href="/brand/axess/favicon/favicon-32.png" sizes="32x32">
@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Archivo:wght@700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
+  --bad:#C0492E;
   /* AXESS — paper, ink surfaces, deep-green accent, mint for digital */
   --ink:#0E1013;--ink2:#191C22;--bone:#F7F6F3;--paper:#F7F6F3;
   --navy:#0E1013;--navy2:#191C22;--acc:#1D5A4A;--acc2:#35A07F;--gold:#B4882E;
@@ -19,7 +20,8 @@
   --rad:16px;--radsm:11px;--shadow:0 14px 36px -20px rgba(30,26,18,.20);--shadow2:0 26px 60px -30px rgba(14,16,19,.40);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overflow-x:clip}
+body{overflow-x:clip;max-width:100%}
 body{font-family:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.55}
 a{color:inherit;text-decoration:none}
 .wrap{max-width:1140px;margin:0 auto;padding:0 22px}
@@ -57,7 +59,7 @@ a{color:inherit;text-decoration:none}
   radial-gradient(48% 56% at 84% 8%,rgba(239,236,228,.06),transparent 60%);animation:drift 20s ease-in-out infinite alternate}
 @keyframes drift{to{transform:scale(1.12) translate(-2%,-1%)}}
 .hero .lines{position:absolute;inset:0;opacity:.05;background-image:repeating-linear-gradient(90deg,var(--bone) 0 1px,transparent 1px 84px)}
-.hero .in{position:relative;padding:78px 0 66px;text-align:center}
+.hero .in{position:relative;padding:78px 22px 66px;text-align:center}
 .ey{display:inline-flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--bone);background:rgba(239,236,228,.08);border:1px solid rgba(239,236,228,.2);padding:7px 14px;border-radius:100px}
 .hero h1{font-size:clamp(36px,5.6vw,62px);line-height:1.02;font-weight:700;letter-spacing:-.02em;margin:22px auto 0;max-width:15ch}
 .hero h1 .u{color:var(--bone);border-bottom:3px solid rgba(239,236,228,.4);padding-bottom:2px}
@@ -66,7 +68,7 @@ a{color:inherit;text-decoration:none}
 .mini{font-family:'IBM Plex Mono',monospace;color:var(--mut2);font-size:12px;margin-top:18px;letter-spacing:.04em}
 /* stats */
 .statwrap{margin-top:-36px;position:relative;z-index:5}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .stats .s{background:var(--paper);border:1px solid var(--line);border-radius:var(--rad);padding:18px 20px;box-shadow:var(--shadow)}
 .stats .s .v{font-size:27px;font-weight:700;letter-spacing:-.02em}
 .stats .s .v.a{color:var(--ink)}
@@ -102,7 +104,8 @@ section{padding:52px 0}
 .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 @media(max-width:820px){.feat{grid-template-columns:1fr}}
 .fc{background:var(--paper);border:1px solid var(--line);border-radius:var(--rad);padding:22px}
-.fc .ic{font-size:22px}
+.fc .ic{width:40px;height:40px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;background:rgba(10,61,143,.09);color:var(--acc)}
+.fc .ic svg{width:21px;height:21px;display:block}
 .fc h4{margin:12px 0 6px;font-size:16px;font-weight:700}
 .fc p{color:var(--mut);font-size:14px}
 /* pricing */
@@ -152,7 +155,7 @@ body{font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;letter-spaci
   .nav .in{gap:10px}
   .nav .btn.g{display:none}                 /* Sign in hidden on phones; Get access → same sign-in */
   .btn{padding:11px 15px;font-size:14px}
-  .hero .in{padding:54px 0 48px}
+  .hero .in{padding:54px 22px 48px}
   .mini{font-size:10px;letter-spacing:.02em;padding:0 8px}
   .speci{gap:16px 22px}
 }
@@ -160,19 +163,19 @@ body{font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;letter-spaci
 .hero,.price,.band{background:var(--navy)}
 .deal .ph{background:linear-gradient(135deg,#14233C,#0E1A2E);color:#3a4a63}
 .step .n{background:var(--acc);color:#fff}
-.btn.p{background:var(--acc);color:#fff;box-shadow:0 6px 18px -6px rgba(29,90,74,.35)}
+.btn.p{background:var(--acc);color:#fff;box-shadow:0 6px 18px -6px rgba(10,61,143,.35)}
 .hero .btn.p,.price .btn.p{background:var(--bone);color:var(--navy)}
 .stats .s .v.a{color:var(--acc)}
-.nlinks a:hover{color:var(--acc);background:rgba(29,90,74,.06)}
+.nlinks a:hover{color:var(--acc);background:rgba(10,61,143,.06)}
 .foot .links a:hover{color:var(--acc)}
-.btn.g:hover{border-color:var(--acc);color:var(--acc);background:rgba(29,90,74,.04)}
+.btn.g:hover{border-color:var(--acc);color:var(--acc);background:rgba(10,61,143,.04)}
 .hero .mini{color:rgba(241,239,234,.84)}
 .price .lab{color:#B9C7DE}
 /* top-bar "coming soon" city teaser */
-.soon{display:inline-flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);background:rgba(29,90,74,.08);border:1px solid rgba(29,90,74,.22);border-radius:100px;padding:7px 13px;white-space:nowrap;margin-right:4px}
+.soon{display:inline-flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);background:rgba(10,61,143,.08);border:1px solid rgba(10,61,143,.22);border-radius:100px;padding:7px 13px;white-space:nowrap;margin-right:4px}
 .soon .dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:soonpulse 1.8s infinite}
 .soon b{color:var(--ink);transition:opacity .22s}
-@keyframes soonpulse{0%{box-shadow:0 0 0 0 rgba(29,90,74,.45)}70%{box-shadow:0 0 0 7px rgba(29,90,74,0)}100%{box-shadow:0 0 0 0 rgba(29,90,74,0)}}
+@keyframes soonpulse{0%{box-shadow:0 0 0 0 rgba(10,61,143,.45)}70%{box-shadow:0 0 0 7px rgba(10,61,143,0)}100%{box-shadow:0 0 0 0 rgba(10,61,143,0)}}
 @media(max-width:1000px){.soon{display:none}}
 /* hero video layer (drop /brand/hero.mp4 to activate; animated mesh is the fallback) */
 .hero .herovid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.34}
@@ -204,9 +207,9 @@ body{font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;letter-spaci
    COMPASS SKIN (AXESS) — Science-blue on white, Inter, airy.
    Appended last so it wins the cascade. ============================================================ */
 :root{
-  --acc:#0064E5;--acc2:#3A86F0;--gold:#0064E5;
+  --acc:#0A3D8F;--acc2:#1E4FA8;--gold:#B4882E;
   --ink:#0B0C0E;--ink2:#16181C;--navy:#0B0C0E;--bone:#FFFFFF;--paper:#FFFFFF;
-  --mut:#5B6472;--mut2:#8A93A3;--line:#E8EAEE;--line2:#DFE2E8;
+  --mut:#5B6472;--mut2:#636B78;--line:#E8EAEE;--line2:#DFE2E8;
 }
 body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .hero h1,.center h2,.step h3,.band h2,.stats .s .v,.deal .s,.price .amt,.rmodal .rhead h3,.rdone div.big,.feat h4{font-family:'Inter',system-ui,sans-serif;letter-spacing:-.02em}
@@ -220,7 +223,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .nav .in{gap:14px}
 .nlinks{flex-wrap:nowrap;gap:2px}
 .nlinks a{font-weight:500;white-space:nowrap}
-.nlinks a:hover{color:var(--acc);background:rgba(0,100,229,.06)}
+.nlinks a:hover{color:var(--acc);background:rgba(10,61,143,.06)}
 @media(max-width:1240px){.soon{display:none!important}}
 /* keep Sign in reachable on phones (was hidden) — compact blue link + tighter buttons */
 .lbl-sm{display:none}
@@ -237,16 +240,16 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 /* buttons — squared, bright blue */
 .btn{border-radius:7px}
 .btn.p{background:var(--acc);color:#fff;box-shadow:none}
-.btn.p:hover{background:#0056c9;box-shadow:0 10px 26px -12px rgba(0,100,229,.7)}
+.btn.p:hover{background:#0056c9;box-shadow:0 10px 26px -12px rgba(10,61,143,.7)}
 .btn.g{border:1px solid var(--line2);color:var(--ink)}
-.btn.g:hover{border-color:var(--acc);color:var(--acc);background:rgba(0,100,229,.04)}
+.btn.g:hover{border-color:var(--acc);color:var(--acc);background:rgba(10,61,143,.04)}
 /* ── HERO: dark, rotating architectural photos ── */
 .hero{background:var(--ink);color:#fff;overflow:hidden;position:relative}
 .hero .mesh,.hero .lines{display:none!important}
 .hero .hbg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.4s ease}
 .hero .hbg.on{opacity:1}
 .hero .scrim{position:absolute;inset:0;z-index:1;display:block!important;background:linear-gradient(180deg,rgba(9,12,18,.62) 0%,rgba(9,12,18,.66) 45%,rgba(9,12,18,.9) 100%)}
-.hero .in{position:relative;z-index:2;text-align:center;padding:96px 0 88px}
+.hero .in{position:relative;z-index:2;text-align:center;padding:96px 22px 88px}
 .hero .ey{color:#cfe0ff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25)}
 .hero h1{color:#fff;font-weight:800;letter-spacing:-.03em;text-shadow:0 2px 24px rgba(0,0,0,.35)}
 .hero h1 .u{color:#7fb0ff;border-bottom:0;padding:0;text-decoration:none}
@@ -259,7 +262,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .hero .btn.demo .pc{width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;display:inline-flex;align-items:center;justify-content:center;margin-right:2px}
 .hero .mini{color:rgba(255,255,255,.8);font-weight:600}
 @media(max-width:600px){
-  .hero .in{padding:56px 0 52px}
+  .hero .in{padding:56px 22px 52px}
   .hero h1{font-size:clamp(32px,8.5vw,42px)}
   .hero p.sub{font-size:15px}
   .hero .cta{flex-direction:column;align-items:stretch}
@@ -273,7 +276,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 /* steps + feature icons */
 .step .n{background:var(--acc);color:#fff}
 .deal .ph{background:linear-gradient(135deg,#E5EDF9,#EEF2F8);color:var(--acc);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:0;overflow:hidden;position:relative}
-.deal .ph::before{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,rgba(0,100,229,.055) 0 10px,transparent 10px 20px)}
+.deal .ph::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%230A3D8F' fill-opacity='0.10' d='M50 0 100 100H74L50 30 26 100H0Z'/><rect fill='%230A3D8F' fill-opacity='0.10' x='22.4' y='56.6' width='30.3' height='14.5'/></svg>") center/86px 86px no-repeat}
 .deal .ph svg.lk{width:32px;height:32px;position:relative;z-index:1}
 .deal .ph .lktxt{position:relative;z-index:1;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#5B6472;font-weight:700}
 .deal .ph .tico{position:absolute;top:9px;left:9px;z-index:2;width:27px;height:27px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 9px -2px rgba(11,12,14,.28)}
@@ -287,12 +290,24 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .band .btn.p{background:#fff;color:var(--acc)}
 .band .btn.ghostlight{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.4)}
 /* coming-soon pill */
-.soon{color:var(--acc);background:rgba(0,100,229,.08);border-color:rgba(0,100,229,.2)}
+.soon{color:var(--acc);background:rgba(10,61,143,.08);border-color:rgba(10,61,143,.2)}
 .soon .dot{background:var(--acc)}.soon b{color:var(--ink)}
-@keyframes soonpulse{0%{box-shadow:0 0 0 0 rgba(0,100,229,.45)}70%{box-shadow:0 0 0 7px rgba(0,100,229,0)}100%{box-shadow:0 0 0 0 rgba(0,100,229,0)}}
+@keyframes soonpulse{0%{box-shadow:0 0 0 0 rgba(10,61,143,.45)}70%{box-shadow:0 0 0 7px rgba(10,61,143,0)}100%{box-shadow:0 0 0 0 rgba(10,61,143,0)}}
+/* expansion ticker strip (above the nav) */
+.xbar{background:var(--acc);color:#fff;overflow:hidden;position:relative;height:33px;font-family:'IBM Plex Mono',monospace}
+.xbar .lbl{position:absolute;left:0;top:0;bottom:0;z-index:2;display:flex;align-items:center;gap:8px;padding:0 16px;background:var(--acc);font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;box-shadow:14px 0 16px -6px rgba(10,61,143,.95)}
+.xbar .lbl .pin{width:6px;height:6px;border-radius:50%;background:#fff;animation:soonpulse 1.8s infinite}
+.xbar .track{display:flex;align-items:center;width:max-content;height:100%;position:absolute;top:0;left:0;animation:xscroll 36s linear infinite}
+.xbar:hover .track{animation-play-state:paused}
+.xbar .seg{display:flex;align-items:center;flex:none}
+.xbar .city{font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:0 18px;white-space:nowrap;opacity:.96}
+.xbar .city .d{opacity:.5;margin-right:18px;font-size:8px;vertical-align:middle}
+@keyframes xscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.xbar .track{animation:none}}
+@media(max-width:560px){.xbar .lbl{font-size:9.5px;padding:0 11px}.xbar .city{font-size:10px}}
 /* request-access modal header → blue */
 .rmodal .rhead{background:var(--acc)}
-.rf input:focus,.rf textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,100,229,.12)}
+.rf input:focus,.rf textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(10,61,143,.12)}
 .rf label .req{color:var(--acc)}
 .foot .links a:hover{color:var(--acc)}
 /* ── pricing tiers: active Founding + crossed-out Annual / 2-Year ── */
@@ -309,13 +324,25 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .plan li b{color:var(--acc)}
 .plan .lockbtn{margin-top:auto;width:100%;text-align:center;background:#F3F5F8;color:var(--mut2);border:1px dashed var(--line2);border-radius:7px;padding:13px;font-weight:600;font-size:13.5px}
 .plan .flag{position:absolute;top:18px;right:18px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);background:#F3F5F8;border:1px solid var(--line);border-radius:100px;padding:4px 10px;font-weight:600}
-.plan .flag.best{color:var(--acc);background:rgba(0,100,229,.08);border-color:rgba(0,100,229,.28)}
+.plan .flag.best{color:var(--acc);background:rgba(10,61,143,.08);border-color:rgba(10,61,143,.28)}
 .plan .lab{padding-right:96px}
 .price .pbest{display:inline-block;font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:#0B0C0E;background:#fff;border-radius:100px;padding:6px 13px;margin-bottom:16px}
 @media(max-width:820px){.plans{grid-template-columns:1fr;max-width:440px}}
+/* Mobile: trim the landing to the essentials so it isn't a long scroll on a phone.
+   Desktop keeps the full page. */
+@media(max-width:640px){
+  #stats{display:none!important}
+  #whyjoin{display:none!important}
+  #expansion{display:none!important}
+  #pricing .plan{display:none!important}
+}
 </style></head>
 <body>
 
+<div class="xbar" aria-label="Markets coming soon">
+  <div class="lbl"><span class="pin"></span>Expanding across New England &amp; NY</div>
+  <div class="track" id="xtrack"></div>
+</div>
 <div class="nav"><div class="wrap in">
   <div class="brand">
     <svg class="ico" viewBox="0 0 100 100" aria-label="AXESS" fill="var(--ink)"><path d="M50 0 100 100H74L50 30 26 100H0Z"/><rect x="22.4" y="56.6" width="30.3" height="14.5"/></svg>
@@ -332,11 +359,11 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
   <div class="hbg on" id="hbg1"></div><div class="hbg" id="hbg2"></div>
   <div class="scrim"></div>
   <div class="wrap in">
-    <span class="ey">◆ Invite-only · Agent-to-agent · Massachusetts</span>
+    <span class="ey">◆ Pre-market · Agent-to-agent · Massachusetts</span>
     <h1>The deals that never <span class="u">hit the market</span>.</h1>
-    <p class="sub">An invite-only, <b>agent-to-agent</b> network for licensed Massachusetts agents — <b>not a public, open-market platform</b>. Trade off-market property of every kind — <b>single-family, condos, multifamily, commercial, and land</b> — directly with other vetted agents, post what your clients need, and keep every deal private until you choose to go public.</p>
+    <p class="sub">A private <b>agent-to-agent</b> network for licensed Massachusetts agents — <b>not a public, open-market platform</b>. Share pre-market and seller-directed off-market property of every kind — <b>single-family, condos, multifamily, commercial, and land</b> — directly with other licensed agents, post what your clients need, and let the seller decide whether and when a property is marketed publicly.</p>
     <div class="cta"><button class="btn p big" onclick="openReq()">Request access</button><button class="btn demo big" onclick="location.href='/demo.html'"><span class="pc"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>Watch the 60-second demo</button></div>
-    <div class="mini">FOUNDING MEMBERS JOIN FREE · $50/MO AFTER LAUNCH · MASSACHUSETTS</div>
+    <div class="mini">JOIN FREE AS A FOUNDING MEMBER · MASSACHUSETTS</div>
   </div>
 </header>
 
@@ -344,19 +371,28 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
   <div class="s"><div class="v mono" data-stat="liveDeals" data-fmt="int">—</div><div class="k">Live deals</div></div>
   <div class="s"><div class="v mono a" data-stat="volume" data-fmt="money">—</div><div class="k">Deal volume on the board</div></div>
   <div class="s"><div class="v mono a" data-stat="commission" data-fmt="money">—</div><div class="k">Commission available</div></div>
-  <div class="s"><div class="v mono" data-stat="members" data-fmt="int">—</div><div class="k">Members &amp; growing</div></div>
 </div></div>
 
 <div class="logos wrap">
-  <div class="row"><span>Citicore Properties</span><span>Grove Property Group</span><span>Summit Home Buyers</span></div>
+  <p>Trusted by agents across Massachusetts</p>
+  <div class="row"><span>Licensed agents only</span><span>Off-market, agent-to-agent</span><span>You control every deal</span></div>
 </div>
+
+<section id="privacy"><div class="wrap">
+  <div class="center"><div class="kick">Your privacy comes first</div><h2>Your listing. Your rules. No one sees it unless you allow it.</h2><p>Nervous about putting a deal on a network? On AXESS you stay in control the whole way through. This is a closed network of licensed, verified agents — <b>not a public portal, and never scraped or advertised</b>.</p></div>
+  <div class="feat">
+    <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></div><h4>Address stays hidden</h4><p>Listings show the opportunity and the numbers — never the street address — until <b>you personally approve</b> who gets it.</p></div>
+    <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.6-3.1 7.7-7 9-3.9-1.3-7-4.4-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><h4>Licensed agents only</h4><p>Every member holds an active Massachusetts real estate license, verified against state records at sign-up and re-checked periodically. No public, no portals, no random inquiries — strictly agent to agent.</p></div>
+    <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"/><circle cx="9" cy="8" r="2.3"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="15" cy="16" r="2.3"/></svg></div><h4>You set the exposure</h4><p>Share a deal with the whole network, with agents you select, or by introduction only — as the seller has directed. Approve intros one at a time, and withdraw it anytime.</p></div>
+  </div>
+</div></section>
 
 <section id="how"><div class="wrap">
   <div class="center"><div class="kick">How it works</div><h2>List quietly. Control access. Close fast.</h2><p>Everything an off-market deal needs — and nothing that exposes it to the open market.</p></div>
   <div class="how">
     <div class="step"><div class="n">1</div><h3>Post in 60 seconds</h3><p>Add your deal with the address shown or kept private — your call. Set the asking price and the buyer-broker commission you'll pay.</p></div>
-    <div class="step"><div class="n">2</div><h3>Agents connect directly</h3><p>Vetted members message you the moment your deal fits a client. No gatekeeping, no lead forms — just agent to agent.</p></div>
-    <div class="step"><div class="n">3</div><h3>Close off-market</h3><p>Zero days-on-market exposure. Move the deal to the right buyer without it ever touching the MLS.</p></div>
+    <div class="step"><div class="n">2</div><h3>Agents connect directly</h3><p>Licensed members message you the moment your deal fits a client. No gatekeeping, no lead forms — just agent to agent.</p></div>
+    <div class="step"><div class="n">3</div><h3>Close off-market</h3><p>Move the deal to the right buyer at the pre-market stage. The seller decides whether and when the property is publicly marketed.</p></div>
   </div>
 </div></section>
 
@@ -366,33 +402,33 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
   <div style="text-align:center;margin-top:32px"><button class="btn p big" onclick="openReq()">Request access to the full feed →</button></div>
 </div></section></div>
 
-<section><div class="wrap">
+<section id="whyjoin"><div class="wrap">
   <div class="center"><div class="kick">Why agents join</div><h2>The off-market network, without the noise.</h2><p>If you've ever gotten a flood of alerts for listings in towns you don't cover, or watched a good deal die on the open market — this is the fix.</p></div>
   <div class="feat">
-    <div class="fc"><div class="ic">🎯</div><h4>Only the deals you actually work</h4><p>Tune every alert to your property types and your markets. No pings about houses in a town you never touch — only what fits your lane.</p></div>
-    <div class="fc"><div class="ic">🏘️</div><h4>Every type, off-market</h4><p>Single-family to multifamily to commercial and land — pre-market deals you won't find on the MLS, all in one private feed.</p></div>
-    <div class="fc"><div class="ic">⚡</div><h4>It works your deals for you</h4><p>Post what your client needs and get matched the moment a deal fits. Post your own in about 30 seconds. It's a tool, not a bulletin board.</p></div>
-    <div class="fc"><div class="ic">🔒</div><h4>Your deal, your rules</h4><p>Keep the address private until you approve an intro. Set your own commission. Share it broad, private, or pocket — your call.</p></div>
-    <div class="fc"><div class="ic">💵</div><h4>Keep 100% of your commission</h4><p>We never take a cut of your deal. Founding members join free, and you're always told before anything is ever charged.</p></div>
-    <div class="fc"><div class="ic">🛡️</div><h4>Real, licensed agents only</h4><p>Every member is verified by license and brokerage before they're in. Invite-only, high-signal, spam-free — agent to agent.</p></div>
+    <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg></div><h4>Only the deals you actually work</h4><p>Tune every alert to your property types and your markets. No pings about houses in a town you never touch — only what fits your lane.</p></div>
+    <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8.5" width="7" height="11.5" rx="1"/><rect x="13" y="4" width="7" height="16" rx="1"/><line x1="7" y1="12" x2="8" y2="12"/><line x1="7" y1="16" x2="8" y2="16"/><line x1="16" y1="8" x2="17" y2="8"/><line x1="16" y1="12" x2="17" y2="12"/></svg></div><h4>Every type, off-market</h4><p>Single-family to multifamily to commercial and land — pre-market and seller-directed inventory, all in one private feed.</p></div>
+    <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11l-1 8.5L19.5 10H13z"/></svg></div><h4>It works your deals for you</h4><p>Post what your client needs and get matched the moment a deal fits. Post your own in about 30 seconds. It's a tool, not a bulletin board.</p></div>
+    <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3"/><path d="M16.5 6.5 19 9"/><path d="M14.5 8.5 17 11"/></svg></div><h4>Your deal, your rules</h4><p>Keep the address private until you approve an intro. Set your own commission. Share it broad, private, or pocket — your call.</p></div>
+    <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="M14.6 9.4c-.5-1-1.5-1.5-2.7-1.5-1.5 0-2.6.8-2.6 2 0 2.9 5.6 1.4 5.6 4.3 0 1.3-1.2 2.1-2.8 2.1-1.3 0-2.4-.6-2.9-1.6"/><line x1="12" y1="6" x2="12" y2="7.6"/><line x1="12" y1="16.4" x2="12" y2="18"/></svg></div><h4>Keep 100% of your commission</h4><p>We never take a cut of your deal. Founding members join free, and you're always told before anything is ever charged.</p></div>
+    <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.6-3.1 7.7-7 9-3.9-1.3-7-4.4-7-9V6z"/></svg></div><h4>Licensed professionals</h4><p>Every member’s license and brokerage are verified at sign-up. High-signal, spam-free — agent to agent.</p></div>
   </div>
 </div></section>
 
 <section id="pricing" style="padding-top:8px"><div class="wrap">
-  <div class="center"><div class="kick">Membership</div><h2>Founding members join free.</h2><p>Get in early while we're building the network. Membership will be $50/month — founding members lock in free access, and you'll be told before anything is ever charged.</p></div>
+  <div class="center"><div class="kick">Membership</div><h2>The first 100 members join free.</h2><p>Get in early. The first 100 agents join at no cost — and once we hit 100, they lock in a <b>$25/month founding rate for life</b>. Everyone who joins after that pays $50/month. You'll always be told before anything is ever charged.</p></div>
   <div class="plans">
     <div class="price">
-      <div class="pbest">★ Best value · Free right now</div>
+      <div class="pbest">★ Best value · First 100 free</div>
       <div class="top"><div class="lab" style="color:#9FBEEE">Founding Membership</div><div class="amt">Free<small style="text-decoration:line-through;color:rgba(241,239,234,.62);margin-left:9px">$50/mo</small></div></div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9FBEEE;margin:-6px 0 4px">Free for founding members · $50/month after launch</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9FBEEE;margin:-6px 0 4px">Free now · then just $25/mo for life · $50/mo for everyone after 100</div>
       <div id="foundingLine" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:rgba(241,239,234,.72);margin:0 0 15px"></div>
       <ul>
         <li><b>✓</b> Browse the full deal feed with all numbers</li>
         <li><b>✓</b> Post unlimited deals — free, forever</li>
         <li><b>✓</b> Request &amp; approve introductions</li>
         <li><b>✓</b> Post your clients' needs &amp; get matched</li>
-        <li><b>✓</b> Vetted-members-only network</li>
-        <li><b>✓</b> Founding rate locked in · cancel anytime</li>
+        <li><b>✓</b> Licensed-members-only network</li>
+        <li><b>✓</b> $25/mo founding rate locked in for life · cancel anytime</li>
       </ul>
       <button class="btn p big" style="width:100%;justify-content:center" onclick="openReq()">Request access — free</button>
     </div>
@@ -431,9 +467,9 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
   <div class="center"><div class="kick">FAQ</div><h2>Questions, answered.</h2></div>
   <div class="faq">
     <details class="q"><summary>Is my property address really private?</summary><div class="a">Yes. The address is stored on our servers and never sent to a buyer's browser until you approve that specific introduction. Everyone else sees the submarket, the numbers, and your description — never the address.</div></details>
-    <details class="q"><summary>Who can join?</summary><div class="a">Licensed Massachusetts real estate agents. Every member is reviewed and approved by hand — we verify your license and brokerage before you're in. That's what keeps the network high-signal and spam-free.</div></details>
-    <details class="q"><summary>What does it cost, and are there deal fees?</summary><div class="a">Right now it's free — founding members join at no cost while we build out the network. Membership will be $50/month afterward, and we'll always tell you before anything is charged. Posting deals is free and unlimited, and commissions are set by the seller on each deal — we never take a cut of your commission.</div></details>
-    <details class="q"><summary>Is this an MLS or an open marketplace?</summary><div class="a">Neither. AXESS is a private, invite-only, agent-to-agent network for off-market opportunities — the exact opposite of a public, open-market platform. Deals move directly between vetted agents and never appear publicly unless you choose to take them public elsewhere.</div></details>
+    <details class="q"><summary>Who can join?</summary><div class="a">Any agent who holds an active Massachusetts real estate license in good standing, is affiliated with a licensed Massachusetts brokerage, agrees to the Terms, and pays the subscription fee. We verify your license against state records at sign-up. There is no application review and no waitlist — if you meet the criteria, you’re in.</div></details>
+    <details class="q"><summary>What does it cost, and are there deal fees?</summary><div class="a">The first 100 members join completely free. Once we reach 100, those founding members lock in a $25/month rate for life, and everyone who joins after that pays $50/month. We'll always tell you before anything is charged. Posting deals is free and unlimited, and commissions are set by the seller on each deal — we never take a cut of your commission.</div></details>
+    <details class="q"><summary>Is this an MLS or an open marketplace?</summary><div class="a">Neither. AXESS is a private, agent-to-agent network for pre-market and seller-directed off-market opportunities — the exact opposite of a public, open-market platform. Properties move directly between licensed agents, and the seller decides whether and when a property is marketed publicly.</div></details>
     <details class="q"><summary>How fast can I list a deal?</summary><div class="a">About 60 seconds. Add the address (kept private), a submarket, price, commission, and a short description — you're live.</div></details>
   </div>
 </div></section>
@@ -457,15 +493,16 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
     <svg class="ico" viewBox="0 0 100 100" style="width:28px;height:28px" aria-label="AXESS" fill="var(--ink)"><path d="M50 0 100 100H74L50 30 26 100H0Z"/><rect x="22.4" y="56.6" width="30.3" height="14.5"/></svg>
     <div><div class="wm">AXESS</div></div>
   </div>
-  <div class="links"><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a onclick="openContact()" style="cursor:pointer">Contact</a><a>Terms</a><a>Privacy</a></div>
-  <div class="mono">© 2026 AXESS — a Citicore Properties Inc network. Not an MLS.</div>
+  <div class="links"><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a onclick="openContact()" style="cursor:pointer">Contact</a><a href="/terms">Terms</a><a href="/privacy">Privacy</a></div>
+  <div class="mono">© <span id="yr">2026</span> AXESS RE LLC. Not a brokerage or listing service.</div>
+  <script>try{document.getElementById('yr').textContent=new Date().getFullYear();}catch(e){}</script>
 </div></div>
 
 <!-- REQUEST AXESS -->
 <div class="rbg" id="reqBg" onclick="if(event.target===this)closeReq()">
   <div class="rmodal" style="position:relative">
     <button class="rx" onclick="closeReq()" aria-label="Close">×</button>
-    <div class="rhead"><h3>Join AXESS</h3><p>Free for founding members ($50/mo after launch). For licensed Massachusetts agents. Create your account now — you can browse right away, and posting &amp; messaging unlock the moment we verify your license.</p><div id="refNote" style="display:none;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)">◆ Referred by a member</div></div>
+    <div class="rhead"><h3>Join AXESS</h3><p>The first 100 members join free — and lock in $25/mo for life once we hit 100 ($50/mo after that). Open to every licensed Massachusetts agent who meets the criteria. Create your account now — you can browse, post, and message as soon as your license is verified.</p><div id="refNote" style="display:none;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)">◆ Referred by a member</div></div>
     <div class="rbody" id="reqBody">
       <div class="rgrid">
         <div class="rf"><label>Full legal name <span class="req">*</span> <span style="color:var(--mut2);font-weight:400">(as on license)</span></label><input id="qName" autocomplete="name"></div>
@@ -478,9 +515,10 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
       </div>
       <div class="rmsg" id="qMsg"></div>
       <div id="cfBox" style="margin:4px 0 10px;display:none"></div>
-      <label class="attn" style="display:flex;gap:9px;align-items:flex-start;background:rgba(180,136,46,.08);border:1px solid rgba(180,136,46,.3);border-radius:10px;padding:11px 13px;margin:4px 0 10px;cursor:pointer"><input type="checkbox" id="qAttest" style="margin-top:3px;flex:none;width:16px;height:16px;accent-color:var(--gold)"><span style="font-size:11.5px;line-height:1.45;color:var(--mut)">I certify that I am a currently licensed real estate agent in good standing, that my name, license number, brokerage, and all information I've provided are true and accurate, and that I am not misrepresenting my identity or licensure. I understand AXESS verifies licenses and that any false statement is grounds for immediate termination without refund. <span class="req">*</span></span></label>
-      <p style="font-size:11.5px;line-height:1.5;color:var(--mut);margin:2px 0 10px">By requesting access you confirm you are a <b>licensed real estate agent in good standing</b> and you agree to our Terms and Privacy Policy, and consent to receive emails from AXESS — including sign-in links, deal alerts, and periodic updates and announcements. You can unsubscribe from marketing emails at any time.</p>
-      <p style="font-size:11px;line-height:1.5;color:var(--mut2);margin:0 0 10px">AXESS is a private, invite-only networking platform for licensed agents — it is <b>not a broker, MLS, or listing service</b> and does not market properties to the public. You are solely responsible for your own compliance with all applicable laws, license and brokerage obligations, fair-housing requirements, MLS rules, and NAR's Clear Cooperation Policy — including timely submission of a listing to the MLS where required, and obtaining any client/seller consent needed to market a property off-market or pre-market. You will only post deals you are authorized to share. Deal details and figures are member-submitted and not verified by AXESS; the built-in analysis is an estimate. Nothing here is legal advice.</p>
+      <label class="attn" style="display:flex;gap:9px;align-items:flex-start;background:rgba(180,136,46,.08);border:1px solid rgba(180,136,46,.3);border-radius:10px;padding:11px 13px;margin:4px 0 10px;cursor:pointer"><input type="checkbox" id="qAttest" style="margin-top:3px;flex:none;width:16px;height:16px;accent-color:var(--gold)"><span style="font-size:11.5px;line-height:1.45;color:var(--mut)">I confirm that I hold an active Massachusetts real estate salesperson or broker license in good standing, that I am affiliated with a licensed Massachusetts brokerage, and that my name, license number, brokerage, and all information I have provided are true and accurate. I understand that AXESS verifies my license against the public records maintained by the Massachusetts Division of Occupational Licensure, and that a false statement is a material breach of the Terms and grounds for termination. <span class="req">*</span></span></label>
+      <label class="attn" style="display:flex;gap:9px;align-items:flex-start;background:var(--card);border:1px solid var(--line2);border-radius:10px;padding:11px 13px;margin:0 0 10px;cursor:pointer"><input type="checkbox" id="qMarketing" checked style="margin-top:3px;flex:none;width:16px;height:16px;accent-color:var(--acc)"><span style="font-size:11.5px;line-height:1.45;color:var(--mut)">Keep me updated with AXESS news, new features, and off-market deal highlights. Unsubscribe anytime.</span></label>
+      <p style="font-size:11.5px;line-height:1.5;color:var(--mut);margin:2px 0 10px">By requesting access you confirm you are a <b>licensed real estate agent in good standing</b> and you agree to our <a href="/terms" target="_blank" style="color:var(--acc);text-decoration:underline">Terms</a> and <a href="/privacy" target="_blank" style="color:var(--acc);text-decoration:underline">Privacy Policy</a>, and consent to receive emails from AXESS — including sign-in links, deal alerts, and periodic updates and announcements. You can unsubscribe from marketing emails at any time.</p>
+      <p style="font-size:11px;line-height:1.5;color:var(--mut2);margin:0 0 10px">AXESS is a private networking platform for licensed agents — it is <b>not a broker, multiple listing service, or listing service</b> and does not market properties to the public. AXESS is paid a flat subscription fee only; it is not a party to any transaction, does not receive, hold, or transmit any transaction funds, and earns no commission or referral fee on any deal. You are solely responsible for your own compliance with all applicable laws, license and brokerage obligations, fair-housing requirements, MLS rules, and NAR's Clear Cooperation Policy — including timely submission of a listing to the MLS where required, and obtaining any client/seller consent needed to market a property off-market or pre-market. You will only post deals you are authorized to share. Deal details and figures are member-submitted and not verified by AXESS; the built-in analysis is an estimate. Nothing here is legal advice.</p>
       <button class="btn p big" id="qBtn" style="width:100%;justify-content:center" onclick="sendReq()">Create account</button>
     </div>
   </div>
@@ -525,12 +563,38 @@ function sendContact(){
     }).catch(function(){msg.textContent='Network error — please try again.';msg.style.color='#C0492E';btn.disabled=false;btn.textContent='Send message';});
 }
 /* Run entry triggers after the whole page (and openReq/openContact) is ready. */
+function showPendingModal(title,msg,pending){
+  var wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(9,12,18,.72);backdrop-filter:blur(4px)';
+  var actions=pending
+    ? '<button class="btn ghostlight big" style="border:1px solid var(--line2);color:var(--ink)" onclick="location.href=\'/auth/logout\'">Use a different account</button>'
+    : '<button class="btn p big" onclick="this.closest(\'div[style]\').remove();openReq()">Request access</button><button class="btn ghostlight big" style="border:1px solid var(--line2);color:var(--ink)" onclick="location.href=\'/auth/logout\'">Use a different account</button>';
+  wrap.innerHTML='<div style="background:#fff;border-radius:18px;max-width:460px;width:100%;overflow:hidden;box-shadow:0 40px 100px -30px rgba(0,0,0,.5)">'
+    +'<div style="background:var(--ink);color:#fff;padding:22px 24px"><div style="font-size:34px;margin-bottom:6px">'+(pending?'⏳':'🔒')+'</div><h3 style="margin:0;font-size:22px;font-weight:800">'+title+'</h3></div>'
+    +'<div style="padding:20px 24px 24px"><p style="color:var(--mut);font-size:14.5px;line-height:1.55;margin:0 0 18px">'+msg+'</p>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'+actions+'</div></div></div>';
+  wrap.addEventListener('click',function(e){if(e.target===wrap)wrap.remove();});
+  document.body.appendChild(wrap);
+}
 window.addEventListener('load',function(){
   try{
     if(location.hash==='#contact'&&typeof openContact==='function'){openContact();return;}
     if(/[?&]join=1/.test(location.search)&&typeof openReq==='function'){
       try{var em=new URLSearchParams(location.search).get('email');if(em){var qe=document.getElementById('qEmail');if(qe)qe.value=em;}}catch(e){}
       openReq();
+    }
+    // Signed in but bounced by the gate (not owner / not approved) — explain instead of a silent redirect.
+    if(/[?&]pending=1/.test(location.search)){
+      fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).then(function(me){
+        me=me||{}; if(!me.email)return;
+        var email=String(me.email).replace(/[<>]/g,'');
+        var pending=(me.status==='pending');
+        if(pending){
+          showPendingModal('Your membership is pending','You’re signed in as <b>'+email+'</b>. Your application is under review — we’ll email you the moment you’re approved. Feel free to look around the public site in the meantime.',true);
+        }else{
+          showPendingModal('You’re not a member yet','You’re signed in as <b>'+email+'</b>, but this account isn’t an AXESS member. Request access with this email, or use the account you originally joined under.',false);
+        }
+      }).catch(function(){});
     }
   }catch(e){}
 });
@@ -543,9 +607,12 @@ var D=[
   {t:'Multifamily',s:'Dorchester',pr:'$2.95M',cm:'2.0% BBC'},
   {t:'Mixed-use',s:'Cambridge',pr:'$3.40M',cm:'3.0% BBC'}
 ];
-function typeIcon(t){var m={'Multifamily':'🏢','Single-family':'🏠','Condo':'🏙️','Townhouse':'🏘️','Land':'🌳','Mixed-use':'🏬','Retail / Commercial':'🏪','Commercial':'🏪','Industrial':'🏭','Development site':'🏗️'};return m[t]||'📍';}
+function typeIcon(t){var m={'Multifamily':'🏢','Single-family':'🏠','Condo':'🏙️','Condo / Conversion':'🏙️','Townhouse':'🏘️','Land':'🌳','Mixed-use':'🏬','Retail / Commercial':'🏪','Commercial':'🏪','Industrial':'🏭','Storage / Warehouse':'📦','Mobile Home Park':'🏡','Development site':'🏗️'};return m[t]||'📍';}
 var LOCK_SVG='<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.7" width="16" height="10.3" rx="2.4"/><path d="M8 10.7V7a4 4 0 0 1 8 0v3.7"/></svg>';
-document.getElementById('grid').innerHTML=D.map(function(d){return '<div class="deal"><div class="ph"><span class="tico">'+typeIcon(d.t)+'</span>'+LOCK_SVG+'<div class="lktxt">Off-market · Address hidden</div></div><div class="bd"><div class="t">'+d.t+'</div><div class="s">'+d.s+'</div><div class="foot"><div class="pr mono">'+d.pr+'</div><div class="cm">'+d.cm+'</div></div></div></div>';}).join('');
+function escH(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function renderDeals(list){document.getElementById('grid').innerHTML=list.map(function(d){return '<div class="deal"><div class="ph"><span class="tico">'+typeIcon(d.t)+'</span>'+LOCK_SVG+'<div class="lktxt">Off-market · Address hidden</div></div><div class="bd"><div class="t">'+escH(d.t)+'</div><div class="s">'+escH(d.s)+'</div><div class="foot"><div class="pr mono">'+escH(d.pr)+'</div><div class="cm">'+escH(d.cm)+'</div></div></div></div>';}).join('');}
+renderDeals(D); // fallback sample cards, replaced by real teaser data below if available
+fetch('/api/pm/teaser',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&j.deals&&j.deals.length){renderDeals(j.deals.map(function(x){return {t:x.type,s:x.area,pr:x.price,cm:x.commission};}));}}).catch(function(){});
 /* hero photo rotation — random start, crossfades through the pool every 6s.
    Add more by dropping h6.jpg, h7.jpg … in /brand/axess/heroes/ and extending POOL. */
 (function(){
@@ -567,7 +634,7 @@ document.getElementById('grid').innerHTML=D.map(function(d){return '<div class="
 })();
 /* ── live stats ticker — real aggregate counts from the database, animated ── */
 (function(){
-  function fmtMoney(n){n=Math.round(n)||0;if(n>=1e6)return '$'+(n/1e6).toFixed(n>=1e7?0:1).replace(/\.0$/,'')+'M';if(n>=1e3)return '$'+Math.round(n/1e3)+'K';return '$'+n.toLocaleString('en-US');}
+  function fmtMoney(n){n=Math.round(n)||0;if(n>=1e9)return '$'+(n/1e9).toFixed(n>=1e10?0:1).replace(/\.0$/,'')+'B';if(n>=1e6)return '$'+(n/1e6).toFixed(n>=1e7?0:1).replace(/\.0$/,'')+'M';if(n>=1e3)return '$'+Math.round(n/1e3)+'K';return '$'+n.toLocaleString('en-US');}
   function fmtInt(n){return (Math.round(n)||0).toLocaleString('en-US');}
   var LAST={};
   function animate(el,from,to,fmt){
@@ -601,6 +668,13 @@ document.getElementById('grid').innerHTML=D.map(function(d){return '<div class="
   setInterval(function(){ i=(i+1)%cities.length; el.style.opacity=0;
     setTimeout(function(){ el.textContent=cities[i]; el.style.opacity=1; },220); }, 2600);
 })();
+/* expansion ticker — one continuous scroll of every teased market (list duplicated for a seamless loop) */
+(function(){
+  var t=document.getElementById('xtrack'); if(!t) return;
+  var markets=['Providence, RI','Worcester, MA','Manchester, NH','Hartford, CT','Portland, ME','Nashua, NH','Cambridge, MA','New Haven, CT','Portsmouth, NH','Springfield, MA','Stamford, CT','New York, NY'];
+  function seg(){var s=document.createElement('div');s.className='seg';s.innerHTML=markets.map(function(c){return '<span class="city"><span class="d">◆</span>'+c+'</span>';}).join('');return s;}
+  t.appendChild(seg()); t.appendChild(seg());   // two copies → -50% keyframe loops seamlessly
+})();
 var CF_TOKEN='',CF_WIDGET=null;
 function loadTurnstile(cb){if(window.turnstile){cb();return;}if(!window.__cfCbs)window.__cfCbs=[];window.__cfCbs.push(cb);if(window.__cfLoading)return;window.__cfLoading=1;window.__cfReady=function(){(window.__cfCbs||[]).forEach(function(f){f();});window.__cfCbs=[];};var s=document.createElement('script');s.src='https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__cfReady&render=explicit';s.async=true;s.defer=true;document.head.appendChild(s);}
 function renderCaptcha(){var site=window.__TURNSTILE_SITE__||'';var box=document.getElementById('cfBox');if(!box)return;if(!site){box.style.display='none';return;}box.style.display='block';loadTurnstile(function(){if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}CF_TOKEN='';return;}try{CF_WIDGET=turnstile.render('#cfBox',{sitekey:site,callback:function(t){CF_TOKEN=t;},'expired-callback':function(){CF_TOKEN='';},'error-callback':function(){CF_TOKEN='';}});}catch(e){}});}
@@ -611,12 +685,12 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeReq();}
 function sendReq(){
   var g=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
   var attest=!!(document.getElementById('qAttest')&&document.getElementById('qAttest').checked);
-  var body={name:g('qName'),email:g('qEmail'),license:g('qLicense'),brokerage:g('qBrokerage'),phone:g('qPhone'),markets:g('qMarkets'),focus:g('qFocus'),note:g('qNote'),attest:attest,ref:(new URLSearchParams(location.search).get('ref')||'').toUpperCase()};
+  var body={name:g('qName'),email:g('qEmail'),license:g('qLicense'),brokerage:g('qBrokerage'),phone:g('qPhone'),markets:g('qMarkets'),focus:g('qFocus'),note:g('qNote'),attest:attest,marketingOptIn:!!(document.getElementById('qMarketing')&&document.getElementById('qMarketing').checked),ref:(new URLSearchParams(location.search).get('ref')||'').toUpperCase()};
   var msg=document.getElementById('qMsg');
   if(!body.name||!body.email){msg.style.color='var(--bad)';msg.textContent='Full legal name and email are required.';return;}
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email)){msg.style.color='var(--bad)';msg.textContent='Enter a valid email.';return;}
   if(!body.phone||!body.license||!body.brokerage){msg.style.color='var(--bad)';msg.textContent='Phone, MA license #, and brokerage are all required.';return;}
-  if(!attest){msg.style.color='var(--bad)';msg.textContent='Please check the licensure certification to continue.';return;}
+  if(!attest){msg.style.color='var(--bad)';msg.textContent='Please confirm your license details to continue.';return;}
   if((window.__TURNSTILE_SITE__||'')&&!CF_TOKEN){msg.style.color='var(--bad)';msg.textContent='Please complete the verification below.';return;}
   body.captcha=CF_TOKEN;
   var btn=document.getElementById('qBtn');btn.disabled=true;btn.textContent='Creating…';msg.style.color='var(--mut)';msg.textContent='';
@@ -624,7 +698,7 @@ function sendReq(){
     .then(function(r){return r.json().catch(function(){return {ok:false};});})
     .then(function(j){
       if(j&&j.ok){
-        document.getElementById('reqBody').innerHTML='<div class="rdone"><div class="big">Account created ✓</div><p style="color:var(--mut);font-size:14px;line-height:1.5">Welcome, '+ (body.name.split(' ')[0]||'') +'. We just emailed a one-tap sign-in link to <b>'+body.email.replace(/</g,'')+'</b> — tap it to log in and set up your profile. You can browse right away; <b>posting &amp; messaging unlock as soon as we verify your license</b> (usually within a day).</p><p style="color:var(--mut2);font-size:12px;margin-top:8px">No link in a minute? Check spam, or use “Sign in” with this email.</p><button class="btn p big" style="margin-top:16px;justify-content:center" onclick="closeReq()">Done</button></div>';
+        document.getElementById('reqBody').innerHTML='<div class="rdone"><div class="big">You’re in ✓</div><p style="color:var(--mut);font-size:14px;line-height:1.5">Welcome, '+ (body.name.split(' ')[0]||'') +'. We just emailed a one-tap sign-in link to <b>'+body.email.replace(/</g,'')+'</b> — tap it to log in and you’re ready to <b>browse deals, post, and connect with members</b> right away.</p><p style="color:var(--mut2);font-size:12px;margin-top:8px">No link in a minute? Check spam, or use “Sign in” with this email.</p><button class="btn p big" style="margin-top:16px;justify-content:center" onclick="closeReq()">Done</button></div>';
       } else { btn.disabled=false;btn.textContent='Create account';msg.style.color='var(--bad)';msg.textContent=(j&&j.message)||'Something went wrong — try again.';CF_TOKEN='';if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}} }
     })
     .catch(function(){btn.disabled=false;btn.textContent='Create account';msg.style.color='var(--bad)';msg.textContent='Network error — try again.';CF_TOKEN='';if(CF_WIDGET!==null){try{turnstile.reset(CF_WIDGET);}catch(e){}}});
@@ -635,6 +709,10 @@ function sendReq(){
     <button class="rx" onclick="closeSignin()" aria-label="Close">×</button>
     <div class="rhead"><h3>Sign in</h3><p>Members only. Enter your email and we&rsquo;ll send you a one-tap sign-in link.</p></div>
     <div class="rbody" id="siBody">
+      <div id="gsiWrap" style="display:none">
+        <div id="gsiBtn" style="display:flex;justify-content:center;min-height:40px"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin:16px 0 4px;color:var(--mut2);font-size:12px;font-weight:600"><span style="flex:1;height:1px;background:var(--line)"></span>OR<span style="flex:1;height:1px;background:var(--line)"></span></div>
+      </div>
       <div class="rf full"><label>Email</label><input id="siEmail" type="email" autocomplete="email" placeholder="you@brokerage.com"></div>
       <div class="rmsg" id="siMsg"></div>
       <button class="btn p big" id="siBtn" style="width:100%;justify-content:center" onclick="sendSignin()">Send sign-in link</button>
@@ -643,7 +721,31 @@ function sendReq(){
   </div>
 </div>
 <script>
-function openSignin(){document.getElementById('siBg').classList.add('on');document.body.style.overflow='hidden';setTimeout(function(){var n=document.getElementById('siEmail');if(n)n.focus();},60);}
+function openSignin(){document.getElementById('siBg').classList.add('on');document.body.style.overflow='hidden';initGsi();setTimeout(function(){var n=document.getElementById('siEmail');if(n)n.focus();},60);}
+/* Google Sign-In — renders a "Continue with Google" button when a client ID is
+   configured; otherwise stays hidden and the email link is the only option. */
+var GSI_READY=false;
+function onGoogleCred(resp){
+  fetch('/auth/google',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credential:(resp&&resp.credential)||''})})
+    .then(function(r){return r.json().catch(function(){return{ok:false};});})
+    .then(function(j){if(j&&j.ok){location.href='/app.html';}else{var m=document.getElementById('siMsg');if(m){m.style.color='var(--bad)';m.textContent='Google sign-in failed — try the email link below.';}}})
+    .catch(function(){var m=document.getElementById('siMsg');if(m){m.style.color='var(--bad)';m.textContent='Network error — try the email link.';}});
+}
+function initGsi(){
+  var cid=window.__GOOGLE_CLIENT_ID__||'';
+  if(!cid)return;                       // not configured yet → keep it hidden
+  var wrap=document.getElementById('gsiWrap');
+  function render(){
+    if(!(window.google&&google.accounts&&google.accounts.id))return;
+    if(!GSI_READY){google.accounts.id.initialize({client_id:cid,callback:onGoogleCred});GSI_READY=true;}
+    var btn=document.getElementById('gsiBtn');if(btn){btn.innerHTML='';google.accounts.id.renderButton(btn,{theme:'outline',size:'large',width:360,text:'continue_with'});}
+    if(wrap)wrap.style.display='';
+  }
+  if(window.google&&google.accounts){render();return;}
+  var s=document.getElementById('gsiScript');
+  if(!s){s=document.createElement('script');s.id='gsiScript';s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=render;document.head.appendChild(s);}
+  else{s.addEventListener('load',render);}
+}
 function closeSignin(){document.getElementById('siBg').classList.remove('on');document.body.style.overflow='';}
 var LAST_SIGNIN_EMAIL='';
 function resendSignin(){
