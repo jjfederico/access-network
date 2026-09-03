@@ -565,15 +565,15 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
 <div class="hero"><div class="wrap in">
   <div class="apphead">
     <div class="ah-l">
-      <h1>Live off-market deals</h1>
-      <p class="sub">Investment property moving agent-to-agent across Massachusetts — before it hits the market.</p>
+      <h1>Live pre-market deals</h1>
+      <p class="sub">Seller-directed property shared with licensed Massachusetts agents — agent to agent.</p>
     </div>
   </div>
   <div class="stats" id="stats">
     <div class="s"><div class="v mono">—</div><div class="k">Live deals</div></div>
     <div class="s"><div class="v mono acc">—</div><div class="k">Total value</div></div>
     <div class="s"><div class="v mono">—</div><div class="k">Submarkets</div></div>
-    <div class="s"><div class="v mono">—</div><div class="k">Avg. commission</div></div>
+    <div class="s"><div class="v mono">—</div><div class="k">Coming soon</div></div>
   </div>
 </div></div>
 
@@ -588,7 +588,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
   <div class="qa" id="quickActions">
     <div class="qa-tile" onclick="openSubmit()" role="button" tabindex="0">
       <div class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3"/><path d="M16.5 6.5 19 9"/><path d="M14.5 8.5 17 11"/></svg></div>
-      <div class="qa-tx"><b>Post a deal</b><span>Share an off-market property with the network.</span></div>
+      <div class="qa-tx"><b>Post a deal</b><span>Share a seller-directed listing with the network.</span></div>
       <div class="qa-go">＋</div>
     </div>
     <div class="qa-tile" onclick="openBuyBox()" role="button" tabindex="0">
@@ -605,9 +605,8 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
       <button data-cat="lease" onclick="setCat('lease')">Commercial</button>
       <button data-cat="all" class="on" onclick="setCat('all')">All</button>
     </div>
-    <div class="mksel">Market <select id="fMarket" onchange="setMarket(this.value)"><option value="MA">Massachusetts</option><option value="NH">New Hampshire</option><option value="RI">Rhode Island</option></select></div>
+    <div class="mksel">Market <select id="fMarket" onchange="setMarket(this.value)"><option value="MA">Massachusetts</option></select></div>
     <div class="mktabs" id="regionTabs"></div>
-    <span class="soonpill"><span class="dot"></span><span class="lbl">Expanding to</span> <b id="soonCity2" class="city">Hartford, CT</b></span>
   </div>
   <div class="mktlayout">
     <!-- filter rail -->
@@ -618,10 +617,10 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
       <div class="fg"><div class="lbl">Price</div><div class="rng"><input id="fMin" inputmode="numeric" placeholder="Min $" oninput="render()"><input id="fMax" inputmode="numeric" placeholder="Max $" oninput="render()"></div></div>
       <div class="fg"><div class="lbl"><span class="tip" tabindex="0" data-tip="Cap rate = a property's yearly net income ÷ its price. Higher = more income per dollar. Used to compare income deals.">Cap rate</span></div><div class="rng"><input id="fCap" inputmode="decimal" placeholder="Min %" oninput="render()"></div></div>
       <div class="fg"><div class="lbl">Units</div><div class="rng"><input id="fUmin" inputmode="numeric" placeholder="Min" oninput="render()"><input id="fUmax" inputmode="numeric" placeholder="Max" oninput="render()"></div></div>
-      <div class="fg"><div class="lbl"><span class="tip" tabindex="0" data-tip="How widely a deal is shared: Broad = open to all members. Private = shown, but details on request. Pocket = quiet listing, hidden from the general feed.">Distribution</span></div><div id="distChecks">
+      <div class="fg"><div class="lbl"><span class="tip" tabindex="0" data-tip="How widely a deal is shared: Broad = open to all members. Private = shown, but details on request. Matched = kept out of the general feed; only surfaced to members with a matching client need.">Distribution</span></div><div id="distChecks">
         <label class="ck"><input type="checkbox" value="broad" onchange="render()"><span class="tip" tabindex="0" data-tip="Open to every member — the widest exposure.">Broad</span></label>
         <label class="ck"><input type="checkbox" value="private" onchange="render()"><span class="tip" tabindex="0" data-tip="Listed, but the full details unlock on request.">Private</span></label>
-        <label class="ck"><input type="checkbox" value="pocket" onchange="render()"><span class="tip" tabindex="0" data-tip="A quiet pocket listing — kept out of the general feed; only surfaced to strong matches.">Pocket</span></label>
+        <label class="ck"><input type="checkbox" value="matched" onchange="render()"><span class="tip" tabindex="0" data-tip="Kept out of the general feed; only surfaced to members with a matching client need.">Matched only</span></label>
       </div></div>
       <div class="fg"><label class="ck"><input type="checkbox" id="fShown" onchange="render()">Address shown only</label></div>
       <button class="save" onclick="saveSearch()">★ Save this search &amp; alert me</button>
@@ -649,7 +648,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
 </div></section>
 
 <div class="foot"><div class="wrap in">
-  <div>AXESS is operated by AXESS RE LLC. Invite-only. Not an MLS.</div>
+  <div>AXESS is operated by AXESS RE LLC. Licensed Massachusetts agents. Not an MLS.</div>
   <div>Deals shown are broker/owner submitted. Verify all figures independently.</div>
   <div><a href="/#contact" style="color:var(--acc);font-weight:600">Contact support</a> — questions or issues? We're here to help.</div>
 </div></div>
@@ -866,12 +865,13 @@ html.dark .bdg.lease{color:#D9B368!important;background:rgba(180,136,46,.14)!imp
       <input type="checkbox" id="sHideAddr" style="width:16px;height:16px;accent-color:var(--gold);flex:none">
       <label for="sHideAddr" style="margin:0;cursor:pointer;font-size:12.5px;color:var(--tx);text-transform:none;letter-spacing:0;font-weight:500;font-family:'Public Sans',system-ui,sans-serif">Hide the exact address <span style="color:var(--mut)">— shown on a map if left unchecked</span></label>
     </div>
+    <div class="f full"><label>Brokerage <span class="hint">— stamped from your profile; not editable here</span></label><input id="sBrokerage" readonly placeholder="Add your brokerage in Profile first"></div>
     <div class="fgrid">
-      <div class="f"><label>Submarket / neighborhood</label><input id="sSub" list="subList" placeholder="Select or type…"><datalist id="subList"></datalist></div>
+      <div class="f"><label>City <span class="hint">— Massachusetts</span></label><input id="sCity" placeholder="e.g. Boston" oninput="updateMlsZoneHint()"></div>
+      <div class="f"><label>Submarket / neighborhood</label><input id="sSub" list="subList" placeholder="Select or type…" oninput="updateMlsZoneHint()"><datalist id="subList"></datalist></div>
       <div class="f"><label>Asset type</label><select id="sType" onchange="syncDealFields()"></select></div>
       <div class="f"><label id="sPriceLabel">Asking price ($)</label><input id="sPrice" inputmode="decimal" placeholder="0"></div>
       <div class="f" id="sBasisWrap" style="display:none"><label>Rent basis</label><select id="sBasis" onchange="syncDealFields()"><option value="rent_mo">Total rent — $/month</option><option value="rent_psf">$ per SF / year</option></select></div>
-      <div class="f"><label>Buyer-broker commission (%)</label><input id="sComm" inputmode="decimal" placeholder="2.5"></div>
       <div class="f"><label>Units</label><input id="sUnits" inputmode="numeric" placeholder="0"></div>
       <div class="f"><label>Cap rate (%)</label><input id="sCap" inputmode="decimal" placeholder="0"></div>
       <div class="f"><label>NOI ($)</label><input id="sNoi" inputmode="decimal" placeholder="0"></div>
@@ -901,8 +901,15 @@ html.dark .bdg.lease{color:#D9B368!important;background:rgba(180,136,46,.14)!imp
       <div class="distbtns" id="distBtns">
         <button type="button" class="distbtn on" data-v="broad" onclick="setDist('broad')"><b>Broad</b><span>Everyone in the network sees it</span></button>
         <button type="button" class="distbtn" data-v="private" onclick="setDist('private')"><b>Private</b><span>Visible — intro needs your approval</span></button>
-        <button type="button" class="distbtn" data-v="pocket" onclick="setDist('pocket')"><b>Pocket</b><span>Only matched client needs see it</span></button>
+        <button type="button" class="distbtn" data-v="matched" onclick="setDist('matched')"><b>Matched only</b><span>Only members with a matching client need see it</span></button>
       </div>
+    </div>
+    <div class="f full"><label>Seller-signed Non-MLS or delayed-listing form <span class="hint">— required to go live · PDF or image</span></label>
+      <input type="file" id="sSellerForm" accept=".pdf,image/*,application/pdf" onchange="uploadSellerForm()" style="font-size:13px;color:var(--mut)">
+      <div id="sSellerFormList" style="margin-top:8px;font-size:12.5px;color:var(--acc2)"></div>
+    </div>
+    <div class="f full" id="mlsZoneWrap" style="display:none;background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:11px 13px">
+      <label class="ck" style="align-items:flex-start;gap:9px"><input type="checkbox" id="sMlsAck" style="margin-top:3px"><span id="mlsZoneTxt" style="font-size:12.5px;line-height:1.45;color:var(--tx)">Posting a property in the Cape Cod &amp; Islands or Berkshire area on this network may count as public marketing under that area’s MLS rules. Confirm with your broker and your MLS before you post. AXESS does not determine whether a post satisfies or violates any MLS rule.</span></label>
     </div>
     <div class="f full"><input type="checkbox" id="sSoon" style="display:none">
       <button type="button" class="soonbtn" id="soonBtn" onclick="toggleSoon()"><span class="soonbox"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span><b>Coming soon</b> <span style="color:var(--mut);font-weight:400">— pre-market; flag it as launching shortly</span></span></button>
@@ -915,16 +922,16 @@ html.dark .bdg.lease{color:#D9B368!important;background:rgba(180,136,46,.14)!imp
 <div class="mbg" id="mBuy" onclick="if(event.target===this)close_('mBuy')"><div class="modal">
   <div class="mhead"><h3>Post a client need</h3><button class="x" onclick="close_('mBuy')">×</button></div>
   <div class="mbody">
-    <p style="color:var(--mut);font-size:13.5px;margin-bottom:14px">Tell the network what your client is looking for. When a matching deal is posted, you'll be first to know.</p>
+    <p style="color:var(--mut);font-size:13.5px;margin-bottom:14px">Posted anonymously to the board. Town/area, beds, baths, type, a price band, and a timeline — no name, no exact price, and do not write “motivated.”</p>
     <div class="fgrid">
-      <div class="f"><label>Your name</label><input id="bName" placeholder="Name"></div>
-      <div class="f"><label>Firm</label><input id="bFirm" placeholder="Company"></div>
-      <div class="f"><label>Min price ($)</label><input id="bMin" inputmode="decimal" placeholder="No min"></div>
-      <div class="f"><label>Max price ($)</label><input id="bMax" inputmode="decimal" placeholder="No max"></div>
+      <div class="f"><label>Price band</label><select id="bBand"><option value="">— choose —</option><option value="under_500k">Under $500K</option><option value="500k_1m">$500K – $1M</option><option value="1m_2m">$1M – $2M</option><option value="2m_5m">$2M – $5M</option><option value="5m_plus">$5M+</option></select></div>
+      <div class="f"><label>Timeline</label><select id="bTimeline"><option value="">— choose —</option><option value="30_days">About 30 days</option><option value="60_days">About 60 days</option><option value="90_days">About 90 days</option><option value="6_months">About 6 months</option><option value="flexible">Flexible</option></select></div>
+      <div class="f"><label>Beds</label><input id="bBeds" inputmode="numeric" placeholder="Any"></div>
+      <div class="f"><label>Baths</label><input id="bBaths" inputmode="decimal" placeholder="Any"></div>
     </div>
     <div class="f full"><label>Property types <span class="hint">— leave blank to match all</span></label><div id="bTypeChecks" style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:6px"></div></div>
-    <details class="buydetails"><summary>Target markets <span class="hint">optional · matches all of Massachusetts by default</span></summary><div id="bSubChecks" style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px;max-height:180px;overflow:auto"></div></details>
-    <div class="f full"><label>Criteria / notes</label><textarea id="bNotes" rows="2" placeholder="Cash, 1031 buyer, value-add 6–20 units, will close in 30 days…"></textarea></div>
+    <details class="buydetails"><summary>Town / area <span class="hint">optional · matches all of Massachusetts by default</span></summary><div id="bSubChecks" style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px;max-height:180px;overflow:auto"></div></details>
+    <div class="f full"><label>Criteria / notes</label><textarea id="bNotes" rows="2" placeholder="Cash, 1031 buyer, value-add 6–20 units…"></textarea></div>
     <div class="mact"><span class="msg" id="bMsg"></span><button class="btn ghost" onclick="close_('mBuy')">Cancel</button><button class="btn acc" onclick="submitBuyBox()">Post client need</button></div>
   </div>
 </div></div>
@@ -1061,8 +1068,13 @@ function isLease(d){return d&&(d.priceBasis==='rent_mo'||d.priceBasis==='rent_ps
 var MAPS_KEY=(window.__MAPS_KEY__||'');
 function loadMaps(cb){if(window.google&&window.google.maps&&window.google.maps.places){cb&&cb();return;}if(!MAPS_KEY)return;if(!window._mapsCbs)window._mapsCbs=[];window._mapsCbs.push(cb);if(window._mapsLoading)return;window._mapsLoading=1;window._mapsReady=function(){(window._mapsCbs||[]).forEach(function(f){f&&f();});window._mapsCbs=[];};var s=document.createElement('script');s.async=true;s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(MAPS_KEY)+'&libraries=places&callback=_mapsReady';document.head.appendChild(s);}
 var SUBMIT_COORDS=null; // {lat,lng} captured from the address autocomplete, saved with the deal
-var SUBMIT_STATE='';    // 2-letter state (MA/NH/RI) captured from the address autocomplete
-function initAddrAuto(){if(!MAPS_KEY)return;if(!window._pacCss){window._pacCss=1;var st=document.createElement('style');st.textContent='.pac-container{z-index:100001!important}';document.head.appendChild(st);}loadMaps(function(){document.querySelectorAll('input.gaddr').forEach(function(el){if(el._ac)return;el._ac=1;var ac=new google.maps.places.Autocomplete(el,{types:['address'],componentRestrictions:{country:'us'},fields:['formatted_address','address_components','geometry']});ac.addListener('place_changed',function(){var p=ac.getPlace();if(!p)return;if(p.formatted_address)el.value=p.formatted_address;if(el.id==='sAddr'){if(p.geometry&&p.geometry.location){SUBMIT_COORDS={lat:p.geometry.location.lat(),lng:p.geometry.location.lng()};}var c=p.address_components||[];function g(t){var x=c.find(function(a){return a.types.indexOf(t)>=0;});return x?x.long_name:'';}function gs(t){var x=c.find(function(a){return a.types.indexOf(t)>=0;});return x?x.short_name:'';}var nb=g('neighborhood')||g('sublocality')||g('locality');if(nb&&$('sSub')&&!$('sSub').value)$('sSub').value=nb;var stt=gs('administrative_area_level_1');if(stt)SUBMIT_STATE=String(stt).toUpperCase();}});});});}
+var SUBMIT_STATE='MA';
+var SUBMIT_SELLER_FORM=null;
+var MLS_ZONE_CITIES={cape_islands:['barnstable','hyannis','falmouth','sandwich','bourne','mashpee','yarmouth','dennis','harwich','chatham','orleans','brewster','eastham','wellfleet','truro','provincetown','cape cod','nantucket','edgartown','oak bluffs','tisbury','vineyard haven','west tisbury','chilmark','aquinnah',"martha's vineyard",'marthas vineyard','marion','wareham','gosnold'],berkshire:['pittsfield','lenox','great barrington','lee','stockbridge','williamstown','north adams','adams','dalton','sheffield','egremont','monterey','new marlborough','sandisfield','otis','becket','hinsdale','peru','washington','cheshire','lanesborough','hancock','richmond','west stockbridge','alford','tyringham','new ashford','clarksburg','florida','savoy','windsor','cummington','middlefield']};
+function mlsZoneFor(city,area,address){var loc=((city||'')+' '+(area||'')+' '+(address||'')).toLowerCase();if(!loc.trim())return '';function inList(list){return list.some(function(c){return loc.indexOf(c)>=0;});}if(inList(MLS_ZONE_CITIES.cape_islands))return 'cape_islands';if(inList(MLS_ZONE_CITIES.berkshire))return 'berkshire';return '';}
+function updateMlsZoneHint(){var wrap=$('mlsZoneWrap');if(!wrap)return;var zone=mlsZoneFor(($('sCity')&&$('sCity').value)||'',($('sSub')&&$('sSub').value)||'',($('sAddr')&&$('sAddr').value)||'');wrap.style.display=zone?'':'none';if(!zone&&$('sMlsAck'))$('sMlsAck').checked=false;}
+function stampBrokerage(){var el=$('sBrokerage');if(!el)return;el.value=(PROFILE&&PROFILE.brokerage)||'';}
+function initAddrAuto(){if(!MAPS_KEY)return;if(!window._pacCss){window._pacCss=1;var st=document.createElement('style');st.textContent='.pac-container{z-index:100001!important}';document.head.appendChild(st);}loadMaps(function(){document.querySelectorAll('input.gaddr').forEach(function(el){if(el._ac)return;el._ac=1;var ac=new google.maps.places.Autocomplete(el,{types:['address'],componentRestrictions:{country:'us'},fields:['formatted_address','address_components','geometry']});ac.addListener('place_changed',function(){var p=ac.getPlace();if(!p)return;if(p.formatted_address)el.value=p.formatted_address;if(el.id==='sAddr'){if(p.geometry&&p.geometry.location){SUBMIT_COORDS={lat:p.geometry.location.lat(),lng:p.geometry.location.lng()};}var c=p.address_components||[];function g(t){var x=c.find(function(a){return a.types.indexOf(t)>=0;});return x?x.long_name:'';}function gs(t){var x=c.find(function(a){return a.types.indexOf(t)>=0;});return x?x.short_name:'';}var city=g('locality')||g('sublocality')||g('postal_town');if(city&&$('sCity'))$('sCity').value=city;var nb=g('neighborhood')||g('sublocality');if(nb&&$('sSub')&&!$('sSub').value)$('sSub').value=nb;var stt=gs('administrative_area_level_1');if(stt){SUBMIT_STATE=String(stt).toUpperCase();if(SUBMIT_STATE&&SUBMIT_STATE!=='MA'){var msg=$('sMsg');if(msg)msg.textContent='AXESS listings must be in Massachusetts.';}}updateMlsZoneHint();}});});});}
 
 /* ── data (all reads/writes go through the secure /api/pm/* API — addresses are
    redacted server-side and only revealed to the seller or an approved buyer) ── */
@@ -1079,9 +1091,9 @@ function nL(l){
     status:(l.status==='off'?'off':l.status==='mls'?'mls':l.status==='closed'?'closed':'live'),mlsAt:l.mlsAt||'',closedAt:l.closedAt||'',closePrice:l.closePrice||'',
     addressHidden:(l.addressHidden!==false),addr:l.address||'',hideAddress:!!l.hideAddress,
     submarket:l.area||l.city||'',city:l.city||'',area:l.area||'',state:l.state||'',zip:l.zip||l.zipPrefix||'',
-    type:l.propType||'',price:l.price,commission:l.commissionPct,commNotes:l.commissionNotes||'',
+    type:l.propType||'',price:l.price,brokerage:l.brokerage||'',hasSellerForm:!!l.hasSellerForm,
     units:l.units,cap:l.capRate,noi:l.noi,sf:l.sqft,gross:l.grossIncome,exp:l.expenses,vac:l.vacancy,tax:l.taxes,hasFin:!!l.hasFinancials,
-    beds:l.beds,baths:l.baths,yb:l.yearBuilt,desc:l.notes||'',dist:l.dist||'broad',soon:!!l.comingSoon,priceBasis:l.priceBasis||'sale',
+    beds:l.beds,baths:l.baths,yb:l.yearBuilt,desc:l.notes||'',dist:(l.dist==='pocket'?'matched':(l.dist||'broad')),soon:!!l.comingSoon,priceBasis:l.priceBasis||'sale',
     docs:Array.isArray(l.docs)?l.docs:[],photos:Array.isArray(l.photos)?l.photos:[],photoCount:(l.photoCount||(Array.isArray(l.photos)?l.photos.length:0)),lat:l.lat||'',lng:l.lng||'',views:l.views||0,featured:!!l.featured,
     ownerVerified:!!l.ownerVerified,ownerProducer:!!l.ownerProducer,ownerPof:l.ownerPof||null,expiresAt:l.expiresAt||'',expired:!!l.expired};
 }
@@ -1123,7 +1135,7 @@ function loadAdminDot(){Promise.all([api('/api/pm/admin/members'),api('/api/pm/a
 var MA_LICENSE_URL='https://occupationallicensingandpermitting.mass.gov/madol/s/';
 function renderOwnerAlert(n){var el=$('ownerAlert');if(!el)return;if(!n||ME.role!=='owner'){el.style.display='none';el.innerHTML='';return;}
   el.innerHTML='<div class="ownalert"><span class="oa-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>'
-    +'<span class="oa-tx"><b>'+n+' agent'+(n===1?'':'s')+' awaiting license verification.</b> Check each license, then approve or reject.</span>'
+    +'<span class="oa-tx"><b>'+n+' agent'+(n===1?'':'s')+' to re-check on the state registry.</b> Membership is automatic; this is a license re-check, not a waitlist.</span>'
     +'<a class="oa-link" href="'+MA_LICENSE_URL+'" target="_blank" rel="noopener">Look up a license ↗</a>'
     +'<button class="btn acc sm" onclick="openAdmin()">Review requests</button></div>';
   el.style.display='';}
@@ -1133,8 +1145,8 @@ function renderGate(){
   if(!APPROVED&&ME.role==='member'){
     if(!el){el=document.createElement('div');el.id='gateBar';el.style.cssText='background:#FBF2DD;border-bottom:1px solid var(--gold);color:#5A4A1E;padding:11px 18px;text-align:center;font-size:13.5px';document.body.insertBefore(el,document.body.firstChild);}
     var pending=PROFILE&&PROFILE.status==='pending';
-    el.innerHTML=pending?'⏳ We\'re verifying your real estate license (usually within a day). You\'ll get an email and full access the moment you\'re approved. <b style="cursor:pointer;text-decoration:underline" onclick="openProfile()">Review your profile →</b>'
-      :'👋 Complete your member profile (license # + brokerage required) to get verified. <b style="cursor:pointer;text-decoration:underline" onclick="openProfile()">Set up profile →</b>';
+    el.innerHTML=pending?'⏳ Complete your license # and brokerage so we can verify you against Massachusetts DOL records. <b style="cursor:pointer;text-decoration:underline" onclick="openProfile()">Review your profile →</b>'
+      :'👋 Complete your member profile (license # + brokerage required). <b style="cursor:pointer;text-decoration:underline" onclick="openProfile()">Set up profile →</b>';
   } else if(el){el.remove();}
 }
 
@@ -1179,7 +1191,7 @@ function ggGateCard(n){
   return '<div class="fl-card">'
     +'<div class="fl-ic"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></div>'
     +'<h3>An active-agent network</h3>'
-    +'<p><b>Everyone on AXESS contributes — that’s the whole point.</b> You share off-market inventory or a live client need, and in return you see everyone else’s. It’s what keeps this a room of real, active agents moving deals — not a crowd of lurkers watching the board.</p>'
+    +'<p><b>Everyone on AXESS contributes — that’s the whole point.</b> You share a listing or a live client need, and in return you see everyone else’s. It’s what keeps this a room of real, active agents moving deals — not a crowd of lurkers watching the board.</p>'
     +count
     +'<p style="margin-bottom:16px">Post <b>one deal</b> or a <b>live client need</b> and the entire board unlocks — instantly. Your listings stay private: no one sees your address or numbers unless <b>you</b> approve them.</p>'
     +'<div class="fl-act"><button class="btn acc" onclick="openSubmit()">＋ Post a deal</button><button class="btn ghost" onclick="openBuyBox()">Post a client need</button></div>'
@@ -1199,7 +1211,7 @@ function renderWelcome(){
   if(!show){el.style.display='none';return;}
   el.innerHTML='<button class="wx" onclick="dismissWelcome()" aria-label="Dismiss">×</button>'
     +'<h3>Welcome to AXESS 👋</h3>'
-    +'<div class="wsub">An invite-only network where agents move deals to each other before they hit the market. Three ways to use it:</div>'
+    +'<div class="wsub">A private network where licensed Massachusetts agents share seller-directed, pre-market property — agent to agent. Three ways to use it:</div>'
     +'<div class="steps">'
       +'<div class="step"><div class="n">🔑</div><b>Post</b><span>Share a deal or a client need whenever you have one.</span></div>'
       +'<div class="step"><div class="n">🔔</div><b>Get matched</b><span>Save what your buyers want — we email you only the deals that fit, never a blast.</span></div>'
@@ -1248,14 +1260,13 @@ function trustBadges(v,p,prod){return badgeProd(prod)+badgeVer(v)+badgePof(p);}
 
 /* ── stats ── */
 function renderStats(){
-  if(GATED&&GATEDSTATS){var s2=$('stats').querySelectorAll('.s .v');s2[0].textContent=GATEDSTATS.count;s2[1].textContent=money(GATEDSTATS.value);s2[2].textContent=GATEDSTATS.subs||'—';s2[3].textContent=GATEDSTATS.avg?GATEDSTATS.avg.toFixed(1)+'%':'—';return;}
+    if(GATED&&GATEDSTATS){var s2=$('stats').querySelectorAll('.s .v');s2[0].textContent=GATEDSTATS.count;s2[1].textContent=money(GATEDSTATS.value);s2[2].textContent=GATEDSTATS.subs||'—';s2[3].textContent='—';return;}
   var live=LISTINGS.filter(function(d){return d.status!=='off'&&d.status!=='mls'&&d.status!=='closed'&&!d.expired;});
   var val=live.reduce(function(a,d){return a+num(d.price);},0);
-  var comms=live.map(function(d){return num(d.commission);}).filter(function(x){return x>0;});
-  var avg=comms.length?(comms.reduce(function(a,b){return a+b;},0)/comms.length):0;
+  var soon=live.filter(function(d){return d.soon;}).length;
   var subs={};live.forEach(function(d){if(d.submarket)subs[d.submarket]=1;});
   var s=$('stats').querySelectorAll('.s .v');
-  s[0].textContent=live.length;s[1].textContent=money(val);s[2].textContent=Object.keys(subs).length||'—';s[3].textContent=avg?avg.toFixed(1)+'%':'—';
+  s[0].textContent=live.length;s[1].textContent=money(val);s[2].textContent=Object.keys(subs).length||'—';s[3].textContent=soon||'—';
 }
 
 /* ── markets / filters ── */
@@ -1273,22 +1284,6 @@ var MARKETS={
    {k:'worcester',name:'Worcester',cities:['worcester','fitchburg','leominster','shrewsbury','auburn','millbury','gardner','clinton','westborough','grafton']},
    {k:'western',name:'Western MA',cities:['springfield','chicopee','holyoke','westfield','pittsfield','northampton','amherst','agawam','west springfield','ludlow']},
    {k:'cape',name:'Cape Cod & Islands',cities:['barnstable','hyannis','falmouth','sandwich','bourne','mashpee','yarmouth','dennis','harwich','chatham','orleans','brewster','eastham','wellfleet','truro','provincetown','cape cod','nantucket','edgartown','oak bluffs','tisbury','vineyard haven','west tisbury','chilmark','aquinnah','marthas vineyard','marion','wareham']}
- ]},
- NH:{name:'New Hampshire',regions:[
-   {k:'all',name:'All NH',cities:null},
-   {k:'nh-manchester',name:'Manchester',cities:['manchester','bedford','goffstown','hooksett','auburn']},
-   {k:'nh-nashua',name:'Nashua',cities:['nashua','merrimack','hudson','litchfield','amherst']},
-   {k:'nh-seacoast',name:'Seacoast',cities:['portsmouth','dover','rochester','exeter','hampton','durham','somersworth']},
-   {k:'nh-concord',name:'Concord',cities:['concord','bow','pembroke','loudon']},
-   {k:'nh-south',name:'Southern NH',cities:['salem','derry','londonderry','windham','pelham','hampstead']}
- ]},
- RI:{name:'Rhode Island',regions:[
-   {k:'all',name:'All RI',cities:null},
-   {k:'ri-providence',name:'Providence',cities:['providence','east providence','north providence','johnston']},
-   {k:'ri-warwick',name:'Warwick',cities:['warwick','cranston','west warwick','coventry']},
-   {k:'ri-blackstone',name:'Blackstone Valley',cities:['pawtucket','central falls','woonsocket','cumberland','lincoln']},
-   {k:'ri-newport',name:'Newport County',cities:['newport','middletown','portsmouth','tiverton']},
-   {k:'ri-southcounty',name:'South County',cities:['south kingstown','narragansett','westerly','north kingstown']}
  ]}
 };
 function curRegions(){return (MARKETS[MARKET]||MARKETS.MA).regions;}
@@ -1355,10 +1350,9 @@ function saveSearch(){
   var types=typeChecked();
   var body={markets:(REGION==='all'?'':(curRegions().filter(function(r){return r.k===REGION;})[0]||{}).name||''),
     propType:types.join(', '),
-    minPrice:($('fMin').value||'').trim(),maxPrice:($('fMax').value||'').trim(),
     minUnits:($('fUmin').value||'').trim(),maxUnits:($('fUmax').value||'').trim(),
     minCap:($('fCap').value||'').trim(),
-    notes:'Saved from browse'+($('fSearch').value?(' · "'+$('fSearch').value+'"'):''),contact:ME.email};
+    notes:'Saved from browse'+($('fSearch').value?(' · "'+$('fSearch').value+'"'):'')};
   api('/api/pm/buybox',body).then(function(j){
     if(j&&j.ok){BUYBOX=j.buybox||BUYBOX;
       var b=document.querySelector('.rail .save');if(b){var o=b.innerHTML;b.innerHTML='✓ Saved — you\'ll be alerted';b.style.color='var(--acc)';setTimeout(function(){b.innerHTML=o;b.style.color='';},2200);}}
@@ -1367,7 +1361,7 @@ function saveSearch(){
 }
 
 /* ── feed ── */
-function distBadge(d){var m={broad:'Broad',private:'Private',pocket:'Pocket'};return '<span class="bdg '+(d.dist||'broad')+'">'+(m[d.dist]||'Broad')+'</span>';}
+function distBadge(d){var m={broad:'Broad',private:'Private',matched:'Matched only',pocket:'Matched only'};return '<span class="bdg '+(d.dist==='pocket'?'matched':(d.dist||'broad'))+'">'+(m[d.dist]||'Broad')+'</span>';}
 // Color-code each deal by asset type — adds variety to the feed and lets agents scan by type.
 function typeColor(t){t=String(t||'').toLowerCase();
   if(t.indexOf('mixed')>=0)return '#B4882E';
@@ -1420,7 +1414,7 @@ function dealCard(d){
     +'<div class="addr'+(open?' open':'')+'">'+addrIcon(open)+addrTxt+'</div>'
     +(d.desc?('<div class="desc">'+esc(d.desc)+'</div>'):'')
     +(cells.length?('<div class="kpis" style="grid-template-columns:repeat('+cells.length+',1fr)">'+kp+'</div>'):'')
-    +'<div class="foot"><div class="price">'+priceLabel(d)+'</div><div class="fr"><span class="comm" title="Buyer-broker commission — what the seller side pays the buyer agent">'+(num(d.commission)?num(d.commission).toFixed(1)+'% BBC':'—')+'</span><span class="ago">'+ago(d.at)+'</span></div></div>'
+    +'<div class="foot"><div class="price">'+priceLabel(d)+'</div><div class="fr"><span class="ago">'+ago(d.at)+'</span></div></div>'
     +'</div>';
 }
 // Dense list row (used by the "List" layout) — same click target, far less height.
@@ -1438,7 +1432,6 @@ function dealRow(d){
     +'<span class="li-sub">'+esc(d.submarket||'Greater Boston')+'</span>'
     +'<span class="li-addr">'+addrIcon(open)+(open?((d.addr&&esc(d.addr))||'Shown'):'Hidden')+'</span>'
     +'<span class="li-kpi">'+kpi+'</span>'
-    +'<span class="li-kpi">'+(num(d.commission)?num(d.commission).toFixed(1)+'% BBC':'')+'</span>'
     +'<span class="li-price">'+priceLabel(d)+'</span>'
     +'<span class="li-badges">'+badges+'</span>'
   +'</div>';
@@ -1455,7 +1448,6 @@ function listHeader(){return '<div class="drow-head">'
   +'<span class="li-sub">Market</span>'
   +'<span class="li-addr">Address</span>'
   +'<span class="li-kpi">Cap/Units</span>'
-  +'<span class="li-kpi"><span class="tip" tabindex="0" data-tip="Buyer-broker commission — what the seller side pays the buyer agent">BBC</span></span>'
   +'<span class="li-price">Price</span>'
   +'<span class="li-badges"></span>'
 +'</div>';}
@@ -1496,12 +1488,11 @@ function renderMap(list){
 }
 // Which state-market a deal belongs to. Uses the deal's stored state (captured
 // from the address autocomplete); blank/unknown defaults to MA so existing deals
-// stay put. NH/RI deals show only when posted with that state.
-function dealMarket(d){var s=String(d.state||'').toUpperCase();return (s==='NH'||s==='RI')?s:'MA';}
+function dealMarket(d){return 'MA';}
 function marketMatch(d){return dealMarket(d)===MARKET;}
 function feedVisible(d){
   if(d.status==='off'||d.status==='mls')return false;
-  if(d.dist==='pocket'&&!isMine(d)&&ME.role!=='owner')return false;   // pocket hidden from the general feed
+  if((d.dist==='pocket'||d.dist==='matched')&&!isMine(d)&&ME.role!=='owner')return false;   // matched-only hidden from the general feed
   if(!marketMatch(d))return false;                                    // only the selected state-market
   return true;
 }
@@ -1562,7 +1553,7 @@ function render(){
   var mktName=(MARKETS[MARKET]||MARKETS.MA).name;
   var empty=anyInMarket
     ? '<div class="empty">No deals match your filters.<br><br><button class="btn acc" onclick="clearFilters()">Clear filters</button></div>'
-    : '<div class="emptybig"><div class="eb-ic">📭</div><h3>No live deals in '+esc(mktName)+' yet</h3><p>This market is just getting started. Post the first off-market deal — or a client need — and it shows up right here.</p><div class="eb-act"><button class="btn acc" onclick="openSubmit()">＋ Post the first deal</button><button class="btn ghost" onclick="openBuyBox()">Post a client need</button></div></div>';
+    : '<div class="emptybig"><div class="eb-ic">📭</div><h3>No live deals in '+esc(mktName)+' yet</h3><p>This market is just getting started. Post the first seller-directed listing — or a client need — and it shows up right here.</p><div class="eb-act"><button class="btn acc" onclick="openSubmit()">＋ Post the first deal</button><button class="btn ghost" onclick="openBuyBox()">Post a client need</button></div></div>';
   if(DEALVIEW==='list'){g.innerHTML=list.length?(listHeader()+list.map(dealRow).join('')):empty;}
   else{g.innerHTML=list.length?list.map(dealCard).join(''):empty;}
 }
@@ -1622,7 +1613,7 @@ function financialsBlock(d,mine){
     var st=(myIntro(d.id)||{}).status;
     var cta=st==='pending'?'<div class="fin-cta pend">✓ Access requested — awaiting broker approval</div>'
       :st==='declined'?'<div class="fin-cta pend">Intro declined</div>'
-      :'<button class="fin-cta go" onclick="openIntro(\''+d.id+'\')">🔒 Request access — qualify your buyer</button>';
+      :'<button class="fin-cta go" onclick="openIntro(\''+d.id+'\')">🔒 Request intro — qualify your buyer</button>';
     return '<div class="finbox locked"><div class="fin-h">Financials <span class="finstate lk">🔒 Locked</span></div>'
       +l('Gross rental income')+l('Effective gross income','sub')+l('Taxes')+l('Operating expenses')+l('Net operating income','noi')
       +'<div class="fin-gate">Full pro-forma unlocks with the address once the listing broker approves your intro.</div>'+cta+'</div>';
@@ -1675,7 +1666,7 @@ function openDetail(id){
   var d=LISTINGS.find(function(x){return x.id===id;});if(!d)return;
   var seeAddr=canSeeAddress(d),mine=isMine(d),intro=myIntro(id);
   if(!mine)api('/api/pm/view/'+d.id,{});   // count the view for seller analytics
-  var rows=[['Asset type',esc(d.type||'—')],['Submarket',esc(d.submarket||'—')],[isLease(d)?'Rent':'Asking price',isLease(d)?priceLabel(d):moneyFull(d.price)],['Units',num(d.units)||'—'],['Cap rate',num(d.cap)?num(d.cap).toFixed(2)+'%':'—'],['NOI',moneyFull(d.noi)],['Square feet',num(d.sf)?Math.round(num(d.sf)).toLocaleString('en-US'):'—'],['Beds',num(d.beds)||'—'],['Baths',num(d.baths)||'—'],['Year built',d.yb?esc(d.yb):'—'],['Buyer-broker commission',num(d.commission)?num(d.commission).toFixed(1)+'%':'—'],['Distribution',{broad:'Broad',private:'Private (approval)',pocket:'Pocket'}[d.dist]||'Broad'],['Posted',ago(d.at)+(d.by?(' · by '+esc(d.by)):'')]];
+  var rows=[['Asset type',esc(d.type||'—')],['City',esc(d.city||'—')],['Submarket',esc(d.submarket||'—')],[isLease(d)?'Rent':'Asking price',isLease(d)?priceLabel(d):moneyFull(d.price)],['Units',num(d.units)||'—'],['Cap rate',num(d.cap)?num(d.cap).toFixed(2)+'%':'—'],['NOI',moneyFull(d.noi)],['Square feet',num(d.sf)?Math.round(num(d.sf)).toLocaleString('en-US'):'—'],['Beds',num(d.beds)||'—'],['Baths',num(d.baths)||'—'],['Year built',d.yb?esc(d.yb):'—'],['Brokerage',esc(d.brokerage||'—')],['Distribution',{broad:'Broad',private:'Private (approval)',matched:'Matched only',pocket:'Matched only'}[d.dist]||'Broad'],['Posted',ago(d.at)+(d.by?(' · by '+esc(d.by)):'')]];
   rows=rows.filter(function(r){return !(['Units','Cap rate','NOI','Square feet','Beds','Baths','Year built'].indexOf(r[0])>=0 && (r[1]==='—'||r[1]===''));});
   var addrBlock = seeAddr
     ? '<div class="reveal"><span style="color:var(--acc);vertical-align:-2px;margin-right:6px">'+addrIcon(true)+'</span><b>'+esc(d.addr||'(no address on file)')+'</b></div>'+(d.addr?mapEmbed(d.addr):(d.submarket?mapEmbed(d.submarket+', '+(d.state||'MA')):''))+streetEmbed(d)+mapsLink(d)
@@ -1750,7 +1741,7 @@ function openIntro(id){_introDeal=id;close_('mDetail');
     +'<div class="f full"><label>Your name</label><input id="iName" value="'+esc(ME.name||'')+'"></div>'
     +'<div class="f full"><label>Firm</label><input id="iFirm" placeholder="Company"></div>'
     +'<div class="f full"><label>A note to the broker — qualify your buyer for permission <a id="aiIntroBtn" onclick="aiIntro()" style="cursor:pointer;color:var(--acc);font-weight:700;font-size:12px;margin-left:8px">✍️ Draft with AI</a></label><textarea id="iMsg" rows="3" placeholder="Cash buyer, 1031, can close in 30 days. Interested in the numbers on this one."></textarea></div>'
-    +'<label class="ck" style="display:flex;gap:8px;align-items:flex-start;margin:2px 0 12px;font-size:12.5px;color:var(--mut);line-height:1.5;cursor:pointer"><input type="checkbox" id="iConf" style="margin-top:3px;flex:0 0 auto"><span>I agree to keep this off-market deal — the address, financials, and documents — <b>strictly confidential</b>, and not to market or share it without the listing agent\'s permission.</span></label>'
+    +'<label class="ck" style="display:flex;gap:8px;align-items:flex-start;margin:2px 0 12px;font-size:12.5px;color:var(--mut);line-height:1.5;cursor:pointer"><input type="checkbox" id="iConf" style="margin-top:3px;flex:0 0 auto"><span>I agree to keep this listing — the address, financials, and documents — <b>strictly confidential</b>, and not to market or share it without the listing agent\'s permission.</span></label>'
     +'<div class="mact"><span class="msg" id="iMsgS"></span><button class="btn ghost" onclick="close_(\'mIntro\')">Cancel</button><button class="btn acc" onclick="sendIntro()">Agree &amp; send request</button></div></div>';
   var m=$('mIntro');if(!m){m=document.createElement('div');m.className='mbg';m.id='mIntro';m.onclick=function(e){if(e.target===m)close_('mIntro');};document.body.appendChild(m);}
   m.innerHTML='<div class="modal">'+html+'</div>';open_('mIntro');
@@ -1894,30 +1885,58 @@ function uploadDocs(){
   });
   inp.value='';
 }
+function renderSellerForm(){
+  var el=$('sSellerFormList');if(!el)return;
+  if(SUBMIT_SELLER_FORM){el.textContent='Attached: '+(SUBMIT_SELLER_FORM.name||'seller form')+' ✓';}
+  else if(EDIT_ID){var cur=LISTINGS.find(function(x){return x.id===EDIT_ID;});el.textContent=(cur&&cur.hasSellerForm)?'Seller-signed form already on file ✓':'';}
+  else el.textContent='';
+}
+function uploadSellerForm(){
+  var inp=$('sSellerForm'),f=inp&&inp.files&&inp.files[0];
+  if(!f)return;
+  $('sMsg').textContent='Uploading seller form…';
+  var rd=new FileReader();
+  rd.onload=function(){
+    var data=String(rd.result||'').replace(/^data:[^,]*,/,'');
+    api('/api/pm/upload',{name:f.name,mime:f.type,size:f.size,data:data}).then(function(j){
+      if(j&&j.ok&&(j.key||j.url)){SUBMIT_SELLER_FORM={name:j.name||f.name,key:j.key||'',url:j.key?'':(j.url||''),uploadedAt:new Date().toISOString()};renderSellerForm();$('sMsg').textContent='Seller form attached ✓';}
+      else{$('sMsg').textContent=(j&&j.message)||'Upload failed — try again.';}
+      setTimeout(function(){if($('sMsg')&&$('sMsg').textContent.indexOf('attached')>=0)$('sMsg').textContent='';},1500);
+    });
+  };
+  rd.readAsDataURL(f);
+  inp.value='';
+}
 /* ── submit deal ── */
 function submitDeal(){
   var editing=!!EDIT_ID;
   var cur=editing?LISTINGS.find(function(x){return x.id===EDIT_ID;}):null;
   var keepStatus=cur?(cur.status==='off'?'off':cur.status==='mls'?'mls':'active'):'active';
-  var body={address:($('sAddr').value||'').trim(),area:($('sSub').value||'').trim(),propType:$('sType').value,
-    ownerName:ME.name||(PROFILE&&PROFILE.name)||'',price:noComma('sPrice'),priceBasis:dealBasis(),commissionPct:($('sComm').value||'').trim(),
+  var body={address:($('sAddr').value||'').trim(),city:($('sCity').value||'').trim(),area:($('sSub').value||'').trim(),propType:$('sType').value,
+    ownerName:ME.name||(PROFILE&&PROFILE.name)||'',price:noComma('sPrice'),priceBasis:dealBasis(),
     units:($('sUnits').value||'').trim(),capRate:($('sCap').value||'').trim(),noi:noComma('sNoi'),
     grossIncome:noComma('sGross'),expenses:noComma('sExp'),vacancy:noComma('sVac'),taxes:noComma('sTax'),
     sqft:noComma('sSf'),beds:($('sBeds').value||'').trim(),baths:($('sBaths').value||'').trim(),yearBuilt:($('sYb').value||'').trim(),
     notes:($('sDesc').value||'').trim(),dist:$('sDist').value,status:keepStatus,
     hideAddress:$('sHideAddr').checked,comingSoon:!!($('sSoon')&&$('sSoon').checked),docs:SUBMIT_DOCS,photos:SUBMIT_PHOTOS,
-    lat:(SUBMIT_COORDS?SUBMIT_COORDS.lat:''),lng:(SUBMIT_COORDS?SUBMIT_COORDS.lng:''),state:SUBMIT_STATE||''};
+    lat:(SUBMIT_COORDS?SUBMIT_COORDS.lat:''),lng:(SUBMIT_COORDS?SUBMIT_COORDS.lng:''),state:'MA',
+    sellerForm:SUBMIT_SELLER_FORM||undefined,mlsZoneAck:!!($('sMlsAck')&&$('sMlsAck').checked)};
   if(editing)body.id=EDIT_ID;
+  if(!body.city){$('sMsg').textContent='Add the Massachusetts city.';return;}
   if(!body.area){$('sMsg').textContent='Add a submarket.';return;}
   if(!num(body.price)){$('sMsg').textContent='Add an asking price.';return;}
+  if(!(PROFILE&&PROFILE.brokerage)){$('sMsg').textContent='Add your licensed Massachusetts brokerage in Profile before posting.';return;}
+  if(!SUBMIT_SELLER_FORM&&!(cur&&cur.hasSellerForm)){$('sMsg').textContent='Upload the seller-signed Non-MLS or delayed-listing form before this listing can go live.';return;}
+  if(mlsZoneFor(body.city,body.area,body.address)&&!body.mlsZoneAck){$('sMsg').textContent='Confirm the Cape / Berkshire MLS note with your broker before posting.';return;}
   $('sMsg').textContent=editing?'Saving…':'Posting…';
   if(submitDeal._busy)return; submitDeal._busy=true; setTimeout(function(){submitDeal._busy=false;},5000);
   api('/api/pm/listing',body).then(function(j){
     submitDeal._busy=false;
     if(j&&j.error==='not_approved'){$('sMsg').textContent='Your membership isn’t approved yet.';return;}
-    $('sMsg').textContent=(j&&j.ok)?(editing?'Saved ✓':'Posted ✓'):'Failed — retry';
-    if(j&&j.ok){resetSubmitForm();renderDocList();renderPhotoList();syncDealFields();EDIT_ID=null;
-      loadAll();setTimeout(function(){close_('mSubmit');$('sMsg').textContent='';},800);}
+    if(j&&!j.ok){$('sMsg').textContent=(j&&j.message)||'Failed — retry';return;}
+    $('sMsg').textContent=editing?'Saved ✓':'Posted ✓';
+    resetSubmitForm();renderDocList();renderPhotoList();syncDealFields();EDIT_ID=null;
+    loadAll();setTimeout(function(){close_('mSubmit');$('sMsg').textContent='';},800);
   });
 }
 function markMLS(id,on){
@@ -1943,8 +1962,8 @@ function markClosed(id,on){
 }
 function toggleOff(id){var d=LISTINGS.find(function(x){return x.id===id;});if(!d)return;
   api('/api/pm/listing',{id:id,status:(d.status==='off'?'active':'off'),
-    address:d.addr,area:d.area,city:d.city,state:d.state,zip:d.zip,ownerName:d.by,propType:d.type,dist:d.dist,
-    price:d.price,commissionPct:d.commission,commissionNotes:d.commNotes,units:d.units,capRate:d.cap,noi:d.noi,
+    address:d.addr,area:d.area,city:d.city,state:'MA',zip:d.zip,ownerName:d.by,propType:d.type,dist:d.dist,
+    price:d.price,units:d.units,capRate:d.cap,noi:d.noi,
     sqft:d.sf,grossIncome:d.gross,expenses:d.exp,beds:d.beds,baths:d.baths,yearBuilt:d.yb,notes:d.desc
   }).then(function(){close_('mDetail');loadAll();});
 }
@@ -1981,9 +2000,9 @@ function payReturn(){
 /* ── member profile ── */
 function openProfile(){
   var p=PROFILE||{};
-  var stat=p.status==='approved'?'<span class="pill appr">Approved</span>':p.status==='rejected'?'<span class="pill dec">Not approved</span>':(ME.role==='member'?'<span class="pill req">Pending review</span>':'<span class="pill appr">Hub member</span>');
+  var stat=p.status==='approved'?'<span class="pill appr">Member</span>':p.status==='rejected'?'<span class="pill dec">Not a member</span>':(ME.role==='member'?'<span class="pill req">Profile incomplete</span>':'<span class="pill appr">Member</span>');
   $('mProfile').innerHTML='<div class="modal"><div class="mhead"><div><h3>My profile</h3><div style="margin-top:4px">'+stat+'</div></div><button class="x" onclick="close_(\'mProfile\')">×</button></div><div class="mbody">'
-    +'<p style="color:var(--mut);font-size:13px;margin-bottom:12px">License number and brokerage are required to be approved to post and message.</p>'
+    +'<p style="color:var(--mut);font-size:13px;margin-bottom:12px">License number and licensed Massachusetts brokerage are required to post and message.</p>'
     +'<div class="fgrid">'
     +'<div class="f"><label>Full name</label><input id="pName" value="'+esc(p.name||ME.name||'')+'"></div>'
     +'<div class="f"><label>Phone</label><input id="pPhone" value="'+esc(p.phone||'')+'"></div>'
@@ -2039,7 +2058,7 @@ function saveProfile(){
 /* ── self-serve: member cancels their own account (records kept, access ends) ── */
 function cancelAccount(){
   if(ME.role==='owner'){alert('The owner account can\'t be cancelled here.');return;}
-  if(!confirm('Cancel your AXESS account?\n\nYour access ends right away. We keep your records, so you can rejoin anytime by requesting access again.'))return;
+  if(!confirm('Cancel your AXESS account?\n\nYour access ends right away. We keep your records, so you can rejoin anytime by creating an account again — if you still meet the published criteria.'))return;
   if(!confirm('Just to confirm — this signs you out and ends your access now. Continue?'))return;
   var m=$('pMsg');if(m)m.textContent='Cancelling…';
   api('/api/pm/cancel',{}).then(function(j){
@@ -2170,7 +2189,20 @@ function adminDigest(dry){var m=$('digMsg');if(m)m.textContent=dry?'Previewing�
     if(j&&j.ok){m.textContent=(dry?('Would reach '+j.recipients+' member'+(j.recipients===1?'':'s')):('Sent — '+j.emailsSent+' email'+(j.emailsSent===1?'':'s')+' to '+j.recipients+' member'+(j.recipients===1?'':'s')))+'.';}
     else{m.textContent='Failed — retry.';}});}
 function adminVerify(email,on){api('/api/pm/admin/verify',{email:email,verified:on}).then(function(){openAdmin();});}
-function adminDeactivate(email,on){if(on&&!confirm('Deactivate '+email+'?\n\nThey lose access immediately, but all their records (profile, deals, history) are kept. You can reactivate anytime.'))return;api('/api/pm/admin/deactivate',{email:email,deactivated:on}).then(function(){openAdmin();loadAdminDot();});}
+function adminDeactivate(email,on){
+  var cause='';
+  if(on){
+    cause=prompt('Stated cause required. Type one of:\n  license_lapse\n  non_payment\n  material_breach','');
+    if(!cause)return;
+    cause=String(cause).trim();
+    if(['license_lapse','non_payment','material_breach'].indexOf(cause)<0){alert('Cause must be license_lapse, non_payment, or material_breach.');return;}
+    if(!confirm('Deactivate '+email+' for '+cause+'?\n\nThey lose access immediately. Records are kept. You can reactivate later.'))return;
+  }
+  api('/api/pm/admin/deactivate',{email:email,deactivated:on,cause:cause}).then(function(j){
+    if(j&&!j.ok){alert((j&&j.message)||'Could not update.');return;}
+    openAdmin();loadAdminDot();
+  });
+}
 function adminProducer(email,on){api('/api/pm/admin/producer',{email:email,producer:on}).then(function(){openAdmin();});}
 function adminPof(email,decision,amount){
   if(decision==='verified'){var a=prompt('Verified proof-of-funds amount (e.g. $2M, or leave blank):',amount||'');if(a===null)return;amount=a.trim();}
@@ -2244,12 +2276,13 @@ function exportDirectory(){
 
 /* ── buy box ── */
 function submitBuyBox(){
-  var name=($('bName').value||ME.name||'').trim();
-  if(!name){$('bMsg').textContent='Add your name.';return;}
+  var notes=($('bNotes').value||'').trim();
+  if(/\bmotivated\b/i.test(notes)){$('bMsg').textContent='Notes cannot use the word “motivated.”';return;}
   var body={markets:checkedVals('bSubChecks').join(', '),propType:checkedVals('bTypeChecks').join(', '),
-    minPrice:noComma('bMin'),maxPrice:noComma('bMax'),
-    notes:($('bNotes').value||'').trim(),contact:($('bFirm').value||'').trim()||ME.email};
-  if(!body.markets&&!body.propType&&!num(body.minPrice)&&!num(body.maxPrice)){$('bMsg').textContent='Add at least a price range, property type, or market so we can match deals.';return;}
+    priceBand:($('bBand')&&$('bBand').value)||'',timeline:($('bTimeline')&&$('bTimeline').value)||'',
+    beds:($('bBeds')&&$('bBeds').value||'').trim(),baths:($('bBaths')&&$('bBaths').value||'').trim(),
+    notes:notes};
+  if(!body.markets&&!body.propType&&!body.priceBand&&!body.timeline&&!body.beds){$('bMsg').textContent='Add at least a town/area, property type, price band, or timeline.';return;}
   $('bMsg').textContent='Posting…';
   if(submitBuyBox._busy)return; submitBuyBox._busy=true; setTimeout(function(){submitBuyBox._busy=false;},5000);
   api('/api/pm/buybox',body).then(function(j){
@@ -2265,7 +2298,7 @@ function buyboxDone(){
   var html='<div class="modal" style="max-width:440px;text-align:center">'
     +'<div style="width:52px;height:52px;border-radius:14px;background:var(--accdim);color:var(--acc);display:flex;align-items:center;justify-content:center;margin:20px auto 12px"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>'
     +'<h3 style="font-size:19px;margin:0 0 8px">Client need posted</h3>'
-    +'<p style="color:var(--mut);font-size:14px;line-height:1.55;margin:0 22px 18px">We’ll alert you the moment a matching off-market deal is listed. Find or edit it anytime under <b>your account menu → My activity → My client needs</b>.</p>'
+    +'<p style="color:var(--mut);font-size:14px;line-height:1.55;margin:0 22px 18px">We’ll alert you the moment a matching listing is posted. Find or edit it anytime under <b>your account menu → My activity → My client needs</b>.</p>'
     +'<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:0 22px 22px"><button class="btn ghost" onclick="close_(\'mBuyDone\')">Done</button><button class="btn acc" onclick="close_(\'mBuyDone\');ACTTAB=\'buybox\';renderActivity();open_(\'mActivity\')">View my client needs</button></div>'
     +'</div>';
   if(!m){m=document.createElement('div');m.className='mbg';m.id='mBuyDone';m.onclick=function(e){if(e.target===m)close_('mBuyDone');};document.body.appendChild(m);}
@@ -2296,22 +2329,21 @@ function extractRentRoll(file){
   rd.readAsDataURL(file);
 }
 /* ── client-needs board ── */
-function needPrice(n){var lo=n.minPrice?money(n.minPrice):'',hi=n.maxPrice?money(n.maxPrice):'';if(lo&&hi)return lo+' – '+hi;if(hi)return 'Up to '+hi;if(lo)return lo+'+';return 'Any price';}
+function needPrice(n){return n.priceBandLabel||'Any price band';}
 function openNeeds(){
   var m=$('mNeeds');
   if(!m){m=document.createElement('div');m.className='mbg';m.id='mNeeds';m.onclick=function(e){if(e.target===m)close_('mNeeds');};document.body.appendChild(m);}
   m.innerHTML='<div class="modal wide"><div class="mhead"><h3>Client needs</h3><button class="x" onclick="close_(\'mNeeds\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mNeeds');
   apiT('/api/pm/needs').then(function(j){
     var needs=(j&&j.needs)||[];
-    var head='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px"><p style="color:var(--mut);font-size:13.5px;margin:0;max-width:520px">What buyers across the network are hunting for. Have a deal that fits? Message the agent — your contact stays private until you connect.</p><button class="btn acc sm" onclick="close_(\'mNeeds\');openBuyBox()">＋ Post / edit my need</button></div>';
+    var head='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px"><p style="color:var(--mut);font-size:13.5px;margin:0;max-width:520px">Anonymous client needs across the network. Have a deal that fits? Message the posting member — names stay off the board.</p><button class="btn acc sm" onclick="close_(\'mNeeds\');openBuyBox()">＋ Post / edit my need</button></div>';
     var rows=needs.length?needs.map(function(n){
-      var meta=[];if(n.minUnits||n.maxUnits)meta.push((n.minUnits||'0')+(n.maxUnits?('–'+n.maxUnits):'+')+' units');if(n.minCap)meta.push(n.minCap+'%+ cap');
-      var ver=n.verified?' <span title="License verified" style="color:var(--acc);font-weight:700;font-size:11px">✓</span>':'';
-      var act=n.mine?'<span class="pill appr" style="align-self:center">Your need</span>':'<button class="btn acc sm" onclick="needMsg(\''+escJS(n.tok)+'\',\''+escJS(n.ownerName)+'\')">I have a deal →</button>';
+      var meta=[];if(n.beds)meta.push(n.beds+' bd');if(n.baths)meta.push(n.baths+' ba');if(n.timelineLabel)meta.push(n.timelineLabel);
+      var act=n.mine?'<span class="pill appr" style="align-self:center">Your need</span>':'<button class="btn acc sm" onclick="needMsg(\''+escJS(n.tok)+'\',\'a member\')">I have a deal →</button>';
       return '<div class="reqrow" style="align-items:flex-start"><div class="grow"><b>'+esc(n.propType||'Any type')+'</b> <span style="color:var(--mut)">· '+esc(needPrice(n))+(meta.length?(' · '+esc(meta.join(' · '))):'')+'</span>'
         +(n.markets?('<div style="color:var(--acc2);font-size:12.5px;margin-top:3px">📍 '+esc(n.markets)+'</div>'):'')
         +(n.notes?('<div style="color:var(--mut);font-size:13px;margin-top:5px;white-space:pre-wrap">'+esc(n.notes)+'</div>'):'')
-        +'<div style="color:var(--mut2);font-size:11.5px;margin-top:6px">— '+esc(n.ownerName||'A member')+(n.firm?(', '+esc(n.firm)):'')+ver+'</div></div>'+act+'</div>';
+        +'</div>'+act+'</div>';
     }).join(''):'<div class="empty">No client needs posted yet. <button class="btn link" onclick="close_(\'mNeeds\');openBuyBox()">Post the first →</button></div>';
     var mb=document.querySelector('#mNeeds .mbody');if(mb)mb.innerHTML=head+rows;
   });
@@ -2319,8 +2351,8 @@ function openNeeds(){
 function needMsg(tok,name){
   var m=$('mNeedMsg');
   var html='<div class="modal" style="max-width:460px"><div class="mhead"><h3>Message '+esc(name||'this agent')+'</h3><button class="x" onclick="close_(\'mNeedMsg\')">×</button></div><div class="mbody">'
-    +'<p style="color:var(--mut);font-size:13px;margin-bottom:10px">Tell them about your off-market deal that fits their client. They\'ll get a message on AXESS and can reply to you directly.</p>'
-    +'<textarea id="nmBody" rows="4" placeholder="I have an off-market multifamily in Worcester, 12 units, 6.2% cap — sounds like a fit for your buyer. Want the details?" style="width:100%;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:10px 11px;font:inherit;font-size:14px"></textarea>'
+    +'<p style="color:var(--mut);font-size:13px;margin-bottom:10px">Tell them about a listing that fits their client. They\'ll get a message on AXESS and can reply to you directly.</p>'
+    +'<textarea id="nmBody" rows="4" placeholder="I have a multifamily in Worcester, 12 units, 6.2% cap — sounds like a fit. Want the details?" style="width:100%;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:10px 11px;font:inherit;font-size:14px"></textarea>'
     +'<div class="mact"><span class="msg" id="nmMsg"></span><button class="btn ghost" onclick="close_(\'mNeedMsg\')">Cancel</button><button class="btn acc" onclick="sendNeedMsg(\''+escJS(tok)+'\')">Send message</button></div></div></div>';
   if(!m){m=document.createElement('div');m.className='mbg';m.id='mNeedMsg';m.onclick=function(e){if(e.target===m)close_('mNeedMsg');};document.body.appendChild(m);}
   m.innerHTML=html;open_('mNeedMsg');setTimeout(function(){var t=$('nmBody');if(t)t.focus();},60);
@@ -2350,7 +2382,8 @@ function renderActivity(){
     h=SENT.length?SENT.map(function(x){var l=x.listing?nL(x.listing):null;var sub=l?(l.submarket||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(sub||'Deal')+'</b> <span style="color:var(--mut)">· '+(l?money(l.price):'')+'</span> '+pill(x.status)+(x.status==='approved'&&l&&l.addr?('<div style="color:var(--acc2);font-size:13px;margin-top:4px">📍 '+esc(l.addr)+'</div>'):'')+'</div>'+((x.status==='approved'&&l&&l.byEmail)?'<button class="btn acc sm" onclick="close_(\'mActivity\');openThread(\''+escJS(l.byEmail)+'\',\''+escJS(l.id)+'\')">💬 Deal room</button>':(l?'<button class="btn ghost sm" onclick="openDetail(\''+l.id+'\')">Open</button>':''))+'</div>';}).join(''):'<div class="empty">You haven\'t requested any introductions yet.</div>';
   } else {
     var x=BUYBOX;
-    h=x?('<div class="reqrow"><div class="grow"><b>'+esc(x.propType||'Any type')+'</b> <span style="color:var(--mut)">· '+money(x.minPrice)+'–'+money(x.maxPrice)+'</span><div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(x.markets||'')+(x.notes?(' · '+esc(x.notes)):'')+'</div></div><button class="btn ghost sm" onclick="close_(\'mActivity\');openBuyBox()">Edit</button></div>'):'<div class="empty">No client needs posted yet. <button class="btn link" onclick="close_(\'mActivity\');openBuyBox()">Post one →</button></div>';
+    var bandLbl=x?(({under_500k:'Under $500K','500k_1m':'$500K – $1M','1m_2m':'$1M – $2M','2m_5m':'$2M – $5M','5m_plus':'$5M+'})[x.priceBand]||'Any price band'):'';
+    h=x?('<div class="reqrow"><div class="grow"><b>'+esc(x.propType||'Any type')+'</b> <span style="color:var(--mut)">· '+esc(bandLbl)+'</span><div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(x.markets||'')+(x.notes?(' · '+esc(x.notes)):'')+'</div></div><button class="btn ghost sm" onclick="close_(\'mActivity\');openBuyBox()">Edit</button></div>'):'<div class="empty">No client needs posted yet. <button class="btn link" onclick="close_(\'mActivity\');openBuyBox()">Post one →</button></div>';
     if(x){
       h+='<div class="shead" style="margin:16px 0 6px"><h2 style="font-size:15px">Live deals matching your clients\' needs <span style="color:var(--gold)">'+BBMATCHES.length+'</span></h2></div>';
       h+=BBMATCHES.length?BBMATCHES.map(function(d){return '<div class="reqrow" style="cursor:pointer" onclick="close_(\'mActivity\');openDetail(\''+d.id+'\')"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+(num(d.cap)?(' · '+num(d.cap).toFixed(1)+'% cap'):'')+'</span></div><span style="color:var(--acc2);font-size:12px">View →</span></div>';}).join(''):'<div class="empty" style="padding:16px">No live deals match yet — you\'ll get an alert the moment one is posted.</div>';
@@ -2477,21 +2510,21 @@ function renderMarket(m){
   var newThisWk=S.perCount[S.perCount.length-1]||0;
   var kpis='<div class="mp-kpis">'
     +tile('Live deals',(m.liveDeals||0),mpSpark(S.cumCount,72,26,'#0A3D8F'),newThisWk?('▲ +'+newThisWk+' this wk'):'')
-    +tile('Total off-market value',money(m.totalValue||0),mpSpark(S.cumVal,72,26,'#B4882E'),'')
+    +tile('Total listing value',money(m.totalValue||0),mpSpark(S.cumVal,72,26,'#B4882E'),'')
     +tile('Avg cap rate',(m.avgCap||0).toFixed(1)+'%',mpSpark(S.cumCap,72,26,'#1C7A4E'),'')
-    +tile('Avg commission',(m.avgCommission||0).toFixed(1)+'%',mpSpark(S.cumComm,72,26,'#6D5AA8'),'')
+    +tile('New this week',String(newThisWk||0),mpSpark(S.perCount,72,26,'#6D5AA8'),'')
     +'</div>';
   var byC={};(window.LISTINGS||[]).filter(feedVisible).forEach(function(d){var t=d.type||'Other';byC[t]=(byC[t]||0)+1;});
   var cKeys=Object.keys(byC).sort(function(a,b){return byC[b]-byC[a];}).slice(0,6),cmx=cKeys.length?byC[cKeys[0]]:1;
   var bars=cKeys.length?cKeys.map(function(t){return '<div class="mp-bar"><span class="lb">'+esc(t)+'</span><div class="tr"><div class="fl" style="width:'+(byC[t]/cmx*100)+'%;background:var(--acc)"></div></div><span class="nv">'+byC[t]+'</span></div>';}).join(''):'<div class="mp-empty">No live deals yet.</div>';
   var hasTrend=S.weeksWithData>=3;
-  var areaCard='<div class="mp-card"><div class="ch"><h4>Off-market value on the network</h4><span class="hint">12 wks</span></div>'+(hasTrend?mpArea(S.cumVal,money(m.totalValue||0)):'<div class="mp-empty">Trend builds as more deals post.</div>')+'</div>';
+  var areaCard='<div class="mp-card"><div class="ch"><h4>Listing value on the network</h4><span class="hint">12 wks</span></div>'+(hasTrend?mpArea(S.cumVal,money(m.totalValue||0)):'<div class="mp-empty">Trend builds as more deals post.</div>')+'</div>';
   var barsCard='<div class="mp-card"><div class="ch"><h4>Deals by asset class</h4><span class="hint">live</span></div><div style="margin-top:2px">'+bars+'</div></div>';
   var colsCard='<div class="mp-card"><div class="ch"><h4>New deals / week</h4><span class="hint">12 wks</span></div>'+(hasTrend?mpCols(S.perCount):'<div class="mp-empty">Weekly activity appears as deals accumulate.</div>')+'</div>';
   var areas=m.byArea||{};var aKeys=Object.keys(areas).sort(function(a,b){return areas[b]-areas[a];}).slice(0,6),amx=aKeys.length?areas[aKeys[0]]:1;
   var subBars=aKeys.length?aKeys.map(function(a){return '<div class="mp-bar"><span class="lb">'+esc(a)+'</span><div class="tr"><div class="fl" style="width:'+(areas[a]/amx*100)+'%;background:var(--acc)"></div></div><span class="nv">'+areas[a]+'</span></div>';}).join(''):'<div class="mp-empty">No live deals yet.</div>';
   var subCard='<div class="mp-card"><div class="ch"><h4>Top submarkets</h4><span class="hint">live</span></div><div style="margin-top:2px">'+subBars+'</div></div>';
-  $('mMarket').innerHTML='<div class="modal wide"><div class="mhead"><div><h3>Market Pulse</h3><div style="color:var(--mut);font-size:12px;margin-top:2px">Off-market activity across '+esc((MARKETS[MARKET]||MARKETS.MA).name)+'</div></div><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody">'
+  $('mMarket').innerHTML='<div class="modal wide"><div class="mhead"><div><h3>Market Pulse</h3><div style="color:var(--mut);font-size:12px;margin-top:2px">Pre-market activity across '+esc((MARKETS[MARKET]||MARKETS.MA).name)+'</div></div><button class="x" onclick="close_(\'mMarket\')">×</button></div><div class="mbody">'
     +kpis
     +'<div class="mp-row">'+areaCard+barsCard+'</div>'
     +'<div class="mp-row">'+colsCard+subCard+'</div>'
@@ -2502,10 +2535,10 @@ function renderMarket(m){
 /* ── broadcast board ── */
 function openBoard(){var _bd=$('mBoard');if(_bd){_bd.innerHTML='<div class="modal wide"><div class="mhead"><h3>Board</h3><button class="x" onclick="close_(\'mBoard\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mBoard');}
   apiT('/api/pm/broadcasts').then(function(j){if(j&&j.timeout){var _b=_bd&&_bd.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}var bs=(j&&j.broadcasts)||[];
-  var posts=bs.length?bs.map(function(b){return '<div class="reqrow" style="align-items:flex-start"><div class="grow"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em">'+esc(b.category||'Misc')+'</div><b style="display:block;margin:2px 0">'+esc(b.title||'(no title)')+'</b><div style="color:var(--mut);font-size:13px;white-space:pre-wrap">'+esc((b.body||'').slice(0,600))+'</div><div style="color:var(--mut2);font-size:12px;margin-top:6px">'+esc(b.fromName||b.from)+' · '+ago(b.at)+'</div></div></div>';}).join(''):'<div class="empty">No posts yet. Start the board — post an ISO, an off-market list, or an announcement.</div>';
+  var posts=bs.length?bs.map(function(b){return '<div class="reqrow" style="align-items:flex-start"><div class="grow"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em">'+esc(b.category||'Misc')+'</div><b style="display:block;margin:2px 0">'+esc(b.title||'(no title)')+'</b><div style="color:var(--mut);font-size:13px;white-space:pre-wrap">'+esc((b.body||'').slice(0,600))+'</div><div style="color:var(--mut2);font-size:12px;margin-top:6px">'+esc(b.fromName||b.from)+' · '+ago(b.at)+'</div></div></div>';}).join(''):'<div class="empty">No posts yet. Start the board — post an ISO, a listing, or an announcement.</div>';
   $('mBoard').innerHTML='<div class="modal wide"><div class="mhead"><h3>Board</h3><button class="x" onclick="close_(\'mBoard\')">×</button></div><div class="mbody">'
     +'<div style="border:1px solid var(--line2);border-radius:12px;padding:12px;margin-bottom:16px">'
-    +'<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><select id="bcCat" style="background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:8px 10px;font:inherit;font-size:13px"><option>ISO — buyer looking</option><option>Off-market list</option><option>Announcement</option><option>Misc</option></select><input id="bcTitle" placeholder="Title" style="flex:1;min-width:160px;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:8px 10px;font:inherit;font-size:13px"></div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><select id="bcCat" style="background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:8px 10px;font:inherit;font-size:13px"><option>ISO — buyer looking</option><option>Pre-market list</option><option>Announcement</option><option>Misc</option></select><input id="bcTitle" placeholder="Title" style="flex:1;min-width:160px;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:8px 10px;font:inherit;font-size:13px"></div>'
     +'<textarea id="bcBody" rows="2" placeholder="Post to the whole network…" style="width:100%;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:9px;padding:9px 10px;font:inherit;font-size:14px"></textarea>'
     +'<div style="display:flex;align-items:center;margin-top:8px"><span class="msg" id="bcMsg" style="margin-right:auto"></span><button class="btn acc sm" onclick="postBroadcast()">Post to board</button></div></div>'
     +posts+'</div></div>';
@@ -2522,14 +2555,15 @@ function open_(id){$(id).classList.add('on');document.body.classList.add('mlock'
 function close_(id){var m=$(id);if(m)m.classList.remove('on');if(!document.querySelector('.mbg.on'))document.body.classList.remove('mlock');}
 var EDIT_ID=null;
 function resetSubmitForm(){
-  ['sAddr','sSub','sPrice','sComm','sUnits','sCap','sNoi','sGross','sVac','sTax','sExp','sSf','sBeds','sBaths','sYb','sDesc'].forEach(function(id){var el=$(id);if(el)el.value='';});
-  if($('sHideAddr'))$('sHideAddr').checked=false;if($('sSoon'))$('sSoon').checked=false;
+  ['sAddr','sCity','sSub','sPrice','sUnits','sCap','sNoi','sGross','sVac','sTax','sExp','sSf','sBeds','sBaths','sYb','sDesc'].forEach(function(id){var el=$(id);if(el)el.value='';});
+  if($('sHideAddr'))$('sHideAddr').checked=false;if($('sSoon'))$('sSoon').checked=false;if($('sMlsAck'))$('sMlsAck').checked=false;
   if($('sType'))$('sType').value=(TYPES[0]||'');
   setDist('broad');setSoon(false);
-  SUBMIT_DOCS=[];SUBMIT_PHOTOS=[];SUBMIT_COORDS=null;SUBMIT_STATE='';
+  SUBMIT_DOCS=[];SUBMIT_PHOTOS=[];SUBMIT_COORDS=null;SUBMIT_STATE='MA';SUBMIT_SELLER_FORM=null;
+  stampBrokerage();updateMlsZoneHint();renderSellerForm();
 }
 function openSubmit(){EDIT_ID=null;resetSubmitForm();if($('sTitle'))$('sTitle').textContent='Post a deal';if($('sBtn'))$('sBtn').textContent='Post deal';if($('sMsg'))$('sMsg').textContent='';
-  fillFilters();attachMoney(['sPrice','sNoi','sGross','sVac','sTax','sExp','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();open_('mSubmit');}
+  fillFilters();attachMoney(['sPrice','sNoi','sGross','sVac','sTax','sExp','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();renderSellerForm();stampBrokerage();open_('mSubmit');}
 // Edit an existing deal — same form, prefilled, saved back to the same id.
 function openEdit(id){
   var d=LISTINGS.find(function(x){return x.id===id;});if(!d)return;
@@ -2537,28 +2571,31 @@ function openEdit(id){
   EDIT_ID=id;
   fillFilters();
   var set=function(elId,v){var el=$(elId);if(el)el.value=(v==null?'':v);};
-  set('sAddr',d.addr);set('sSub',d.submarket||d.area);set('sType',d.type||'');
+  set('sAddr',d.addr);set('sCity',d.city||'');set('sSub',d.submarket||d.area);set('sType',d.type||'');
   if($('sBasis')&&(d.priceBasis==='rent_mo'||d.priceBasis==='rent_psf'))$('sBasis').value=d.priceBasis;
-  set('sPrice',fmtMoneyStr(d.price));set('sComm',d.commission);
+  set('sPrice',fmtMoneyStr(d.price));
   set('sUnits',d.units);set('sCap',d.cap);set('sNoi',fmtMoneyStr(d.noi));
   set('sGross',fmtMoneyStr(d.gross));set('sVac',fmtMoneyStr(d.vac));set('sTax',fmtMoneyStr(d.tax));set('sExp',fmtMoneyStr(d.exp));
   set('sSf',fmtMoneyStr(d.sf));set('sBeds',d.beds);set('sBaths',d.baths);set('sYb',d.yb);
-  set('sDesc',d.desc);setDist(d.dist||'broad');setSoon(!!d.soon);
+  set('sDesc',d.desc);setDist((d.dist==='pocket'?'matched':(d.dist||'broad')));setSoon(!!d.soon);
   if($('sHideAddr'))$('sHideAddr').checked=!!d.hideAddress;if($('sSoon'))$('sSoon').checked=!!d.soon;
   SUBMIT_DOCS=Array.isArray(d.docs)?d.docs.slice():[];
   SUBMIT_PHOTOS=Array.isArray(d.photos)?d.photos.slice():[];
-  SUBMIT_COORDS=(d.lat&&d.lng)?{lat:d.lat,lng:d.lng}:null;SUBMIT_STATE=String(d.state||'').toUpperCase();
+  SUBMIT_COORDS=(d.lat&&d.lng)?{lat:d.lat,lng:d.lng}:null;SUBMIT_STATE='MA';SUBMIT_SELLER_FORM=null;
+  stampBrokerage();updateMlsZoneHint();if($('sMlsAck'))$('sMlsAck').checked=false;
   if($('sTitle'))$('sTitle').textContent='Edit deal';if($('sBtn'))$('sBtn').textContent='Save changes';if($('sMsg'))$('sMsg').textContent='';
-  attachMoney(['sPrice','sNoi','sGross','sVac','sTax','sExp','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();open_('mSubmit');
+  attachMoney(['sPrice','sNoi','sGross','sVac','sTax','sExp','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();renderSellerForm();open_('mSubmit');
 }
 function checkedVals(wrapId){var w=$(wrapId);if(!w)return [];return Array.prototype.slice.call(w.querySelectorAll('input:checked')).map(function(i){return i.value;});}
 function buildChecks(wrapId,opts,preSel){var w=$(wrapId);if(!w)return;var pre=String(preSel||'').toLowerCase();w.innerHTML=opts.map(function(o){var on=pre&&pre.indexOf(o.toLowerCase())>=0?' checked':'';return '<label class="ck" style="font-size:12.5px"><input type="checkbox" value="'+esc(o)+'"'+on+'>'+esc(o)+'</label>';}).join('');}
 function openBuyBox(){
-  if(!$('bName').value)$('bName').value=ME.name||'';
   buildChecks('bTypeChecks',TYPES,BUYBOX?BUYBOX.propType:'');
   buildChecks('bSubChecks',MARKETS.MA.regions.filter(function(r){return r.k!=='all';}).map(function(r){return r.name;}),BUYBOX?BUYBOX.markets:'');
-  attachMoney(['bMin','bMax']);
-  if(BUYBOX){$('bFirm').value=BUYBOX.contact||'';$('bMin').value=BUYBOX.minPrice?Number(String(BUYBOX.minPrice).replace(/[^0-9]/g,'')).toLocaleString('en-US'):'';$('bMax').value=BUYBOX.maxPrice?Number(String(BUYBOX.maxPrice).replace(/[^0-9]/g,'')).toLocaleString('en-US'):'';$('bNotes').value=BUYBOX.notes||'';}
+  if($('bBand'))$('bBand').value=(BUYBOX&&BUYBOX.priceBand)||'';
+  if($('bTimeline'))$('bTimeline').value=(BUYBOX&&BUYBOX.timeline)||'';
+  if($('bBeds'))$('bBeds').value=(BUYBOX&&BUYBOX.beds)||'';
+  if($('bBaths'))$('bBaths').value=(BUYBOX&&BUYBOX.baths)||'';
+  if($('bNotes'))$('bNotes').value=(BUYBOX&&BUYBOX.notes)||'';
   open_('mBuy');
 }
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){['mSubmit','mBuy','mDetail','mActivity','mIntro','mMsgs','mContact','mNotifs','mMarket','mBoard','mProfile','mNotifSet','mAdmin','mDirectory'].forEach(close_);mcClose();close_acct();close_nav();}});
@@ -2592,14 +2629,14 @@ function mcFromDeal(price){$('mcPrice').value=Math.round(num(price))||'';close_(
 
 /* ── guided tour ── */
 var TOUR=[
- {title:'Welcome to AXESS',body:'A private, invite-only network where Massachusetts agents move off-market deals — agent to agent. This 60-second tour shows you around; replay it anytime from the “?” in the top bar.'},
- {el:'#regionTabs',title:'Choose your market',body:'Browse deals by region across Massachusetts. New states are coming — you’ll see them queued on the right.',place:'bottom'},
+ {title:'Welcome to AXESS',body:'A private network where licensed Massachusetts agents share seller-directed, pre-market property — agent to agent. This 60-second tour shows you around; replay it anytime from the “?” in the top bar.'},
+ {el:'#regionTabs',title:'Choose your market',body:'Browse deals by region across Massachusetts.',place:'bottom'},
  {el:'#rail',title:'Filter the feed',body:'Narrow by property type, price, cap rate, units, and how the deal is being shared.',place:'right'},
  {el:'.rail .save',title:'Save a search & get alerted',body:'Turn any filter into a saved alert — the moment a matching deal posts, you hear about it first.',place:'right'},
  {el:'.sortbar',title:'Sort & search',body:'Sort by newest, price, or cap rate — or type a keyword to jump straight to it.',place:'bottom'},
  {el:'#grid .deal',title:'Open any deal',body:'Tap a card for the full numbers, the map, and documents. The exact address stays private until you request an intro.',place:'top'},
  {el:'#grid .deal',title:'Request an intro → deal room',body:'Ask the listing agent for an intro. When they approve, the address unlocks and a private “deal room” opens where you two share docs and talk — agent to agent, no lead forms.',place:'top'},
- {el:'.hero .btn.acc',title:'Post your own deal',body:'Add an off-market deal in about 60 seconds. Hide the exact address or show it on a map — your call. Posting is what unlocks the network for you.',place:'bottom'},
+ {el:'.hero .btn.acc',title:'Post your own deal',body:'Add a listing in about 60 seconds. Hide the exact address or show it on a map — your call. Upload the seller-signed Non-MLS or delayed-listing form before it goes live.',place:'bottom'},
  {el:'.hero .btn.ghost',title:'Post a client need',body:'Tell the network what your clients are hunting for and get matched to new deals automatically.',place:'bottom'},
  {el:'.nlink.ico[title="Alerts"]',title:'Alerts & messages',body:'The bell shows your match alerts. “Messages” is where you talk agent-to-agent about a deal.',place:'bottom'},
  {title:'You’re all set',body:'Post a deal, save a search, and start connecting. Need this again? Hit the “?” in the top bar anytime.'}
@@ -2636,9 +2673,6 @@ function maybeAutoTour(){if(_autoTourDone)return;_autoTourDone=true;if(window.in
 window.addEventListener('resize',function(){if($('tourWrap')&&$('tourWrap').classList.contains('on')&&TOURI>=0){var s=TOUR[TOURI],el=s.el?document.querySelector(s.el):null;if(el)tourPlace(el,s.place||'bottom');}});
 document.addEventListener('keydown',function(e){if($('tourWrap')&&$('tourWrap').classList.contains('on')){if(e.key==='Escape')endTour();else if(e.key==='ArrowRight')tourGo(1);else if(e.key==='ArrowLeft')tourGo(-1);}});
 
-/* market-bar "coming soon" city rotation */
-(function(){var el=$('soonCity2');if(!el)return;var c=['Hartford, CT','Portland, ME','Burlington, VT','New York, NY','Bridgeport, CT','Portsmouth, NH'],i=0;
-  setInterval(function(){i=(i+1)%c.length;el.textContent=c[i];el.classList.remove('city');void el.offsetWidth;el.classList.add('city');},2600);})();
 /* ── init ── */
 /* ── light / dark theme toggle ── */
 var THEME_MOON='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
@@ -2682,7 +2716,7 @@ function sendInvite(){
   <div class="modal" style="max-width:640px">
     <div class="mhead"><div><h3>Import inventory</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Owner only. Adds each row to the live feed under your account — it appends, it never overwrites what's already there.</div></div><button class="x" onclick="close_('mImport')">×</button></div>
     <div style="padding:16px 20px 20px">
-      <div style="font-size:12.5px;color:var(--mut);margin-bottom:8px">One JSON object per listing. Fields: <b>address, city, area, state, zip, price, propType, commissionPct, dist</b> (broad/private/pocket). Edit freely, then Add all.</div>
+      <div style="font-size:12.5px;color:var(--mut);margin-bottom:8px">One JSON object per listing. Fields: <b>address, city, area, state, zip, price, propType, dist</b> (broad/private/matched). Edit freely, then Add all. Live posts still need a seller-signed form and a Massachusetts city.</div>
       <textarea id="impJson" spellcheck="false" style="width:100%;height:230px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.5;border:1px solid var(--line2);border-radius:10px;padding:12px;background:var(--bg2);color:var(--tx);resize:vertical"></textarea>
       <div id="impMsg" style="font-size:13px;color:var(--mut);min-height:20px;margin:8px 0"></div>
       <div style="display:flex;gap:10px;align-items:center">
@@ -2694,7 +2728,7 @@ function sendInvite(){
 </div>
 
 <script>
-/* ── Owner bulk-import: John's real inventory (all Multifamily, 2% BBC). ──
+/* ── Owner bulk-import: inventory JSON. ──
    Appends through POST /api/pm/listing one at a time, so matching alerts,
    IDs, and reciprocity all behave exactly like a normal post. */
 // Import starter data is loaded on demand from the owner-only endpoint — never

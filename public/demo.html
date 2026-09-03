@@ -142,7 +142,7 @@ button{font:inherit;cursor:pointer}
   <span class="hidemob">Sample data — explore freely. Nothing here is real, and nothing you click sends anything.</span>
   <span class="sp"></span>
   <a class="ghost" onclick="startTour()" style="cursor:pointer">Take the tour</a>
-  <a class="cta" href="/#contact-req" onclick="goJoin(event)">Request access →</a>
+  <a class="cta" href="/#contact-req" onclick="goJoin(event)">Create account →</a>
 </div></div>
 
 <div class="nav"><div class="in">
@@ -152,23 +152,23 @@ button{font:inherit;cursor:pointer}
   </a>
   <div class="sp"></div>
   <button class="btn g sm" onclick="location.href='/'">Back to site</button>
-  <button class="btn p sm" onclick="goJoin()">Request access</button>
+  <button class="btn p sm" onclick="goJoin()">Create account</button>
 </div></div>
 
 <div class="wrap">
   <div class="head" id="tp-head">
-    <h1>Live off-market deals</h1>
-    <p>This is exactly what members see after they sign in — a private feed of deals moving agent-to-agent.</p>
+    <h1>Live pre-market deals</h1>
+    <p>This is exactly what members see after they sign in — a private feed of seller-directed listings, agent to agent.</p>
     <div class="stats">
       <div class="s"><div class="v a">6</div><div class="k">Live deals</div></div>
       <div class="s"><div class="v a">$14.8M</div><div class="k">Volume on the board</div></div>
-      <div class="s"><div class="v a">$318K</div><div class="k">Commission available</div></div>
+      <div class="s"><div class="v a">6</div><div class="k">Massachusetts towns</div></div>
       <div class="s"><div class="v">340</div><div class="k">Members &amp; growing</div></div>
     </div>
   </div>
 
   <div class="qa" id="tp-qa">
-    <div class="qa-tile" onclick="nudge('Posting a deal')"><div class="ic">🔑</div><div><h4>Post a deal</h4><p>Share an off-market property with the network.</p></div><div class="plus">＋</div></div>
+    <div class="qa-tile" onclick="nudge('Posting a deal')"><div class="ic">🔑</div><div><h4>Post a deal</h4><p>Share a seller-directed listing with the network.</p></div><div class="plus">＋</div></div>
     <div class="qa-tile" onclick="nudge('Posting a client need')"><div class="ic">🎯</div><div><h4>Post a client need</h4><p>Tell the network what your buyer is hunting for.</p></div><div class="plus">＋</div></div>
   </div>
 
@@ -181,7 +181,7 @@ button{font:inherit;cursor:pointer}
   <div class="grid" id="grid"></div>
 </div>
 
-<div class="foot">You're viewing the AXESS demo. <a onclick="goJoin()" style="cursor:pointer">Request access</a> to use it for real — or <a href="/">go back to the site</a>.</div>
+<div class="foot">You're viewing the AXESS demo. <a onclick="goJoin()" style="cursor:pointer">Create an account</a> to use it for real — or <a href="/">go back to the site</a>.</div>
 
 <!-- deal detail modal -->
 <div class="mbg" id="mbg" onclick="if(event.target===this)closeDeal()">
@@ -206,7 +206,7 @@ button{font:inherit;cursor:pointer}
 </div>
 
 <!-- nudge toast -->
-<div class="nudge" id="ndg"><div><b id="ndgT">Sign up to do this</b> <span id="ndgS"></span></div><a onclick="goJoin()" style="cursor:pointer">Request access</a></div>
+<div class="nudge" id="ndg"><div><b id="ndgT">Sign up to do this</b> <span id="ndgS"></span></div><a onclick="goJoin()" style="cursor:pointer">Create account</a></div>
 
 <!-- tour -->
 <div id="tw"><div id="tov"></div><div id="tring"></div>
@@ -219,12 +219,12 @@ button{font:inherit;cursor:pointer}
 var MARKETS=['All MA','Boston','North Shore','Merrimack Valley','South Shore','MetroWest','Worcester','Western MA'];
 var MARKET='All MA';
 var DEALS=[
- {type:'Multifamily',cat:'residential',mk:'Boston',title:'3-unit · South Boston',area:'Dorchester Heights',price:'$1,570,000',comm:'2% BBC',kpis:[['Units','3'],['Cap','5.4%'],['GRM','12.3']],broad:true,desc:'Turnkey triple-decker, all units renovated 2022. Gross income $127,800. Long-term tenants, below-market rents with upside.',agent:'M. Sullivan',firm:'Grove Property Group'},
- {type:'Single-family',cat:'residential',mk:'MetroWest',title:'Colonial · Newton',area:'West Newton Hill',price:'$2,250,000',comm:'2.5% BBC',kpis:[['Beds','5'],['Baths','3.5'],['SqFt','3,400']],broad:false,desc:'Pre-market colonial on a quarter-acre. Seller wants a quiet sale before spring. Updated kitchen, finished basement.',agent:'R. Chen',firm:'Citicore Properties'},
- {type:'Development site',cat:'commercial',mk:'Boston',title:'Approved 12-unit',area:'East Cambridge',price:'$3,900,000',comm:'2% BBC',kpis:[['Units','12'],['Zoning','Approved'],['Buildable','14,200sf']],broad:true,desc:'Fully permitted 12-unit development site. Shovel-ready. Rare approved parcel in a high-demand corridor.',agent:'D. Okafor',firm:'Summit Home Buyers'},
- {type:'Mixed-use',cat:'commercial',mk:'Worcester',title:'Retail + 6 apts',area:'Downtown Worcester',price:'$2,150,000',comm:'3% BBC',kpis:[['Units','6+2'],['Cap','7.1%'],['NOI','$152K']],broad:false,desc:'Corner mixed-use: two retail bays plus six apartments. Strong in-place income, value-add on the commercial side.',agent:'J. Alvarez',firm:'Grove Property Group'},
- {type:'Condo',cat:'residential',mk:'Boston',title:'2-bed · Seaport',area:'Seaport District',price:'$1,375,000',comm:'2.5% BBC',kpis:[['Beds','2'],['Baths','2'],['SqFt','1,180']],broad:false,desc:'High-floor Seaport condo with harbor views. Owner relocating, wants an off-market deal to avoid showings.',agent:'K. Patel',firm:'Citicore Properties'},
- {type:'Industrial',cat:'commercial',mk:'North Shore',title:'Warehouse · 22K sf',area:'Peabody',price:'$3,600,000',comm:'2% BBC',kpis:[['SqFt','22,000'],['Clear','24ft'],['Cap','6.5%']],broad:true,desc:'Single-tenant industrial, credit tenant, 5 years remaining on NNN lease. Clean environmental. Rare Route 128 access.',agent:'T. Byrne',firm:'Summit Home Buyers'}
+ {type:'Multifamily',cat:'residential',mk:'Boston',title:'3-unit · South Boston',area:'Dorchester Heights',price:'$1,570,000',kpis:[['Units','3'],['Cap','5.4%'],['GRM','12.3']],broad:true,desc:'Turnkey triple-decker, all units renovated 2022. Gross income $127,800. Long-term tenants, below-market rents with upside.',agent:'M. Sullivan',firm:'Licensed MA brokerage'},
+ {type:'Single-family',cat:'residential',mk:'MetroWest',title:'Colonial · Newton',area:'West Newton Hill',price:'$2,250,000',kpis:[['Beds','5'],['Baths','3.5'],['SqFt','3,400']],broad:false,desc:'Pre-market colonial on a quarter-acre. Seller wants a quiet sale before spring. Updated kitchen, finished basement.',agent:'R. Chen',firm:'Licensed MA brokerage'},
+ {type:'Development site',cat:'commercial',mk:'Boston',title:'Approved 12-unit',area:'East Cambridge',price:'$3,900,000',kpis:[['Units','12'],['Zoning','Approved'],['Buildable','14,200sf']],broad:true,desc:'Fully permitted 12-unit development site. Shovel-ready. Rare approved parcel in a high-demand corridor.',agent:'D. Okafor',firm:'Licensed MA brokerage'},
+ {type:'Mixed-use',cat:'commercial',mk:'Worcester',title:'Retail + 6 apts',area:'Downtown Worcester',price:'$2,150,000',kpis:[['Units','6+2'],['Cap','7.1%'],['NOI','$152K']],broad:false,desc:'Corner mixed-use: two retail bays plus six apartments. Strong in-place income, value-add on the commercial side.',agent:'J. Alvarez',firm:'Licensed MA brokerage'},
+ {type:'Condo',cat:'residential',mk:'Boston',title:'2-bed · Seaport',area:'Seaport District',price:'$1,375,000',kpis:[['Beds','2'],['Baths','2'],['SqFt','1,180']],broad:false,desc:'High-floor Seaport condo with harbor views. Owner relocating, wants a quiet sale to avoid showings.',agent:'K. Patel',firm:'Licensed MA brokerage'},
+ {type:'Industrial',cat:'commercial',mk:'North Shore',title:'Warehouse · 22K sf',area:'Peabody',price:'$3,600,000',kpis:[['SqFt','22,000'],['Clear','24ft'],['Cap','6.5%']],broad:true,desc:'Single-tenant industrial, credit tenant, 5 years remaining on NNN lease. Clean environmental. Rare Route 128 access.',agent:'T. Byrne',firm:'Licensed MA brokerage'}
 ];
 var CAT='all';
 function initials(n){return (n||'A').replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).map(function(w){return w[0];}).slice(0,2).join('').toUpperCase()||'A';}
@@ -241,34 +241,34 @@ function renderGrid(){
     return '<div class="deal" onclick="openDeal('+DEALS.indexOf(d)+')"'+(i===0?' id="tp-card"':'')+'>'
       +'<div class="cover"><span class="tico">'+typeIcon(d.type)+'</span>'
       +'<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.7" width="16" height="10.3" rx="2.4"/><path d="M8 10.7V7a4 4 0 0 1 8 0v3.7"/></svg>'
-      +'<div class="lktxt">Off-market · Address on request</div></div>'
+      +'<div class="lktxt">Pre-market · Address on request</div></div>'
       +'<div class="bd"><div class="top"><div class="type">'+d.type+'</div><div class="badges">'+bdgs+'</div></div>'
       +'<div class="s">'+d.title+'</div><div class="addr">📍 '+d.area+'</div>'
       +'<div class="desc">'+d.desc+'</div>'
       +'<div class="kpis">'+kp+'</div>'
-      +'<div class="foot"><div class="price">'+d.price+'</div><div class="comm">'+d.comm+'</div></div></div></div>';
+      +'<div class="foot"><div class="price">'+d.price+'</div></div></div></div>';
   }).join('');
 }
 function openDeal(i){var d=DEALS[i];document.getElementById('dType').textContent=d.type+' · '+d.mk;
   document.getElementById('dTitle').textContent=d.title;
-  document.getElementById('dKpis').innerHTML=d.kpis.concat([['Price',d.price],['Commission',d.comm],['Status','Off-market']]).slice(0,6).map(function(k){return '<div class="c"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+'</div></div>';}).join('');
+  document.getElementById('dKpis').innerHTML=d.kpis.concat([['Price',d.price],['Status','Pre-market']]).slice(0,6).map(function(k){return '<div class="c"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+'</div></div>';}).join('');
   document.getElementById('dDesc').textContent=d.desc;
   document.getElementById('dAgent').textContent=d.agent;document.getElementById('dAgentAv').textContent=initials(d.agent);
   document.getElementById('dAgentMeta').textContent=d.firm+' · Licensed MA agent';
   document.getElementById('mbg').classList.add('on');document.body.style.overflow='hidden';}
 function closeDeal(){document.getElementById('mbg').classList.remove('on');document.body.style.overflow='';}
 var ndgTimer;
-function nudge(what){var n=document.getElementById('ndg');document.getElementById('ndgT').textContent=what+' is a member feature.';document.getElementById('ndgS').textContent='Request access to do it for real.';n.classList.add('on');clearTimeout(ndgTimer);ndgTimer=setTimeout(function(){n.classList.remove('on');},4200);}
+function nudge(what){var n=document.getElementById('ndg');document.getElementById('ndgT').textContent=what+' is a member feature.';document.getElementById('ndgS').textContent='Create an account to do it for real.';n.classList.add('on');clearTimeout(ndgTimer);ndgTimer=setTimeout(function(){n.classList.remove('on');},4200);}
 function goJoin(e){if(e&&e.preventDefault)e.preventDefault();location.href='/?join=1';}
 
 /* ── guided tour ── */
 var STEPS=[
- {el:null,st:'Welcome',t:'Welcome to the AXESS demo',b:'AXESS is a private, invite-only network where licensed agents move off-market deals directly to each other. This 60-second tour shows how it works — all with sample data.'},
- {el:'tp-head',st:'The feed',t:'A live board of off-market deals',b:'Members see every live deal with the full numbers — price, commission, cap rate, units — but the exact address stays private until the listing agent approves an intro.'},
- {el:'tp-filters',st:'Find your lane',t:'Filter to what you actually work',b:'Switch between Residential and Commercial and pick your markets. In the real app you also save alerts, so you\'re only pinged about deals that fit your clients.'},
+ {el:null,st:'Welcome',t:'Welcome to the AXESS demo',b:'AXESS is a private network where licensed Massachusetts agents share seller-directed, pre-market property — agent to agent. This 60-second tour shows how it works — all with sample data.'},
+ {el:'tp-head',st:'The feed',t:'A live board of pre-market deals',b:'Members see every live deal with the full numbers — price, cap rate, units — but the exact address stays private until the listing agent approves an intro.'},
+ {el:'tp-filters',st:'Find your lane',t:'Filter to what you actually work',b:'Switch between Residential and Commercial and pick your Massachusetts markets. In the real app you also save alerts, so you\'re only pinged about deals that fit your clients.'},
  {el:'tp-card',st:'Open a deal',t:'Click any deal for the full picture',b:'Every card opens the numbers, the description, and the listing agent\'s verified profile. Go ahead — click a deal after the tour to explore.'},
- {el:'tp-qa',st:'Your turn',t:'Post a deal or a client need',b:'Members post an off-market property in about 60 seconds, or post what a buyer is hunting for and get matched automatically. Contributing is what unlocks the network.'},
- {el:null,st:'Ready',t:'That\'s the whole idea',b:'Post deals, control who sees the address, and connect agent-to-agent. Ready to use it for real? Request access — founding members join free.'}
+ {el:'tp-qa',st:'Your turn',t:'Post a deal or a client need',b:'Members post a listing in about 60 seconds, or post what a buyer is hunting for and get matched automatically. Contributing is what unlocks the network.'},
+ {el:null,st:'Ready',t:'That\'s the whole idea',b:'Post deals, control who sees the address, and connect agent-to-agent. Ready to use it for real? Create an account — founding members join free.'}
 ];
 var TI=-1;
 function startTour(){TI=-1;document.getElementById('tw').classList.add('on');tGo(1);}

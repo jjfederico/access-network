@@ -41,7 +41,7 @@ RULES
                    No logo over photography without a solid plate behind it.
   Do not           stretch, rotate, outline, add shadows, recolor, re-space the
                    letters, or set the subline in anything but Plex Mono.
-  Subline          "LEASING" left, "OFF-MARKET" right. Either half may be used
+  Subline          "A REAL ESTATE NETWORK". Either half may be used
                    alone when one product is the subject; keep the same
                    position it holds in the pair.
 

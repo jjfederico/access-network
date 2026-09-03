@@ -1,7 +1,7 @@
 {
-  "name": "AXESS — Off-Market Real Estate Network",
+  "name": "AXESS — Massachusetts agent network",
   "short_name": "AXESS",
-  "description": "Invite-only, agent-to-agent off-market real estate deals for licensed Massachusetts agents.",
+  "description": "Seller-directed, pre-market real estate for licensed Massachusetts agents. Agent to agent.",
   "start_url": "/app.html",
   "scope": "/",
   "display": "standalone",

@@ -11,6 +11,7 @@ const fs = require('fs');
 const https = require('https');
 const db = require('./db');
 const authMod = require('./auth');
+const compliance = require('./lib/compliance');
 const { pmLoad, pmSave, pmMutate } = db;
 
 // Tiny HTTPS GET → JSON (used to verify Google sign-in tokens; no extra deps).
@@ -117,11 +118,10 @@ const PM_KEYS = { listings: 'pm_listings', intros: 'pm_intros', buyboxes: 'pm_bu
 
 // Canonical licensure attestation — the exact text a member must accept at signup.
 // Stored verbatim on their profile with a timestamp + IP so acceptance is provable.
-const ATTEST_TEXT = "I certify that I am a currently licensed real estate agent in good standing, that my name, license number, brokerage, and all information I've provided are true and accurate, and that I am not misrepresenting my identity or licensure. I understand AXESS verifies licenses and that any false statement is grounds for immediate termination without refund.";
+const ATTEST_TEXT = "I confirm that I hold an active Massachusetts real estate salesperson or broker license in good standing, that I am affiliated with a licensed Massachusetts brokerage, and that my name, license number, brokerage, and all information I have provided are true and accurate. I understand that AXESS verifies my license against the public records maintained by the Massachusetts Division of Occupational Licensure, and that a false statement is a material breach of the Terms and grounds for termination.";
 // Confidentiality agreement accepted when requesting an intro — stored verbatim on the
-// intro record with a timestamp + IP so acceptance is provable. Protects the seller's
-// private distribution and reinforces that these deals are pre-market, not for public marketing.
-const CONF_TEXT = "I agree to keep this off-market deal and everything shared about it — including the address, financials, and any documents — strictly confidential. I will not market, forward, or disclose it to anyone without the listing agent's written permission, and I am requesting access on behalf of a genuine, ready buyer.";
+// intro record with a timestamp + IP so acceptance is provable.
+const CONF_TEXT = "I agree to keep this listing and everything shared about it — including the address, financials, and any documents — strictly confidential. I will not market, forward, or disclose it to anyone without the listing agent's written permission, and I am requesting access on behalf of a genuine, ready buyer.";
 
 // ── give-to-get reciprocity ─────────────────────────────────────────────────
 // The network only works if members contribute. A member keeps FULL access
@@ -181,7 +181,7 @@ function pmPublicView(l, full, gated) {
   const zip = String(l.zip || '');
   // Address/docs/photos/pin are visible only to entitled viewers (full), or on a
   // BROAD deal whose lister didn't hide the address and the viewer isn't gated.
-  // Private/Pocket deals NEVER expose the address here — it unlocks only after an
+  // Private/matched deals NEVER expose the address here — it unlocks only after an
   // approved intro (pmEntitled → /api/pm/reveal).
   const isBroad = (l.dist || 'broad') === 'broad';
   const showAddr = full || (isBroad && !l.hideAddress && !gated);
@@ -200,7 +200,8 @@ function pmPublicView(l, full, gated) {
     // sensitive pro-forma — withheld here and revealed only to entitled viewers
     // below. Cap rate stays public as the headline metric / filter.
     hasFinancials: !!(l.noi || l.grossIncome || l.expenses || l.vacancy || l.taxes),
-    commissionPct: l.commissionPct || '', commissionNotes: l.commissionNotes || '',
+    brokerage: l.brokerage || '',
+    hasSellerForm: !!(l.sellerForm && (l.sellerForm.key || l.sellerForm.url)),
     notes: l.notes || '', docCount: Array.isArray(l.docs) ? l.docs.length : 0, views: l.views || 0,
     photoCount: Array.isArray(l.photos) ? l.photos.length : 0,
     hideAddress: !!l.hideAddress, addressHidden: !showAddr, comingSoon: !!l.comingSoon,
@@ -313,7 +314,8 @@ const MARKET_REGIONS = {
 function pmNeedTok(email){ return require('crypto').createHmac('sha256', process.env.SESSION_SECRET || process.env.DIGEST_KEY || 'axess-needs').update(_lc(email || '')).digest('base64url').slice(0, 18); }
 function pmMatch(l, box) {
   if (!l || !box) return false;
-  const price = pmNum(l.price), minP = pmNum(box.minPrice), maxP = pmNum(box.maxPrice);
+  const band = compliance.priceBandById(box.priceBand);
+  const price = pmNum(l.price), minP = band ? band.min : pmNum(box.minPrice), maxP = band ? band.max : pmNum(box.maxPrice);
   if (minP && price && price < minP) return false;
   if (maxP && price && price > maxP) return false;
   const units = pmNum(l.units), minU = pmNum(box.minUnits), maxU = pmNum(box.maxUnits);
@@ -377,8 +379,8 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
     const rows = listings
       .filter(l => l && (((l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed') || mine(l) || isOwner))
       .filter(l => !isExpired(l) || mine(l) || isOwner)
-      // Pocket deals stay out of the general feed for everyone but the owner/admin.
-      .filter(l => (l.dist || 'broad') !== 'pocket' || mine(l) || isOwner)
+      // Matched-only deals stay out of the general feed for everyone but the owner/admin.
+      .filter(l => ((l.dist || 'broad') !== 'pocket' && (l.dist || 'broad') !== 'matched') || mine(l) || isOwner)
       .map(l => attachOwner(pmPublicView(l, entitled(l), gated && !mine(l)), l.owner))
       .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
     // Server-side give-to-get: a member who has never contributed (ignoring the
@@ -388,13 +390,11 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
     if (mustPost) {
       const _n = v => { const x = Number(String(v == null ? '' : v).replace(/[^0-9.]/g, '')); return isNaN(x) ? 0 : x; };
       const subs = {}; rows.forEach(r => { if (r && r.submarket) subs[r.submarket] = 1; });
-      const comms = rows.map(r => _n(r && r.commission)).filter(x => x > 0);
       return res.json({
         ok: true, listings: [], gated: true,
         gatedCount: rows.length,
         gatedValue: rows.reduce((a, r) => a + _n(r && r.price), 0),
         gatedSubmarkets: Object.keys(subs).length,
-        gatedAvgComm: comms.length ? (comms.reduce((a, b) => a + b, 0) / comms.length) : 0,
         me: { email: req.user.email, role: req.user.role, focus: meProf.focus || '', reciprocity: recip }
       });
     }
@@ -434,19 +434,25 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
       ownerName: S(b.ownerName, 80),
       status: (b.status === 'off' ? 'off' : b.status === 'mls' ? 'mls' : 'active'),
       address: S(b.address, 200), city: S(b.city, 80), area: S(b.area, 80),
-      state: S(b.state, 40), zip: S(b.zip, 20), hideAddress: !!b.hideAddress,
+      state: 'MA', zip: S(b.zip, 20), hideAddress: !!b.hideAddress,
       propType: S(b.propType, 60),
-      dist: (['broad', 'private', 'pocket'].indexOf(b.dist) >= 0 ? b.dist : 'broad'),
+      dist: (['broad', 'private', 'matched'].indexOf(b.dist) >= 0 ? b.dist : (b.dist === 'pocket' ? 'matched' : 'broad')),
       units: S(b.units, 20), sqft: S(b.sqft, 20),
       beds: S(b.beds, 20), baths: S(b.baths, 20), yearBuilt: S(b.yearBuilt, 12),
       price: S(b.price, 24), noi: S(b.noi, 24), capRate: S(b.capRate, 16),
       lat: S(b.lat, 24), lng: S(b.lng, 24),
       grossIncome: S(b.grossIncome, 24), expenses: S(b.expenses, 24),
       vacancy: S(b.vacancy, 24), taxes: S(b.taxes, 24),
-      commissionPct: S(b.commissionPct, 16), commissionNotes: S(b.commissionNotes, 300),
       notes: S(b.notes, 3000), comingSoon: b.comingSoon === true, priceBasis: (['rent_mo','rent_psf','sale'].indexOf(String(b.priceBasis)) >= 0 ? String(b.priceBasis) : 'sale'), docs: docsIn, photos: photosIn
     };
-    // A Private/Pocket deal must never expose its address, regardless of the
+    if (b.state && !compliance.isMassachusettsState(b.state))
+      return res.status(400).json({ ok: false, error: 'ma_only', message: 'AXESS listings must be in Massachusetts.' });
+    const hit = compliance.compensationHit(fields.notes);
+    if (hit) return res.status(400).json({ ok: false, error: 'compensation_language', message: 'Listing descriptions cannot mention commissions, buyer-broker compensation, referral fees, or finder’s fees. Remove that language and try again.' });
+    const profsForStamp = await pmLoad('pm_profiles');
+    const meProfStamp = profsForStamp.find(p => p && _lc(p.email) === pmEmail(req.user)) || {};
+    fields.brokerage = String(meProfStamp.brokerage || '').trim().slice(0, 120);
+    // A matched/private deal must never expose its address, regardless of the
     // hide-address checkbox — force it hidden at write time.
     if ((fields.dist || 'broad') !== 'broad') fields.hideAddress = true;
     if (!id && !pmNum(fields.price)) return res.status(400).json({ ok: false, error: 'no_price', message: 'Add an asking price.' });
@@ -468,11 +474,40 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
       if (!('lat' in b)) rec.lat = cur.lat || '';
       if (!('lng' in b)) rec.lng = cur.lng || '';
       if (!('dist' in b)) rec.dist = cur.dist || 'broad';
+      if (!('city' in b)) rec.city = cur.city || '';
+      if (!('area' in b)) rec.area = cur.area || '';
+      rec.brokerage = fields.brokerage || cur.brokerage || '';
+      rec.commissionPct = ''; rec.commissionNotes = '';
       if ((rec.dist || 'broad') !== 'broad') rec.hideAddress = true;
       listings[idx] = rec;
     } else {
       rec = Object.assign({ id: pmId('L'), owner: req.user.email, createdAt: now, updatedAt: now, expiresAt: in30, views: 0, featured: false }, fields);
       listings.push(rec); isNew = true;
+    }
+    const goingLive = (rec.status || 'active') === 'active';
+    if (goingLive) {
+      if (!String(rec.city || '').trim())
+        return res.status(400).json({ ok: false, error: 'city_required', message: 'Add the Massachusetts city before this listing can go live.' });
+      if (!String(rec.brokerage || '').trim())
+        return res.status(400).json({ ok: false, error: 'brokerage_required', message: 'Your profile must list your licensed Massachusetts brokerage before you can post.' });
+      const incomingForm = (b.sellerForm && typeof b.sellerForm === 'object') ? b.sellerForm : rec.sellerForm;
+      if (compliance.sellerFormOk(incomingForm)) {
+        rec.sellerForm = {
+          name: S(incomingForm.name, 160),
+          key: cleanKey(incomingForm.key),
+          url: incomingForm.key ? '' : pmSafeUrl(S(incomingForm.url, 900)),
+          uploadedAt: incomingForm.uploadedAt || now
+        };
+      } else if (!compliance.sellerFormOk(rec.sellerForm)) {
+        return res.status(400).json({ ok: false, error: 'seller_form_required', message: 'Upload the seller-signed Non-MLS or delayed-listing form before this listing can go live.' });
+      }
+      const zone = compliance.mlsZoneFor(rec.city, rec.area, rec.address);
+      if (zone) {
+        if (b.mlsZoneAck !== true && !rec.mlsZoneAckAt)
+          return res.status(400).json({ ok: false, error: 'mls_zone_ack_required', message: compliance.MLS_ZONE_WARNING });
+        rec.mlsZone = zone;
+        rec.mlsZoneAckAt = rec.mlsZoneAckAt || now;
+      }
     }
     await pmSave(PM_KEYS.listings, listings);
     if (isNew && rec.status !== 'off') {
@@ -693,11 +728,23 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
     const boxes = await pmLoad(PM_KEYS.buyboxes);
     const email = pmEmail(req.user);
     const now = new Date().toISOString();
-    const fields = { markets: S(b.markets, 200), propType: S(b.propType, 80), minPrice: S(b.minPrice, 24), maxPrice: S(b.maxPrice, 24), notes: S(b.notes, 1500), contact: S(b.contact || req.user.email, 120) };
+    if (compliance.motivatedHit(b.notes))
+      return res.status(400).json({ ok: false, error: 'no_motivated', message: 'Client-need notes cannot use the word “motivated.” Describe the search without that language.' });
+    const priceBand = compliance.normalizePriceBand(b.priceBand);
+    if (b.priceBand && !priceBand) return res.status(400).json({ ok: false, error: 'bad_price_band', message: 'Choose a price band — not an exact maximum.' });
+    const band = compliance.priceBandById(priceBand);
+    const fields = {
+      markets: S(b.markets, 200), propType: S(b.propType, 80),
+      priceBand,
+      minPrice: band ? String(band.min || '') : '',
+      maxPrice: band ? String(band.max || '') : '',
+      beds: S(b.beds, 20), baths: S(b.baths, 20),
+      timeline: compliance.normalizeTimeline(b.timeline),
+      notes: S(b.notes, 1500)
+    };
     ['minUnits', 'maxUnits', 'minCap'].forEach(k => { if (k in b) fields[k] = S(b[k], 12); });
-    // A buy box needs at least one real criterion, or it matches (and spams) every deal.
-    if (!fields.markets && !fields.propType && !pmNum(fields.minPrice) && !pmNum(fields.maxPrice) && !pmNum(fields.minUnits) && !pmNum(fields.maxUnits) && !pmNum(fields.minCap))
-      return res.status(400).json({ ok: false, error: 'empty_box', message: 'Add at least a price range, property type, or market.' });
+    if (!fields.markets && !fields.propType && !fields.priceBand && !pmNum(fields.minUnits) && !pmNum(fields.maxUnits) && !pmNum(fields.minCap) && !fields.beds && !fields.timeline)
+      return res.status(400).json({ ok: false, error: 'empty_box', message: 'Add at least a town/area, property type, price band, or timeline.' });
     const upd = await pmMutate(PM_KEYS.buyboxes, arr => {
       const idx = arr.findIndex(x => x && _lc(x.owner) === email);
       let rec, isNew = false;
@@ -727,17 +774,24 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
 
 // ── Client-needs board: every member's live client need, visible to the network ─
 // so a listing agent can see live demand and reach out with a matching deal.
-// Contact is mediated — name + firm shown, email hidden; messages route by token.
+// Board is anonymous — no name, firm, or exact price. Messages route by token.
 app.get('/api/pm/needs', ensureAuth, pmGate, async (req, res) => {
   try {
     if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
     const [boxes, profs] = await Promise.all([pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles')]);
     const me = pmEmail(req.user);
     const pby = {}; profs.forEach(p => { if (p && p.email) pby[_lc(p.email)] = p; });
-    const needs = boxes.filter(Boolean).map(bx => { const p = pby[_lc(bx.owner)] || {};
-      return { tok: pmNeedTok(bx.owner), mine: _lc(bx.owner) === me, ownerName: p.name || bx.ownerName || 'A member', firm: p.brokerage || '', verified: !!p.verified,
-        markets: bx.markets || '', propType: bx.propType || '', minPrice: bx.minPrice || '', maxPrice: bx.maxPrice || '', minUnits: bx.minUnits || '', maxUnits: bx.maxUnits || '', minCap: bx.minCap || '', notes: bx.notes || '', at: bx.updatedAt || bx.createdAt || '' }; })
-      .filter(n => n.markets || n.propType || pmNum(n.minPrice) || pmNum(n.maxPrice) || (n.notes || '').trim())
+    const needs = boxes.filter(Boolean).map(bx => {
+      const band = compliance.priceBandById(bx.priceBand);
+      return {
+        tok: pmNeedTok(bx.owner), mine: _lc(bx.owner) === me,
+        markets: bx.markets || '', propType: bx.propType || '',
+        priceBand: (band && band.id) || '', priceBandLabel: (band && band.label) || '',
+        beds: bx.beds || '', baths: bx.baths || '',
+        timeline: bx.timeline || '', timelineLabel: compliance.NEED_TIMELINE_LABELS[bx.timeline] || '',
+        notes: bx.notes || '', at: bx.updatedAt || bx.createdAt || ''
+      }; })
+      .filter(n => n.markets || n.propType || n.priceBand || n.beds || n.timeline || (n.notes || '').trim())
       .sort((a, b) => String(b.at).localeCompare(String(a.at)));
     res.json({ ok: true, needs });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
@@ -859,11 +913,10 @@ app.get('/api/pm/market', ensureAuth, pmGate, async (req, res) => {
     const live = listings.filter(_liveStatus);
     const off = listings.filter(l => l && !l.sample && (l.status || 'active') === 'off');
     const val = live.reduce((a, l) => a + pmNum(l.price), 0);
-    const comms = live.map(l => pmNum(l.commissionPct)).filter(x => x > 0);
     const caps = live.map(l => pmNum(l.capRate)).filter(x => x > 0);
     const areas = {}; live.forEach(l => { const a = l.area || l.city || '—'; areas[a] = (areas[a] || 0) + 1; });
     const recent = live.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 6).map(l => ({ id: l.id, area: l.area || l.city || '', propType: l.propType || '', price: l.price || '', createdAt: l.createdAt || '' }));
-    res.json({ ok: true, market: { liveDeals: live.length, offMarket: off.length, totalValue: val, buyboxes: boxes.length, avgCommission: comms.length ? (comms.reduce((a, b) => a + b, 0) / comms.length) : 0, avgCap: caps.length ? (caps.reduce((a, b) => a + b, 0) / caps.length) : 0, byArea: areas, recent } });
+    res.json({ ok: true, market: { liveDeals: live.length, withdrawn: off.length, totalValue: val, buyboxes: boxes.length, avgCap: caps.length ? (caps.reduce((a, b) => a + b, 0) / caps.length) : 0, byArea: areas, recent } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.get('/api/pm/broadcasts', ensureAuth, pmGate, async (req, res) => {
@@ -953,9 +1006,14 @@ app.post('/api/pm/profile', ensureAuth, pmGate, async (req, res) => {
     const idx = profs.findIndex(p => p && _lc(p.email) === email);
     let rec, isNew = false;
     if (idx >= 0) { rec = Object.assign({}, profs[idx], fields, { updatedAt: now }); profs[idx] = rec; }
-    else { const status = req.user.role === 'owner' ? 'approved' : 'pending'; rec = Object.assign({ email: req.user.email, status, createdAt: now, updatedAt: now }, fields); profs.push(rec); isNew = true; }
+    else { rec = Object.assign({ email: req.user.email, status: 'pending', createdAt: now, updatedAt: now }, fields); profs.push(rec); isNew = true; }
+    const banned = !!rec.deactivated || rec.status === 'rejected' || rec.status === 'denied';
+    if (!banned && (req.user.role === 'owner' || (rec.license && rec.brokerage))) {
+      rec.status = 'approved';
+      rec.approvedAt = rec.approvedAt || now;
+      rec.state = rec.state || 'MA';
+    }
     await pmSave('pm_profiles', profs);
-    if (isNew && rec.status === 'pending' && ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member awaiting approval', (rec.name || rec.email) + ' signed up.\nLicense: ' + (rec.license || '—') + '\nBrokerage: ' + (rec.brokerage || '—') + '\n\nApprove them in the AXESS admin panel.'); } catch (e) {} }
     res.json({ ok: true, profile: rec, approved: await pmApproved(req.user) });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -987,7 +1045,6 @@ function pmDigestLine(l) {
   if (pmNum(l.price)) facts.push(pmMoneyShort(l.price));
   if (pmNum(l.capRate)) facts.push(pmNum(l.capRate).toFixed(1) + '% cap');
   else if (pmNum(l.units)) facts.push(pmNum(l.units) + ' units');
-  if (pmNum(l.commissionPct)) facts.push(pmNum(l.commissionPct).toFixed(1) + '% BBC');
   return '• ' + bits.join(' ') + (facts.length ? ' — ' + facts.join(', ') : '');
 }
 function pmDigestFor(prof, listings, boxes, sinceMs) {
@@ -1205,8 +1262,8 @@ app.post('/api/pm/admin/approve', ensureAuth, pmGate, async (req, res) => {
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 // Deactivate / reactivate a member. Soft-only: flips a flag, never touches the
-// member's records (profile, listings, payout info, history all preserved). A
-// deactivated member fails pmGate and can no longer reach the app. Reversible.
+// member's records (profile, listings, history all preserved). Requires a stated
+// cause. A deactivated member fails pmGate and can no longer reach the app.
 app.post('/api/pm/admin/deactivate', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   const b = req.body || {};
@@ -1218,14 +1275,22 @@ app.post('/api/pm/admin/deactivate', ensureAuth, pmGate, async (req, res) => {
     const profs = await pmLoad('pm_profiles');
     const idx = profs.findIndex(p => p && _lc(p.email) === email);
     if (idx < 0) return res.status(404).json({ ok: false, error: 'not_found' });
+    if (on) {
+      if (!compliance.validTerminationCause(b.cause))
+        return res.status(400).json({ ok: false, error: 'stated_cause_required', message: 'Termination requires a stated cause: license lapse, non-payment, or material breach.' });
+      profs[idx].terminationCause = b.cause;
+      profs[idx].terminationNoticeAt = new Date().toISOString();
+    } else {
+      profs[idx].terminationCause = '';
+    }
     profs[idx].deactivated = on;
     profs[idx].deactivatedAt = on ? new Date().toISOString() : '';
     await pmSave('pm_profiles', profs);
-    res.json({ ok: true, email, deactivated: on });
+    res.json({ ok: true, email, deactivated: on, cause: on ? b.cause : '' });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 // ── Self-serve: a member cancels their own account. Access ends immediately,
-//    but every record is kept (payout/referral history, past deals). The owner
+//    but every record is kept (referral credits, past deals). The owner
 //    can restore access later from the admin panel. ──────────────────────────
 app.post('/api/pm/cancel', ensureAuth, pmGate, async (req, res) => {
   // Owner can't self-cancel — that would lock the whole network's admin out.
@@ -1289,9 +1354,10 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
   if (!name || !email || !/^[^@\s"'<>\\]+@[^@\s"'<>\\]+\.[^@\s"'<>\\]+$/.test(email)) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Name and a valid email are required.' });
   if (!phone || !license || !brokerage) return res.status(400).json({ ok: false, error: 'bad_request', message: 'Phone, license number, and brokerage are all required.' });
   // License sanity check: a real MA real-estate license is 4–12 digits. This blocks
-  // blanks, "n/a", and typo'd junk before it ever reaches the owner's approval queue.
-  // (MA has no public verification API, so the owner still confirms on the state
-  // registry via the one-click lookup — this just filters the obvious fakes.)
+  // blanks, "n/a", and typo'd junk. MA has no public verification API, so licenses
+  // are re-checked against DOL records as an operations process — this just filters
+  // the obvious fakes. Admission itself is automatic when the published criteria
+  // are met; it is not an owner waitlist.
   const _licDigits = license.replace(/\D/g, '');
   if (_licDigits.length < 4 || _licDigits.length > 12 || /^(n\/?a|none|test|unknown|pending)$/i.test(license.trim()))
     return res.status(400).json({ ok: false, error: 'bad_license', message: 'Enter your real Massachusetts license number as it appears on the state registry (digits only).' });
@@ -1302,31 +1368,26 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
     const now = new Date().toISOString();
     const attestation = { text: ATTEST_TEXT, accepted: true, at: now, ip };
     const refCode = S(b.ref, 12).toUpperCase().replace(/[^A-Z0-9]/g, '') || '';
-    // 1) Create/refresh the PROFILE — auto-approved on licensure attestation so the
-    //    member gets full access right away. The owner can remove anyone at any time
-    //    from the Members tab (and reserves that right in the Terms).
+    // Automatic admission: anyone who meets the published criteria (active MA
+    // license + licensed MA brokerage + Terms + attestation) is admitted. No
+    // owner discretionary review. Termination is only for stated cause.
     const profs = await pmLoad('pm_profiles');
     const pIdx = profs.findIndex(p => p && _lc(p.email) === email);
-    // Founding-member lock-in: the first PM_FOUNDING_CAP (100) approved members
-    // are stamped foundingRate=true — they'll get the $25/mo lifetime rate when
-    // billing is switched on. Everyone after pays the standard rate. memberNo is
-    // their join order. (Separate from the give-get `founder` exemption flag.)
-    const foundingCap = Number(process.env.PM_FOUNDING_CAP || 100);
     const priorMembers = profs.filter(p => p && !p.sample && p.status === 'approved' && !p.deactivated && _lc(p.email) !== email).length;
-    const isFounder = priorMembers < foundingCap;
+    const founding = compliance.foundingForJoinOrder(priorMembers);
     if (pIdx >= 0) {
       const cur = profs[pIdx];
-      // A removed/deactivated member cannot silently re-approve themselves by
-      // re-submitting the join form — keep them out and flag the owner.
+      // A member terminated for stated cause cannot silently re-admit themselves
+      // by re-submitting the join form.
       const banned = !!cur.deactivated || cur.status === 'rejected' || cur.status === 'denied';
-      profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: cur.state || 'MA', attestation, marketingOptIn: (b.marketingOptIn !== false), marketingConsentAt: (b.marketingOptIn !== false ? now : (cur.marketingConsentAt || '')), updatedAt: now, status: banned ? cur.status : (cur.status === 'approved' ? 'approved' : 'pending'), deactivated: banned ? cur.deactivated : false });
+      profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: 'MA', attestation, marketingOptIn: (b.marketingOptIn !== false), marketingConsentAt: (b.marketingOptIn !== false ? now : (cur.marketingConsentAt || '')), updatedAt: now, status: banned ? cur.status : 'approved', approvedAt: banned ? cur.approvedAt : (cur.approvedAt || now), deactivated: banned ? cur.deactivated : false });
       if (banned) {
         await pmSave('pm_profiles', profs);
         if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · removed member tried to rejoin', (name || email) + ' (' + email + ') re-submitted the join form but is deactivated/removed — kept out.'); } catch (e) {} }
         return res.json({ ok: true, linkSent: false });
       }
     } else {
-      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'pending', attestation, foundingRate: isFounder, memberNo: priorMembers + 1, marketingOptIn: b.marketingOptIn !== false, marketingConsentAt: now, createdAt: now, updatedAt: now });
+      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'approved', approvedAt: now, attestation, foundingRate: founding.founder, memberNo: founding.memberNo, marketingOptIn: b.marketingOptIn !== false, marketingConsentAt: now, createdAt: now, updatedAt: now });
     }
     // Credit the referrer (if any), now that the member is in.
     try {
@@ -1342,31 +1403,31 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
       }
     } catch (e) {}
     await pmSave('pm_profiles', profs);
-    // 2) Keep a PENDING request record — the owner approves it in the admin panel.
+    // 2) Log the join (record only — admission already happened above).
     const reqs = await pmLoad('pm_requests');
     if (!reqs.some(r => r && _lc(r.email) === email && r.status !== 'denied')) {
-      reqs.push({ id: pmId('R'), email, name, license, brokerage, phone, markets: S(b.markets, 200), focus: pmFocus(b.focus), note: S(b.note, 1000), referredBy: refCode, status: 'pending', auto: false, at: now, decidedAt: '' });
+      reqs.push({ id: pmId('R'), email, name, license, brokerage, phone, markets: S(b.markets, 200), focus: pmFocus(b.focus), note: S(b.note, 1000), referredBy: refCode, status: 'admitted', auto: true, at: now, decidedAt: now });
       await pmSave('pm_requests', reqs.length > 2000 ? reqs.slice(-2000) : reqs);
     }
     // 3) Send the sign-in link now so they can log in right away.
     let linkSent = false;
     try { linkSent = await authMod.sendMagicLink(email, BASE_URL || 'https://axessre.com'); } catch (e) {}
-    // Welcome email for brand-new members (separate from the sign-in link) — orients them on day one.
     if (pIdx < 0) {
       try {
-        await pmSendRich(email, 'AXESS · we got your request — verifying your license', {
-          heading: 'We got your request',
+        await pmSendRich(email, 'AXESS · you’re in', {
+          heading: 'Welcome to AXESS',
           paras: [
-            'Thanks for requesting access to AXESS, ' + _emailEsc(name || 'there') + '.',
-            'AXESS is a private agent-to-agent network for pre-market and seller-directed property in Massachusetts, and every member holds a verified Massachusetts real estate license. We’re verifying your license against state records now (usually within a day).',
-            'The moment you’re approved, you’ll get an email and full access to post deals, request intros, and message members.',
-            'Reply to this email anytime; it comes straight to me.'
+            'You’re a member, ' + _emailEsc(name || 'there') + '.',
+            'AXESS is a private agent-to-agent network for pre-market and seller-directed property in Massachusetts. Membership is open to every licensed Massachusetts agent who meets the published criteria.',
+            'We verify licenses against the public records maintained by the Massachusetts Division of Occupational Licensure at sign-up, periodically, and when a license is scheduled to expire. A false statement is a material breach of the Terms.',
+            'Sign in to post listings, post a client need, and message other members. Reply to this email anytime; it comes straight to me.'
           ],
-          sign: '— John, Founder · AXESS<br>info@axessre.com'
+          sign: '— John, Founder · AXESS<br>info@axessre.com',
+          cta: { label: 'Sign in to AXESS', url: PM_BASE + '/app.html' }
         });
       } catch (e) {}
     }
-    if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member awaiting your approval', name + ' requested access and is awaiting license verification.\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nVerify their license and approve (or reject) them in the AXESS admin panel → Requests tab.'); } catch (e) {} }
+    if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member joined', name + ' joined AXESS.\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nAdmitted automatically under the published criteria. Re-check the license on the state registry when you have a moment.'); } catch (e) {} }
     res.json({ ok: true, linkSent });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
@@ -1523,19 +1584,17 @@ app.get('/api/pm/stats', async (req, res) => {
     const now = new Date();
     const active = listings.filter(l => l && !l.sample && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !(l.expiresAt && new Date(l.expiresAt) < now));
     const volume = active.reduce((a, l) => a + pmNum(l.price), 0);
-    const commission = active.reduce((a, l) => a + pmNum(l.price) * pmNum(l.commissionPct) / 100, 0);
     const members = profs.filter(p => p && !p.sample && p.status === 'approved' && !p.deactivated).length;
-    const foundingCap = Number(process.env.PM_FOUNDING_CAP || 100);
-    res.json({ ok: true, stats: { liveDeals: active.length, volume: Math.round(volume), commission: Math.round(commission), members, clientNeeds: boxes.filter(b => b && !b.sample).length, dealsPosted: listings.filter(l => l && !l.sample).length, foundingCap, foundingLeft: Math.max(0, foundingCap - members), foundingFull: members >= foundingCap } });
+    const foundingCap = compliance.FOUNDING_CAP;
+    res.json({ ok: true, stats: { liveDeals: active.length, volume: Math.round(volume), members, clientNeeds: boxes.filter(b => b && !b.sample).length, dealsPosted: listings.filter(l => l && !l.sample).length, foundingCap, foundingLeft: Math.max(0, foundingCap - members), foundingFull: members >= foundingCap } });
   } catch (e) { res.json({ ok: false }); }
 });
 
 // ── public teaser cards for the landing page (no auth) ───────────────────────
-// Returns ONLY safe basics — asset type, general submarket/town, rounded price,
-// and buyer-broker commission — pulled from real, actively-listed, BROADLY
-// distributed deals. Never exposes address, owner, docs, photos, exact geo, or
-// notes. Pocket/private-distribution listings are excluded. Shuffled per request
-// so the cards rotate.
+// Returns ONLY safe basics — asset type, general submarket/town, rounded price —
+// pulled from real, actively-listed, BROADLY distributed deals. Never exposes
+// address, owner, docs, photos, exact geo, notes, or compensation. Private and
+// matched-only listings are excluded. Shuffled per request so the cards rotate.
 app.get('/api/pm/teaser', async (req, res) => {
   try {
     const listings = await pmLoad(PM_KEYS.listings);
@@ -1548,8 +1607,7 @@ app.get('/api/pm/teaser', async (req, res) => {
       .map(l => ({
         type: l.propType || '',
         area: l.area || l.city || '',
-        price: pmNum(l.price) ? pmMoneyShort(l.price) : '',
-        commission: pmNum(l.commissionPct) ? (Number(pmNum(l.commissionPct).toFixed(1)) + '% BBC') : ''
+        price: pmNum(l.price) ? pmMoneyShort(l.price) : ''
       }))
       .filter(x => x.type && x.area && x.price);
     for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = items[i]; items[i] = items[j]; items[j] = t; }
@@ -1868,20 +1926,20 @@ app.all('/api/pm/seed', ensureAuth, pmGate, async (req, res) => {
     ];
     PEOPLE.forEach(p => profs.push(Object.assign({ status: 'approved', createdAt: iso(now - 20 * D), sample: true }, p)));
     const DEALS = [
-      { o: 0, L: { propType: 'Multifamily', area: 'South Boston', city: 'Boston', zip: '02127', address: '42 Telegraph St', price: 1850000, commissionPct: 2.5, units: 6, capRate: 5.2, noi: 96200, sqft: 5400, yearBuilt: 1905, notes: 'Turn-key 6-unit, all 2-beds, separate utilities. Upside on 2 units at lease turn.', featured: true } },
-      { o: 0, L: { propType: 'Multifamily', area: 'Dorchester', city: 'Boston', zip: '02122', address: '18 Melville Ave', price: 2950000, commissionPct: 2.0, units: 12, capRate: 5.8, noi: 171100, sqft: 10200, yearBuilt: 1920, notes: '12-unit brick, mostly renovated. Value-add on 4 legacy tenants.' } },
-      { o: 1, L: { propType: 'Mixed-use', area: 'Cambridge', city: 'Cambridge', zip: '02139', address: '605 Massachusetts Ave', price: 3400000, commissionPct: 3.0, units: 8, capRate: 4.9, noi: 166600, sqft: 8900, notes: 'Retail + 6 apartments on Mass Ave. Below-market retail lease rolls next year.', featured: true } },
-      { o: 1, L: { propType: 'Development', area: 'Somerville', city: 'Somerville', zip: '02143', price: 1200000, commissionPct: 2.5, sqft: 9000, notes: 'Permitted for 14 units near Union Sq. Full plans available.', dist: 'private', hideAddress: true, address: '0 Prospect St (assemblage)' } },
-      { o: 2, L: { propType: 'Retail', area: 'Quincy', city: 'Quincy', zip: '02169', address: '380 Hancock St', price: 2100000, commissionPct: 2.5, capRate: 6.1, noi: 128100, sqft: 7200, notes: 'Single-tenant retail, corporate guarantee, 7 years remaining.' } },
-      { o: 4, L: { propType: 'Multifamily', area: 'Worcester', city: 'Worcester', zip: '01610', address: '22 Kingsbury St', price: 3600000, commissionPct: 2.0, units: 24, capRate: 6.5, noi: 234000, sqft: 19800, notes: '24-unit garden style. Assumable financing at 4.1%.' } },
-      { o: 3, L: { propType: 'Condo', area: 'Lynn', city: 'Lynn', zip: '01902', address: '55 Broad St', price: 1450000, commissionPct: 2.5, units: 5, sqft: 6100, notes: '5 condo-able units, master deed started. Conversion play.' } },
-      { o: 5, L: { propType: 'Industrial', area: 'Malden', city: 'Malden', zip: '02148', address: '120 Commercial St', price: 4200000, commissionPct: 2.0, capRate: 6.0, noi: 252000, sqft: 31000, notes: '31k SF flex/industrial, fully leased to 3 tenants.', featured: true } },
-      { o: 6, L: { propType: 'Single-family', area: 'Brockton', city: 'Brockton', zip: '02301', address: 'Scattered-site portfolio (7 homes)', price: 1100000, commissionPct: 2.5, units: 7, notes: '7-home SFR rental portfolio, all leased. Clean management.' } },
-      { o: 7, L: { propType: 'Mixed-use', area: 'Lowell', city: 'Lowell', zip: '01852', address: '145 Merrimack St', price: 2750000, commissionPct: 2.5, units: 10, capRate: 5.5, noi: 151300, sqft: 12400, notes: 'Downtown mixed-use, 2 retail + 8 residential.' } },
-      { o: 8, L: { propType: 'Multifamily', area: 'Revere', city: 'Revere', zip: '02151', price: 2400000, commissionPct: 2.5, units: 9, capRate: 5.6, noi: 134400, sqft: 8600, notes: '9-unit near the beach. Seller wants a quiet sale.', hideAddress: true, address: '(on file — hidden)' } },
-      { o: 8, L: { propType: 'Land', area: 'Framingham', city: 'Framingham', zip: '01702', address: '0 Waverley St', price: 900000, commissionPct: 3.0, sqft: 43560, notes: '1 acre, commercial zoning, curb cut in place.' } },
-      { o: 5, L: { propType: 'Multifamily', area: 'Medford', city: 'Medford', zip: '02155', address: '31 Salem St', price: 2650000, commissionPct: 2.25, units: 8, capRate: 5.4, noi: 143100, sqft: 7800, notes: '8-unit near Tufts. Consistent student demand.' } },
-      { o: 3, L: { propType: 'Retail', area: 'Salem', city: 'Salem', zip: '01970', address: '210 Essex St', price: 1950000, commissionPct: 2.5, capRate: 6.2, noi: 120900, sqft: 5600, notes: 'Downtown Salem retail, strong foot traffic.' } }
+      { o: 0, L: { propType: 'Multifamily', area: 'South Boston', city: 'Boston', zip: '02127', address: '42 Telegraph St', price: 1850000, units: 6, capRate: 5.2, noi: 96200, sqft: 5400, yearBuilt: 1905, notes: 'Turn-key 6-unit, all 2-beds, separate utilities. Upside on 2 units at lease turn.', featured: true } },
+      { o: 0, L: { propType: 'Multifamily', area: 'Dorchester', city: 'Boston', zip: '02122', address: '18 Melville Ave', price: 2950000, units: 12, capRate: 5.8, noi: 171100, sqft: 10200, yearBuilt: 1920, notes: '12-unit brick, mostly renovated. Value-add on 4 legacy tenants.' } },
+      { o: 1, L: { propType: 'Mixed-use', area: 'Cambridge', city: 'Cambridge', zip: '02139', address: '605 Massachusetts Ave', price: 3400000, units: 8, capRate: 4.9, noi: 166600, sqft: 8900, notes: 'Retail + 6 apartments on Mass Ave. Below-market retail lease rolls next year.', featured: true } },
+      { o: 1, L: { propType: 'Development', area: 'Somerville', city: 'Somerville', zip: '02143', price: 1200000, sqft: 9000, notes: 'Permitted for 14 units near Union Sq. Full plans available.', dist: 'private', hideAddress: true, address: '0 Prospect St (assemblage)' } },
+      { o: 2, L: { propType: 'Retail', area: 'Quincy', city: 'Quincy', zip: '02169', address: '380 Hancock St', price: 2100000, capRate: 6.1, noi: 128100, sqft: 7200, notes: 'Single-tenant retail, corporate guarantee, 7 years remaining.' } },
+      { o: 4, L: { propType: 'Multifamily', area: 'Worcester', city: 'Worcester', zip: '01610', address: '22 Kingsbury St', price: 3600000, units: 24, capRate: 6.5, noi: 234000, sqft: 19800, notes: '24-unit garden style. Assumable financing at 4.1%.' } },
+      { o: 3, L: { propType: 'Condo', area: 'Lynn', city: 'Lynn', zip: '01902', address: '55 Broad St', price: 1450000, units: 5, sqft: 6100, notes: '5 condo-able units, master deed started. Conversion play.' } },
+      { o: 5, L: { propType: 'Industrial', area: 'Malden', city: 'Malden', zip: '02148', address: '120 Commercial St', price: 4200000, capRate: 6.0, noi: 252000, sqft: 31000, notes: '31k SF flex/industrial, fully leased to 3 tenants.', featured: true } },
+      { o: 6, L: { propType: 'Single-family', area: 'Brockton', city: 'Brockton', zip: '02301', address: 'Scattered-site portfolio (7 homes)', price: 1100000, units: 7, notes: '7-home SFR rental portfolio, all leased. Clean management.' } },
+      { o: 7, L: { propType: 'Mixed-use', area: 'Lowell', city: 'Lowell', zip: '01852', address: '145 Merrimack St', price: 2750000, units: 10, capRate: 5.5, noi: 151300, sqft: 12400, notes: 'Downtown mixed-use, 2 retail + 8 residential.' } },
+      { o: 8, L: { propType: 'Multifamily', area: 'Revere', city: 'Revere', zip: '02151', price: 2400000, units: 9, capRate: 5.6, noi: 134400, sqft: 8600, notes: '9-unit near the beach. Seller wants a quiet sale.', hideAddress: true, address: '(on file — hidden)' } },
+      { o: 8, L: { propType: 'Land', area: 'Framingham', city: 'Framingham', zip: '01702', address: '0 Waverley St', price: 900000, sqft: 43560, notes: '1 acre, commercial zoning, curb cut in place.' } },
+      { o: 5, L: { propType: 'Multifamily', area: 'Medford', city: 'Medford', zip: '02155', address: '31 Salem St', price: 2650000, units: 8, capRate: 5.4, noi: 143100, sqft: 7800, notes: '8-unit near Tufts. Consistent student demand.' } },
+      { o: 3, L: { propType: 'Retail', area: 'Salem', city: 'Salem', zip: '01970', address: '210 Essex St', price: 1950000, capRate: 6.2, noi: 120900, sqft: 5600, notes: 'Downtown Salem retail, strong foot traffic.' } }
     ];
     DEALS.forEach((d, i) => { const p = PEOPLE[d.o]; listings.push(Object.assign({ id: 'SAMPLE-' + (i + 1), owner: p.email, ownerName: p.name, status: 'active', dist: 'broad', state: 'MA', docs: [], views: (7 * i) % 40, createdAt: iso(now - (i + 1) * 2 * D), updatedAt: iso(now - i * D), expiresAt: iso(now + (26 - (i % 12)) * D), sample: true }, d.L)); });
     const BOXES = [
@@ -2052,7 +2110,7 @@ app.get(['/', '/index.html'], serveLanding);
 // Google's tokeninfo endpoint, confirm the audience is our OAuth client and the
 // email is verified, then start the same session the magic link would. Existing
 // members sign in instantly; anyone without a profile still passes the gate as a
-// signed-in guest and is routed to Request access. No password stored, ever.
+// signed-in guest and is routed to Create account. No password stored, ever.
 app.post('/auth/google', async (req, res) => {
   const cred = String((req.body || {}).credential || '');
   const CID = process.env.GOOGLE_CLIENT_ID || '';
