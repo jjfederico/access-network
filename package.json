@@ -1,12 +1,13 @@
 {
   "name": "access-network",
   "version": "1.0.0",
-  "description": "ACCESS — invite-only, agent-to-agent off-market investment deal network (standalone).",
+  "description": "AXESS — Massachusetts-only licensed-agent network for seller-directed, pre-market property. Flat subscription.",
   "main": "server.js",
   "type": "commonjs",
   "engines": { "node": ">=18" },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node test/compliance.test.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.658.0",
