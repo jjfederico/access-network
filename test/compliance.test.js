@@ -69,8 +69,12 @@ assert.ok(!c.licenseFormatOk('12'));
 
 const ok = c.admissionCriteria({ license: '9012345', brokerage: 'Acme Realty', state: 'MA', attest: true });
 assert.strictEqual(ok.met, true);
-assert.strictEqual(ok.checks.subscription, 'launch_period_free');
-assert.strictEqual(c.admissionCriteria({ license: '9012345', brokerage: 'Acme', state: 'MA', attest: true, billingOn: true }).checks.subscription, 'published_rate_due');
+assert.strictEqual(ok.checks.subscription, 'free_trial_then_published_rate');
+
+assert.strictEqual(c.TRIAL_DAYS, 14);
+assert.strictEqual(c.trialEndsAt('2026-10-01T00:00:00Z', ''), '');
+assert.strictEqual(c.trialEndsAt('2026-10-01T00:00:00Z', '2026-11-01T00:00:00Z'), '2026-11-15T00:00:00.000Z');
+assert.strictEqual(c.trialEndsAt('2026-11-10T00:00:00Z', '2026-11-01T00:00:00Z'), '2026-11-24T00:00:00.000Z');
 assert.strictEqual(c.admissionCriteria({ license: '9012345', brokerage: 'Acme', state: 'NH', attest: true }).met, false);
 assert.strictEqual(c.admissionCriteria({ license: '9012345', brokerage: '', state: 'MA', attest: true }).met, false);
 assert.strictEqual(c.admissionCriteria({ license: '9012345', brokerage: 'Acme', state: 'MA', attest: false }).met, false);
