@@ -310,8 +310,8 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 .rf input:focus,.rf textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(10,61,143,.12)}
 .rf label .req{color:var(--acc)}
 .foot .links a:hover{color:var(--acc)}
-/* ── pricing tiers: active Founding + crossed-out Annual / 2-Year ── */
-.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:1020px;margin:0 auto;align-items:stretch}
+/* ── pricing: one flat membership plan ── */
+.plans{display:grid;grid-template-columns:1fr;gap:18px;max-width:440px;margin:0 auto;align-items:stretch}
 .plans .price{max-width:none;margin:0;width:auto;box-shadow:0 0 0 2px var(--acc),var(--shadow2)}
 .plans .price .btn.p{background:#fff;color:var(--ink)}
 .plan{background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px;display:flex;flex-direction:column;position:relative}
@@ -428,33 +428,6 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
       <button class="btn p big" style="width:100%;justify-content:center" onclick="openReq()">Create account — free</button>
     </div>
 
-    <div class="plan">
-      <span class="flag">After launch</span>
-      <div class="lab">Annual</div>
-      <div class="amt">$500<small>/year</small></div>
-      <div class="permo">≈ $42/mo · 2 months free</div>
-      <ul>
-        <li><b>✓</b> Everything in membership</li>
-        <li><b>✓</b> Save vs. paying monthly</li>
-        <li><b>✓</b> Priority support</li>
-        <li><b>✓</b> Locked-in annual rate</li>
-      </ul>
-      <div class="lockbtn">Coming after launch</div>
-    </div>
-
-    <div class="plan">
-      <span class="flag">After launch</span>
-      <div class="lab">2-Year</div>
-      <div class="amt">$840<small>/2 years</small></div>
-      <div class="permo">≈ $35/mo · save 30%</div>
-      <ul>
-        <li><b>✓</b> Everything in membership</li>
-        <li><b>✓</b> Our lowest monthly rate</li>
-        <li><b>✓</b> Priority support</li>
-        <li><b>✓</b> Rate locked for 2 years</li>
-      </ul>
-      <div class="lockbtn">Coming after launch</div>
-    </div>
   </div>
 </div></section>
 
