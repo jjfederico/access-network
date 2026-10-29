@@ -618,8 +618,12 @@ fetch('/api/pm/teaser',{cache:'no-store'}).then(function(r){return r.json();}).t
     if(!s.liveDeals && !s.members && !s.dealsPosted) return;
     document.querySelectorAll('#stats [data-stat]').forEach(function(el){
       var key=el.getAttribute('data-stat'),fmt=el.getAttribute('data-fmt');
-      var to=Number(s[key]||0), from=(LAST[key]==null?0:Number(LAST[key]));
-      animate(el,from,to,fmt); LAST[key]=to;
+      var to=Number(s[key]||0);
+      // First load shows the live number straight away (no count-up from 0 that
+      // reads as a wrong value mid-animation); later changes animate.
+      if(LAST[key]==null){el.textContent=(fmt==='money'?fmtMoney(to):fmtInt(to));}
+      else if(LAST[key]!==to){animate(el,Number(LAST[key]),to,fmt);}
+      LAST[key]=to;
     });
   }
   function foundingBanner(s){
