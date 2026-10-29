@@ -551,7 +551,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
       <a onclick="close_acct();openActivity()">My activity <span id="reqDot" style="display:none;color:var(--acc2)">●</span></a>
       <a onclick="close_acct();openProfile()">Profile</a>
       <a onclick="close_acct();openNotifSettings()">Notifications</a>
-      <a onclick="close_acct();openReferral()">Refer &amp; earn <span style="color:var(--gold)">◆</span></a>
+      <a onclick="close_acct();openReferral()">Share AXESS <span style="color:var(--gold)">◆</span></a>
       <a id="adminLink" style="display:none;color:var(--gold)" onclick="close_acct();openAdmin()">Admin <span id="adminDot" style="display:none"></span></a>
       <a id="inviteLink" style="display:none;color:var(--acc2)" onclick="close_acct();openInvite()">✉ Send a sign-up link</a>
       <a id="importLink" style="display:none;color:var(--gold)" onclick="close_acct();openImport()">＋ Import inventory</a>
@@ -1097,7 +1097,7 @@ function nL(l){
     docs:Array.isArray(l.docs)?l.docs:[],photos:Array.isArray(l.photos)?l.photos:[],photoCount:(l.photoCount||(Array.isArray(l.photos)?l.photos.length:0)),lat:l.lat||'',lng:l.lng||'',views:l.views||0,featured:!!l.featured,
     ownerVerified:!!l.ownerVerified,ownerProducer:!!l.ownerProducer,ownerPof:l.ownerPof||null,expiresAt:l.expiresAt||'',expired:!!l.expired};
 }
-var PROFILE=null, APPROVED=true, BBMATCHES=[], PAYCFG={enabled:false,membership:false,prices:{renew:10,feature:25}};
+var PROFILE=null, APPROVED=true, BBMATCHES=[], PAYCFG={enabled:false,membership:false,prices:{}};
 // api() with a timeout so one slow/hanging Apps Script call can never resolve late
 // and freeze the page. Always resolves.
 function apiT(path,ms){return Promise.race([api(path),new Promise(function(r){setTimeout(function(){r({ok:false,timeout:true});},ms||9000);})]);}
@@ -1671,8 +1671,8 @@ function openDetail(id){
   var addrBlock = seeAddr
     ? '<div class="reveal"><span style="color:var(--acc);vertical-align:-2px;margin-right:6px">'+addrIcon(true)+'</span><b>'+esc(d.addr||'(no address on file)')+'</b></div>'+(d.addr?mapEmbed(d.addr):(d.submarket?mapEmbed(d.submarket+', '+(d.state||'MA')):''))+streetEmbed(d)+mapsLink(d)
     : '<div class="reveal" style="background:var(--card);border-color:var(--line2)"><span style="color:var(--gold);vertical-align:-2px;margin-right:6px">'+addrIcon(false)+'</span><b style="color:var(--gold)">Address unlocks after an approved intro.</b> Request an introduction — the listing agent approves before the exact address and documents are shared.</div>'+(d.submarket?'<div style="font-size:11.5px;color:var(--mut);margin:8px 0 4px">Approximate area · '+esc(d.submarket)+'</div>'+mapEmbed(d.submarket+', '+(d.state||'MA')):'');
-  var renewLbl='↻ Renew 30 days'+(PAYCFG.enabled?(' ($'+PAYCFG.prices.renew+')'):'');
-  var featBtn=PAYCFG.enabled?(d.featured?'<button class="btn ghost" disabled style="opacity:.6">★ Featured</button>':'<button class="btn acc" onclick="featureDeal(\''+d.id+'\')">★ Feature ($'+PAYCFG.prices.feature+')</button>'):'';
+  var renewLbl='↻ Renew 30 days';
+  var featBtn='';
   var _calcBtn='<button class="btn ghost" onclick="mcFromDeal('+num(d.price)+')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="4" y="2.5" width="16" height="19" rx="2.2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8.5" y1="12" x2="8.5" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="15.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="8.5" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/></svg>Calc payment</button>';
   var _introS=intro&&intro.status;
   // Non-owner action: an entitled/broad deal (address visible) → message directly;
@@ -1973,18 +1973,9 @@ function delDeal(id){if(!confirm('Delete this deal permanently?'))return;
 }
 function ago2(iso){try{var s=(new Date(iso)-Date.now())/1000;if(s<=0)return 'expired';if(s<86400)return 'in '+Math.max(1,Math.round(s/3600))+'h';return 'in '+Math.round(s/86400)+'d';}catch(e){return '';}}
 function renewDeal(id){
-  if(PAYCFG.enabled){ return payCheckout('renew',id); }        // paid renew via Stripe
-  api('/api/pm/renew',{id:id}).then(function(j){                // free fallback until Stripe is on
+  api('/api/pm/renew',{id:id}).then(function(j){                // renewing a listing is always free
     if(j&&j.ok){loadAll();openDetail(id);}
     else{alert((j&&j.message)||'Could not renew — try again.');}
-  });
-}
-function featureDeal(id){ if(PAYCFG.enabled) payCheckout('feature',id); }
-function payCheckout(kind,id){
-  api('/api/pm/checkout',{kind:kind,listingId:id}).then(function(j){
-    if(j&&j.ok&&j.url){ location.href=j.url; }
-    else if(j&&j.error==='not_configured'){ alert('Payments aren’t switched on yet.'); }
-    else { alert('Could not start checkout — try again.'); }
   });
 }
 // Returning from Stripe checkout (?paid=SESSION): verify + apply, then clean the URL.
@@ -1993,7 +1984,7 @@ function payReturn(){
   var sid=decodeURIComponent(m[1]);
   api('/api/pm/pay/confirm?session_id='+encodeURIComponent(sid)).then(function(j){
     try{ history.replaceState(null,'',location.pathname); }catch(e){}
-    if(j&&j.ok){ var msg=j.kind==='feature'?'Deal featured ✓':j.kind==='membership'?'Membership active ✓':'Deal renewed ✓'; setTimeout(function(){alert(msg);},200); loadAll(); }
+    if(j&&j.ok){ var msg='Membership active ✓'; setTimeout(function(){alert(msg);},200); loadAll(); }
     else if(j&&j.error==='unpaid'){ /* payment not completed */ }
   });
 }
@@ -2244,13 +2235,13 @@ function openReferral(){
     var stat=function(v,l){return '<div style="flex:1;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:12px 10px;text-align:center"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;color:var(--tx)">'+(v||0)+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-top:3px">'+l+'</div></div>';};
     var refd=(j.referred||[]).map(function(e){return '<div style="font-size:12.5px;color:var(--mut);padding:5px 0;border-bottom:1px solid var(--line)">'+esc(e)+'</div>';}).join('');
     $('mReferral').innerHTML='<div class="modal">'
-      +'<div class="mhead"><div><h3>Refer &amp; earn</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Share AXESS with Massachusetts agents. Each agent who joins through your link is <b>1 free month</b> for you.</div></div><button class="x" onclick="close_(\'mReferral\')">×</button></div>'
+      +'<div class="mhead"><div><h3>Share AXESS</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Share AXESS with Massachusetts agents.</div></div><button class="x" onclick="close_(\'mReferral\')">×</button></div>'
       +'<div class="mbody">'
-        +'<div style="display:flex;gap:10px;margin-bottom:16px">'+stat(j.approved,'Joined')+stat(j.pending,'Pending')+stat(j.credits,'Free months')+'</div>'
+        +'<div style="display:flex;gap:10px;margin-bottom:16px">'+stat(j.approved,'Joined')+stat(j.pending,'Pending')+'</div>'
         +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:6px">Your referral link</div>'
         +'<div style="display:flex;gap:8px"><input id="refLink" readonly value="'+esc(j.link)+'" onclick="this.select()" style="flex:1;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:10px 12px;font:inherit;font-size:13px"><button class="btn acc sm" onclick="copyRef()">Copy</button></div>'
         +'<div id="refCopied" style="display:none;color:var(--acc);font-size:12px;font-weight:600;margin-top:7px">Copied ✓</div>'
-        +'<p style="color:var(--mut);font-size:12px;line-height:1.5;margin-top:14px">Share it by text or email. Your link only pre-fills the public sign-up form — membership is open to any Massachusetts licensed agent in good standing who meets the published criteria. When an agent joins through your link, you earn a free month — applied when membership billing begins.</p>'
+        +'<p style="color:var(--mut);font-size:12px;line-height:1.5;margin-top:14px">Share it by text or email. Your link only pre-fills the public sign-up form — membership is open to any Massachusetts licensed agent in good standing who meets the published criteria. Sharing doesn’t earn credits or discounts — the published rate is the same for every member.</p>'
         +(refd?('<div style="margin-top:12px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:4px">Agents you\'ve brought in</div>'+refd+'</div>'):'')
       +'</div></div>';
     open_('mReferral');

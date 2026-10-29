@@ -1008,7 +1008,6 @@ app.get('/api/pm/analytics/:id', ensureAuth, pmGate, async (req, res) => {
     res.json({ ok: true, analytics: { id: l.id, views: Number(l.views) || 0, uniqueViewers: Array.isArray(l.viewers) ? l.viewers.length : 0, matches: matches.length, messageThreads: threadKeys.size, messages: msgs.filter(m => m && m.listingId === l.id).length, expiresAt: l.expiresAt || '', daysLeft, featured: !!l.featured, expired: l.expiresAt ? (new Date(l.expiresAt) < new Date()) : false } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
-const PM_PAID_RENEW = process.env.PM_PAID_RENEW === '1';
 app.post('/api/pm/renew', ensureAuth, pmGate, async (req, res) => {
   const id = String((req.body || {}).id || '');
   if (!id) return res.status(400).json({ ok: false, error: 'no_id' });
@@ -1019,7 +1018,6 @@ app.post('/api/pm/renew', ensureAuth, pmGate, async (req, res) => {
     const l = listings[idx];
     if (_lc(l.owner) !== pmEmail(req.user) && req.user.role !== 'owner') return res.status(403).json({ ok: false, error: 'not_your_listing' });
     if ((l.status || 'active') === 'off' && !pmAuthorized(l)) return res.status(400).json({ ok: false, error: 'seller_form_required', message: SELLER_FORM_MSG });
-    if (PM_PAID_RENEW && !(req.body && req.body.paid) && req.user.role !== 'owner') return res.status(402).json({ ok: false, error: 'payment_required', message: 'Renewing a deal is $1.' });
     const base = l.expiresAt && new Date(l.expiresAt) > new Date() ? new Date(l.expiresAt) : new Date();
     l.expiresAt = new Date(base.getTime() + 30 * 864e5).toISOString();
     l.renewedAt = new Date().toISOString(); l.renew5Sent = false; l.renew1Sent = false;
@@ -1352,7 +1350,7 @@ app.post('/api/pm/admin/deactivate', ensureAuth, pmGate, async (req, res) => {
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 // ── Self-serve: a member cancels their own account. Access ends immediately,
-//    but every record is kept (referral credits, past deals). The owner
+//    but every record is kept (profile, past deals). The owner
 //    can restore access later from the admin panel. ──────────────────────────
 app.post('/api/pm/cancel', ensureAuth, pmGate, async (req, res) => {
   // Owner can't self-cancel — that would lock the whole network's admin out.
@@ -1465,8 +1463,8 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
         if (ref) {
           ref.referredEmails = Array.isArray(ref.referredEmails) ? ref.referredEmails : [];
           if (!ref.referredEmails.some(e => _lc(e) === email)) {
-            ref.referredEmails.push(email); ref.referrals = (ref.referrals || 0) + 1; ref.referralCredits = (ref.referralCredits || 0) + 1;
-            try { await pmSendEmail(ref.email, 'AXESS · your referral joined', (name || email) + ' just joined AXESS through your referral link. You\'ve earned 1 free month, credited when membership billing begins. That\'s ' + ref.referralCredits + ' free month(s) so far — thanks for growing the network.'); } catch (e) {}
+            ref.referredEmails.push(email); ref.referrals = (ref.referrals || 0) + 1;
+            try { await pmSendEmail(ref.email, 'AXESS · your referral joined', (name || email) + ' just joined AXESS through your referral link. Thanks for sharing AXESS.'); } catch (e) {}
           }
         }
       }
@@ -1613,8 +1611,8 @@ app.post('/api/pm/admin/request/decide', ensureAuth, pmGate, async (req, res) =>
           if (ref) {
             ref.referredEmails = Array.isArray(ref.referredEmails) ? ref.referredEmails : [];
             if (!ref.referredEmails.some(e => _lc(e) === _lc(r.email))) {
-              ref.referredEmails.push(r.email); ref.referrals = (ref.referrals || 0) + 1; ref.referralCredits = (ref.referralCredits || 0) + 1;
-              try { await pmSendEmail(ref.email, 'AXESS · your referral was approved', (r.name || r.email) + ' just joined AXESS through your referral link. You\'ve earned 1 free month, credited when membership billing begins. That\'s ' + ref.referralCredits + ' free month(s) so far — thanks for growing the network.'); } catch (e) {}
+              ref.referredEmails.push(r.email); ref.referrals = (ref.referrals || 0) + 1;
+              try { await pmSendEmail(ref.email, 'AXESS · your referral was approved', (r.name || r.email) + ' just joined AXESS through your referral link. Thanks for sharing AXESS.'); } catch (e) {}
             }
           }
         }
@@ -1662,7 +1660,7 @@ app.get('/api/pm/referral', ensureAuth, pmGate, async (req, res) => {
     const me = profs.find(p => p && _lc(p.email) === email) || {};
     const referred = Array.isArray(me.referredEmails) ? me.referredEmails : [];
     const pending = reqs.filter(r => r && r.referredBy === code && r.status === 'pending').length;
-    res.json({ ok: true, code, link, approved: referred.length, pending, credits: me.referralCredits || referred.length, referred });
+    res.json({ ok: true, code, link, approved: referred.length, pending, referred });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
@@ -1894,7 +1892,8 @@ if (process.env.STRIPE_SECRET_KEY) {
   try { const Stripe = require('stripe'); stripe = new Stripe(process.env.STRIPE_SECRET_KEY); }
   catch (e) { console.log('[stripe] load failed — payments disabled:', e && e.message); }
 }
-const PM_PRICE = { renew: Number(process.env.PM_PRICE_RENEW || 1000), feature: Number(process.env.PM_PRICE_FEATURE || 2500) };
+// AXESS charges a flat membership subscription only — no per-listing or
+// per-deal charges of any kind (renewing a listing is always free).
 // Membership pricing. Founding members (first 100) pay the founding rate for life;
 // everyone after pays the standard rate. Set the two Stripe recurring Price IDs
 // (STRIPE_PRICE_FOUNDING / STRIPE_PRICE_STANDARD) when you're ready to charge.
@@ -1918,7 +1917,7 @@ app.get('/api/pm/pay/status', ensureAuth, pmGate, async (req, res) => {
     const founder = !!me.foundingRate;
     const monthly = founder ? MEMBERSHIP_FOUNDING : MEMBERSHIP_STANDARD;
     const membershipConfigured = !!(stripe && priceIdForMember(me));
-    res.json({ ok: true, enabled: !!stripe, membership: membershipConfigured, billingOn: !!settings.billingOn, founder, monthly, memberNo: me.memberNo || null, paid: !!me.paid, prices: { renew: PM_PRICE.renew / 100, feature: PM_PRICE.feature / 100, founding: MEMBERSHIP_FOUNDING, standard: MEMBERSHIP_STANDARD } });
+    res.json({ ok: true, enabled: !!stripe, membership: membershipConfigured, billingOn: !!settings.billingOn, founder, monthly, memberNo: me.memberNo || null, paid: !!me.paid, prices: { founding: MEMBERSHIP_FOUNDING, standard: MEMBERSHIP_STANDARD } });
   } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
 });
 // Owner: switch membership billing on/off. Off = nobody charged (free launch).
@@ -1936,19 +1935,6 @@ app.post('/api/pm/checkout', ensureAuth, pmGate, async (req, res) => {
   if (!stripe) return res.status(503).json({ ok: false, error: 'not_configured' });
   const b = req.body || {}, kind = String(b.kind || '');
   try {
-    if (kind === 'renew' || kind === 'feature') {
-      // Paid actions are off during the free launch — gated by the same billing switch as membership.
-      const settings = await pmSettings();
-      if (!settings.billingOn) return res.status(409).json({ ok: false, error: 'billing_off', message: 'Paid upgrades are off during our free launch period.' });
-      const id = String(b.listingId || ''); if (!id) return res.status(400).json({ ok: false, error: 'no_id' });
-      const listings = await pmLoad(PM_KEYS.listings); const l = listings.find(x => x && x.id === id);
-      if (!l) return res.status(404).json({ ok: false, error: 'not_found' });
-      if (_lc(l.owner) !== pmEmail(req.user) && req.user.role !== 'owner') return res.status(403).json({ ok: false, error: 'not_your_listing' });
-      const amount = PM_PRICE[kind];
-      const label = kind === 'renew' ? 'AXESS — renew deal (30 days)' : 'AXESS — feature deal';
-      const session = await stripe.checkout.sessions.create({ mode: 'payment', payment_method_types: ['card'], line_items: [{ price_data: { currency: 'usd', unit_amount: amount, product_data: { name: label } }, quantity: 1 }], metadata: { kind, listingId: id, email: pmEmail(req.user) }, success_url: PM_BASE + '/app.html?paid={CHECKOUT_SESSION_ID}', cancel_url: PM_BASE + '/app.html' });
-      return res.json({ ok: true, url: session.url });
-    }
     if (kind === 'membership') {
       // Free launch period: no charging until the owner switches billing on.
       const settings = await pmSettings();
@@ -1973,14 +1959,7 @@ app.get('/api/pm/pay/confirm', ensureAuth, pmGate, async (req, res) => {
     const m = s.metadata || {}, kind = m.kind;
     const pays = await pmLoad('pm_pays');
     if (pays.some(p => p && p.sid === sid)) return res.json({ ok: true, already: true, kind });
-    if (kind === 'renew' || kind === 'feature') {
-      const listings = await pmLoad(PM_KEYS.listings); const idx = listings.findIndex(x => x && x.id === m.listingId);
-      if (idx >= 0) {
-        if (kind === 'renew') { const l = listings[idx]; const base = l.expiresAt && new Date(l.expiresAt) > new Date() ? new Date(l.expiresAt) : new Date(); l.expiresAt = new Date(base.getTime() + 30 * 864e5).toISOString(); l.renew5Sent = false; l.renew1Sent = false; if ((l.status || 'active') === 'off' && pmAuthorized(l)) l.status = 'active'; }
-        else { listings[idx].featured = true; }
-        await pmSave(PM_KEYS.listings, listings);
-      }
-    } else if (kind === 'membership') {
+    if (kind === 'membership') {
       const profs = await pmLoad('pm_profiles'); const p = profs.find(x => x && _lc(x.email) === _lc(m.email || pmEmail(req.user)));
       if (p) { p.status = 'approved'; p.paid = true; p.paidAt = new Date().toISOString(); await pmSave('pm_profiles', profs); }
     }
