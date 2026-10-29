@@ -11,6 +11,7 @@
 
 const crypto = require('crypto');
 const { pmLoad, pmSave } = require('./db');
+const demo = require('./lib/demo');
 
 // ACCESS_ADMIN may hold one email or several (comma-separated) — every listed
 // address is a full owner. ADMIN is the primary (first), used as the "to" for
@@ -103,6 +104,8 @@ function emailFooter(to) {
     + '</div>';
 }
 async function sendEmail(to, subject, html) {
+  // Demo mode never sends real email.
+  if (demo.active()) { console.log('[AXESS demo — email suppressed]', to, '·', subject); return true; }
   html = String(html || '') + emailFooter(to);
   const key = process.env.RESEND_API_KEY;
   if (!key) { console.log('[ACCESS email — no RESEND_API_KEY, logging]\nTo:', to, '\nSubject:', subject, '\n', html); return true; }
