@@ -549,6 +549,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
       <a onclick="close_acct();openActivity()">My activity <span id="reqDot" style="display:none;color:var(--acc2)">●</span></a>
       <a onclick="close_acct();openProfile()">Profile</a>
       <a onclick="close_acct();openNotifSettings()">Notifications</a>
+      <a id="billingLink" onclick="close_acct();openBilling()">Membership &amp; billing</a>
       <a onclick="close_acct();openReferral()">Share AXESS <span style="color:var(--gold)">◆</span></a>
       <a id="adminLink" style="display:none;color:var(--gold)" onclick="close_acct();openAdmin()">Admin <span id="adminDot" style="display:none"></span></a>
       <a id="inviteLink" style="display:none;color:var(--acc2)" onclick="close_acct();openInvite()">✉ Send a sign-up link</a>
@@ -960,6 +961,7 @@ html.dark .bdg.lease{color:#D9B368!important;background:rgba(180,136,46,.14)!imp
 <div class="mbg" id="mAdmin" onclick="if(event.target===this)close_('mAdmin')"></div>
 <div class="mbg" id="mDirectory" onclick="if(event.target===this)close_('mDirectory')"></div>
 <div class="mbg" id="mReferral" onclick="if(event.target===this)close_('mReferral')"></div>
+<div class="mbg" id="mBilling" onclick="if(event.target===this)close_('mBilling')"></div>
 
 <!-- MORTGAGE CALCULATOR — nav-anchored dropdown, top right -->
 <div id="mcPanel" role="dialog" aria-label="Mortgage calculator">
@@ -1976,6 +1978,51 @@ function renewDeal(id){
   });
 }
 // Returning from Stripe checkout (?paid=SESSION): verify + apply, then clean the URL.
+/* ── membership & billing (member) ── */
+function fmtDay(iso){try{return new Date(iso).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});}catch(e){return '';}}
+function openBilling(){
+  api('/api/pm/pay/status').then(function(j){
+    if(!j||!j.ok){alert('Couldn’t load your membership right now — try again in a moment.');return;}
+    var rate=j.founder?('$'+j.prices.founding+'/month — founding rate, locked in for life'):('$'+j.prices.standard+'/month');
+    var st,act='';
+    if(j.paid){st='<b style="color:#1E7A52">Active.</b> Your membership is '+esc(rate)+'.';
+      if(j.canManage)act='<button class="btn ghost" onclick="billingPortal()">Update card or cancel</button>';}
+    else if(j.subStatus==='past_due'){st='<b style="color:var(--bad)">Payment failed.</b> Update your card to keep your membership.';
+      if(j.canManage)act='<button class="btn acc" onclick="billingPortal()">Update card</button>';}
+    else if(!j.billingOn){st='<b>Free trial.</b> Billing hasn’t started yet, so nothing is charged. When it starts you’ll get an email and a full '+j.trialDays+'-day free trial. After that your membership is '+esc(rate)+'.';}
+    else{
+      var left=j.trialDaysLeft;
+      st=(left>0?('<b>Free trial — '+left+' day'+(left===1?'':'s')+' left</b> (ends '+esc(fmtDay(j.trialEndsAt))+').'):'<b style="color:var(--bad)">Your free trial has ended.</b>')+' Your membership is '+esc(rate)+'. Flat subscription, cancel anytime.';
+      act=j.membership?'<button class="btn acc" id="subBtn" onclick="startMembership()">Start my membership</button>':'<span style="color:var(--mut);font-size:12.5px">Online payment isn’t set up yet — contact us.</span>';
+    }
+    $('mBilling').innerHTML='<div class="modal" style="max-width:480px"><div class="mhead"><h3>Membership &amp; billing</h3><button class="x" onclick="close_(\'mBilling\')">×</button></div><div class="mbody">'
+      +'<p style="font-size:14px;line-height:1.55;margin-bottom:12px">'+st+'</p>'
+      +'<p style="color:var(--mut);font-size:12px;line-height:1.5;margin-bottom:14px">AXESS is a flat monthly subscription. It never charges per listing or per deal. '+(j.trialEndsAt&&!j.paid?'If you start now, you still aren’t charged until your trial ends.':'')+'</p>'
+      +'<div class="mact"><span class="msg" id="billMsg"></span>'+act+'</div></div></div>';
+    open_('mBilling');
+  });
+}
+function startMembership(){var b=$('subBtn'),m=$('billMsg');if(b)b.disabled=true;if(m)m.textContent='Opening secure checkout…';
+  api('/api/pm/checkout',{kind:'membership'}).then(function(j){if(j&&j.ok&&j.url){location.href=j.url;return;}if(b)b.disabled=false;if(m)m.textContent=(j&&j.message)||'Could not start checkout — try again.';});}
+function billingPortal(){var m=$('billMsg');if(m)m.textContent='Opening…';
+  api('/api/pm/billing/portal',{}).then(function(j){if(j&&j.ok&&j.url){location.href=j.url;return;}if(m)m.textContent=(j&&j.message)||'Could not open billing — try again.';});}
+/* ── billing switch (owner) ── */
+function adminBillingLoad(){
+  var box=$('admBilling');if(!box)return;
+  api('/api/pm/admin/billing').then(function(j){
+    if(!j||!j.ok){box.textContent='Could not load billing status.';return;}
+    var c=j.counts||{};
+    box.innerHTML='<div style="font-size:13px;margin-bottom:8px">Billing is <b>'+(j.billingOn?'ON':'OFF')+'</b>'+(j.billingStartedAt?(' · started '+esc(fmtDay(j.billingStartedAt))):'')+' · '+(c.members||0)+' members · '+(c.paying||0)+' paying · '+(c.inTrial||0)+' not yet paying</div>'
+      +(j.ready?'':('<div style="color:var(--bad);font-size:12px;margin-bottom:8px">Not ready — set these in Render first: '+esc((j.missing||[]).join(', '))+'</div>'))
+      +'<button class="btn '+(j.billingOn?'ghost':'acc')+' sm" onclick="adminBillingSet('+(!j.billingOn)+','+(!j.billingStartedAt)+')"'+(!j.billingOn&&!j.ready?' disabled':'')+'>'+(j.billingOn?'Turn billing off':'Turn billing on')+'</button> <span id="billSetMsg" style="font-size:12.5px;color:var(--mut)"></span>';
+  });
+}
+function adminBillingSet(on,first){
+  if(on&&!confirm('Turn membership billing ON?'+(first?'\n\nThis emails every member now: their 14-day free trial starts today, then $25/mo (first 100) or $50/mo. Nobody is charged until their trial ends and they start their membership.':'')))return;
+  if(!on&&!confirm('Turn billing OFF? New checkouts stop. Existing Stripe subscriptions are not cancelled.'))return;
+  var m=$('billSetMsg');if(m)m.textContent='Saving…';
+  api('/api/pm/admin/billing',{on:on}).then(function(j){if(j&&!j.ok){if(m)m.textContent=j.message||'Failed.';return;}if(m)m.textContent=on?('On ✓'+(j.notified?(' — '+j.notified+' members emailed'):'')):'Off ✓';adminBillingLoad();});
+}
 function payReturn(){
   var m=/[?&]paid=([^&]+)/.exec(location.search); if(!m) return;
   var sid=decodeURIComponent(m[1]);
@@ -2166,12 +2213,14 @@ function openAdmin(){
         +'<div style="color:var(--mut2);font-size:11.5px;margin-top:6px">Emails each member only the new deals matching their buy box or alert settings since the last send — no blasts. Preview shows who\'d get one without sending. Automate it by scheduling a POST to /api/pm/digest/run?key=YOUR_DIGEST_KEY.</div>'
       +'</div>'
       +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
+        +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Membership billing</div><div id="admBilling" style="color:var(--mut);font-size:12.5px">Loading…</div></div>'
+      +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
         +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Sample data (preview only)</div>'
         +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn acc sm" onclick="adminSeed(\'load\')">Load sample data</button><button class="btn ghost sm" onclick="adminSeed(\'clear\')">Clear sample data</button><span id="seedMsg" style="font-size:12.5px;color:var(--mut)"></span></div>'
         +'<div style="color:var(--mut2);font-size:11.5px;margin-top:6px">Loads demo deals, members &amp; client-needs so you can see the site populated and check the totals. Clear before real launch.</div>'
       +'</div>'
       +'</div></div>';
-    open_('mAdmin');
+    open_('mAdmin');adminBillingLoad();
   });
 }
 function admTab(t){var aa=$('admAdmissions');if(aa)aa.style.display=t==='a'?'':'none';var ta=$('admTabA');if(ta)ta.classList.toggle('on',t==='a');$('admRequests').style.display=t==='r'?'':'none';$('admMembers').style.display=t==='m'?'':'none';var ai=$('admInvites');if(ai)ai.style.display=t==='i'?'':'none';$('admDeals').style.display=t==='d'?'':'none';$('admTabR').classList.toggle('on',t==='r');$('admTabM').classList.toggle('on',t==='m');var ti=$('admTabI');if(ti)ti.classList.toggle('on',t==='i');$('admTabD').classList.toggle('on',t==='d');}
@@ -2685,6 +2734,7 @@ function toggleTheme(){applyTheme(document.documentElement.classList.contains('d
 applyTheme(document.documentElement.classList.contains('dark')?'dark':'light');
 loadAll();
 payReturn();
+if(/[?&]billing=1/.test(location.search)){try{history.replaceState(null,'',location.pathname);}catch(e){}setTimeout(openBilling,600);}
 </script>
 <div class="lbx" id="lbx" onclick="if(event.target===this)albLbClose()"><button class="lx" onclick="albLbClose()">×</button><img id="lbxImg" src="" alt=""><div class="lc" id="lbxCap"></div></div>
 
