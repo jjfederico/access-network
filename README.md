@@ -22,8 +22,22 @@ Express serves **only `public/`**. Root HTML outside `public/` is not live.
 Open to every applicant who (a) holds an active Massachusetts salesperson
 or broker license in good standing, (b) is affiliated with a licensed
 Massachusetts brokerage, (c) agrees to the Terms, and (d) pays the
-applicable subscription. Admission is automatic. Termination is only for
-stated cause (license lapse, non-payment, or material breach).
+applicable subscription. Admission is automatic. Denial or termination is
+only for stated cause (license lapse, non-payment, or material breach).
+The criteria are published at `/membership` (`public/membership.html`).
+
+Every admission decision is appended to `pm_admissions` (date, applicant,
+criteria checked, license verification result, decision, stated cause for
+any denial). Admin-only: `GET /api/pm/admin/admissions` and the Admin →
+Admissions log tab.
+
+## Seller authorization
+
+A listing is live (feed, detail, intros, alerts, digest, teaser, stats) only
+with the seller-signed Non-MLS / delayed-listing form on file
+(`compliance.listingAuthorized`). Every path that can set a listing active —
+post, edit, relist, renew, undo-MLS, undo-closed, paid renew — enforces it.
+Owner-loaded sample data (`sample: true`) is exempt.
 
 Published pricing (honored in code): first 100 members free, then $25/month
 for life for those founding members; $50/month after the 100th.

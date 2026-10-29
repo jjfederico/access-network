@@ -158,7 +158,7 @@ button{font:inherit;cursor:pointer}
 <div class="wrap">
   <div class="head" id="tp-head">
     <h1>Live pre-market deals</h1>
-    <p>This is exactly what members see after they sign in — a private feed of seller-directed listings, agent to agent.</p>
+    <p>This is exactly what members see after they sign in — a members’ feed of seller-directed listings, agent to agent.</p>
     <div class="stats">
       <div class="s"><div class="v a">6</div><div class="k">Live deals</div></div>
       <div class="s"><div class="v a">$14.8M</div><div class="k">Volume on the board</div></div>
@@ -220,10 +220,10 @@ var MARKETS=['All MA','Boston','North Shore','Merrimack Valley','South Shore','M
 var MARKET='All MA';
 var DEALS=[
  {type:'Multifamily',cat:'residential',mk:'Boston',title:'3-unit · South Boston',area:'Dorchester Heights',price:'$1,570,000',kpis:[['Units','3'],['Cap','5.4%'],['GRM','12.3']],broad:true,desc:'Turnkey triple-decker, all units renovated 2022. Gross income $127,800. Long-term tenants, below-market rents with upside.',agent:'M. Sullivan',firm:'Licensed MA brokerage'},
- {type:'Single-family',cat:'residential',mk:'MetroWest',title:'Colonial · Newton',area:'West Newton Hill',price:'$2,250,000',kpis:[['Beds','5'],['Baths','3.5'],['SqFt','3,400']],broad:false,desc:'Pre-market colonial on a quarter-acre. Seller wants a quiet sale before spring. Updated kitchen, finished basement.',agent:'R. Chen',firm:'Licensed MA brokerage'},
+ {type:'Single-family',cat:'residential',mk:'MetroWest',title:'Colonial · Newton',area:'West Newton Hill',price:'$2,250,000',kpis:[['Beds','5'],['Baths','3.5'],['SqFt','3,400']],broad:false,desc:'Pre-market colonial on a quarter-acre. Seller has directed a pre-market sale before spring. Updated kitchen, finished basement.',agent:'R. Chen',firm:'Licensed MA brokerage'},
  {type:'Development site',cat:'commercial',mk:'Boston',title:'Approved 12-unit',area:'East Cambridge',price:'$3,900,000',kpis:[['Units','12'],['Zoning','Approved'],['Buildable','14,200sf']],broad:true,desc:'Fully permitted 12-unit development site. Shovel-ready. Rare approved parcel in a high-demand corridor.',agent:'D. Okafor',firm:'Licensed MA brokerage'},
  {type:'Mixed-use',cat:'commercial',mk:'Worcester',title:'Retail + 6 apts',area:'Downtown Worcester',price:'$2,150,000',kpis:[['Units','6+2'],['Cap','7.1%'],['NOI','$152K']],broad:false,desc:'Corner mixed-use: two retail bays plus six apartments. Strong in-place income, value-add on the commercial side.',agent:'J. Alvarez',firm:'Licensed MA brokerage'},
- {type:'Condo',cat:'residential',mk:'Boston',title:'2-bed · Seaport',area:'Seaport District',price:'$1,375,000',kpis:[['Beds','2'],['Baths','2'],['SqFt','1,180']],broad:false,desc:'High-floor Seaport condo with harbor views. Owner relocating, wants a quiet sale to avoid showings.',agent:'K. Patel',firm:'Licensed MA brokerage'},
+ {type:'Condo',cat:'residential',mk:'Boston',title:'2-bed · Seaport',area:'Seaport District',price:'$1,375,000',kpis:[['Beds','2'],['Baths','2'],['SqFt','1,180']],broad:false,desc:'High-floor Seaport condo with harbor views. Owner relocating; seller has directed a pre-market sale.',agent:'K. Patel',firm:'Licensed MA brokerage'},
  {type:'Industrial',cat:'commercial',mk:'North Shore',title:'Warehouse · 22K sf',area:'Peabody',price:'$3,600,000',kpis:[['SqFt','22,000'],['Clear','24ft'],['Cap','6.5%']],broad:true,desc:'Single-tenant industrial, credit tenant, 5 years remaining on NNN lease. Clean environmental. Rare Route 128 access.',agent:'T. Byrne',firm:'Licensed MA brokerage'}
 ];
 var CAT='all';
@@ -263,7 +263,7 @@ function goJoin(e){if(e&&e.preventDefault)e.preventDefault();location.href='/?jo
 
 /* ── guided tour ── */
 var STEPS=[
- {el:null,st:'Welcome',t:'Welcome to the AXESS demo',b:'AXESS is a private network where licensed Massachusetts agents share seller-directed, pre-market property — agent to agent. This 60-second tour shows how it works — all with sample data.'},
+ {el:null,st:'Welcome',t:'Welcome to the AXESS demo',b:'AXESS is software where licensed Massachusetts agents share seller-directed, pre-market property — agent to agent. This 60-second tour shows how it works — all with sample data.'},
  {el:'tp-head',st:'The feed',t:'A live board of pre-market deals',b:'Members see every live deal with the full numbers — price, cap rate, units — but the exact address stays private until the listing agent approves an intro.'},
  {el:'tp-filters',st:'Find your lane',t:'Filter to what you actually work',b:'Switch between Residential and Commercial and pick your Massachusetts markets. In the real app you also save alerts, so you\'re only pinged about deals that fit your clients.'},
  {el:'tp-card',st:'Open a deal',t:'Click any deal for the full picture',b:'Every card opens the numbers, the description, and the listing agent\'s verified profile. Go ahead — click a deal after the tour to explore.'},

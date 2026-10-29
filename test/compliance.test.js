@@ -57,4 +57,23 @@ assert.ok(!c.sellerFormOk(null));
 assert.ok(!c.sellerFormOk({ name: 'form.pdf' }));
 assert.ok(!c.sellerFormOk({ key: 'u/x' }));
 
+assert.ok(c.listingAuthorized({ sellerForm: { name: 'f.pdf', key: 'u/f.pdf' } }));
+assert.ok(c.listingAuthorized({ sample: true }));
+assert.ok(!c.listingAuthorized({ status: 'active' }));
+assert.ok(!c.listingAuthorized({ sellerForm: { name: 'f.pdf' } }));
+assert.ok(!c.listingAuthorized(null));
+
+assert.ok(c.licenseFormatOk('9012345'));
+assert.ok(!c.licenseFormatOk('n/a'));
+assert.ok(!c.licenseFormatOk('12'));
+
+const ok = c.admissionCriteria({ license: '9012345', brokerage: 'Acme Realty', state: 'MA', attest: true });
+assert.strictEqual(ok.met, true);
+assert.strictEqual(ok.checks.subscription, 'launch_period_free');
+assert.strictEqual(c.admissionCriteria({ license: '9012345', brokerage: 'Acme', state: 'MA', attest: true, billingOn: true }).checks.subscription, 'published_rate_due');
+assert.strictEqual(c.admissionCriteria({ license: '9012345', brokerage: 'Acme', state: 'NH', attest: true }).met, false);
+assert.strictEqual(c.admissionCriteria({ license: '9012345', brokerage: '', state: 'MA', attest: true }).met, false);
+assert.strictEqual(c.admissionCriteria({ license: '9012345', brokerage: 'Acme', state: 'MA', attest: false }).met, false);
+assert.deepStrictEqual(Object.keys(c.CAUSE_LABELS).sort(), c.TERMINATION_CAUSES.slice().sort());
+
 console.log('compliance tests ok');
