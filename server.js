@@ -23,6 +23,9 @@ function httpsGetJson(url) {
 
 const app = express();
 app.set('trust proxy', 1);
+// Stripe webhook needs the raw body for signature checks, so it is mounted
+// before the JSON parser. Handler is defined with the rest of billing below.
+app.post('/api/pm/stripe/webhook', express.raw({ type: 'application/json', limit: '1mb' }), (req, res) => pmStripeWebhook(req, res));
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -1867,7 +1870,7 @@ app.post('/api/pm/ai/intro', rateLimit('ai', 20, 10 * 60 * 1000), ensureAuth, pm
     res.json({ ok: true, text: out.text.slice(0, 800) });
   } catch (e) { try { await extractQuotaRefund(me); } catch (_) {} res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
-// ── Stripe: renew ($10), feature ($25), membership (subscription) ────────────
+// ── Stripe: membership subscription (the only charge) ───────────────────────
 let stripe = null;
 if (process.env.STRIPE_SECRET_KEY) {
   try { const Stripe = require('stripe'); stripe = new Stripe(process.env.STRIPE_SECRET_KEY); }
@@ -1900,22 +1903,129 @@ app.get('/api/pm/pay/status', ensureAuth, pmGate, async (req, res) => {
     const membershipConfigured = !!(stripe && priceIdForMember(me));
     const trialEndsAt = compliance.trialEndsAt(me.approvedAt || me.createdAt, settings.billingStartedAt);
     const trialDaysLeft = trialEndsAt ? Math.max(0, Math.ceil((new Date(trialEndsAt) - Date.now()) / 864e5)) : null;
-    res.json({ ok: true, enabled: !!stripe, membership: membershipConfigured, billingOn: !!settings.billingOn, trialDays: compliance.TRIAL_DAYS, trialEndsAt, trialDaysLeft, founder, monthly, memberNo: me.memberNo || null, paid: !!me.paid, prices: { founding: MEMBERSHIP_FOUNDING, standard: MEMBERSHIP_STANDARD } });
+    res.json({ ok: true, enabled: !!stripe, membership: membershipConfigured, billingOn: !!settings.billingOn, trialDays: compliance.TRIAL_DAYS, trialEndsAt, trialDaysLeft, subStatus: me.subStatus || '', canManage: !!(stripe && me.stripeCustomer), founder, monthly, memberNo: me.memberNo || null, paid: !!me.paid, prices: { founding: MEMBERSHIP_FOUNDING, standard: MEMBERSHIP_STANDARD } });
   } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
 });
 // Owner: switch membership billing on/off. Off = nobody charged. The first time
 // it goes on, billingStartedAt starts the 14-day trial clock for existing members.
+function pmBillingReady() {
+  const missing = [];
+  if (!stripe) missing.push('STRIPE_SECRET_KEY');
+  if (!(STRIPE_PRICE_FOUNDING || STRIPE_PRICE_MEMBERSHIP)) missing.push('STRIPE_PRICE_FOUNDING');
+  if (!(STRIPE_PRICE_STANDARD || STRIPE_PRICE_MEMBERSHIP)) missing.push('STRIPE_PRICE_STANDARD');
+  if (!process.env.STRIPE_WEBHOOK_SECRET) missing.push('STRIPE_WEBHOOK_SECRET');
+  return { ready: !missing.length, missing };
+}
+const pmRealMembers = profs => profs.filter(p => p && !p.sample && p.status === 'approved' && !p.deactivated && !ADMINS.includes(_lc(p.email)));
+app.get('/api/pm/admin/billing', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const [s, profs] = await Promise.all([pmSettings(), pmLoad('pm_profiles')]);
+    const members = pmRealMembers(profs);
+    const r = pmBillingReady();
+    res.json({ ok: true, billingOn: !!s.billingOn, billingStartedAt: s.billingStartedAt || '', ready: r.ready, missing: r.missing,
+      counts: { members: members.length, paying: members.filter(p => p.paid).length, inTrial: members.filter(p => !p.paid).length } });
+  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+});
 app.post('/api/pm/admin/billing', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   const on = (req.body || {}).on === true;
   try {
+    if (on) {
+      const r = pmBillingReady();
+      if (!r.ready) return res.status(409).json({ ok: false, error: 'billing_not_ready', missing: r.missing, message: 'Billing can’t start until these are set in Render: ' + r.missing.join(', ') });
+    }
     const s = await pmSettings();
+    const firstStart = on && !s.billingStartedAt;
     s.billingOn = on; s.billingUpdatedAt = new Date().toISOString();
-    if (on && !s.billingStartedAt) s.billingStartedAt = s.billingUpdatedAt;
+    if (firstStart) s.billingStartedAt = s.billingUpdatedAt;
     await pmSaveSettings(s);
-    res.json({ ok: true, billingOn: on });
+    // First time billing starts: every member gets written notice of their trial
+    // end date and rate before anything can be charged (Terms §8).
+    let notified = 0;
+    if (firstStart) {
+      const profs = await pmLoad('pm_profiles');
+      for (const p of pmRealMembers(profs)) {
+        if (p.paid) continue;
+        const end = compliance.trialEndsAt(p.approvedAt || p.createdAt, s.billingStartedAt);
+        try {
+          await pmSendRich(p.email, 'AXESS · membership billing begins', {
+            heading: 'Your 14-day free trial has started',
+            paras: ['AXESS membership billing has begun. Your 14-day free trial runs through <b>' + _emailEsc(new Date(end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })) + '</b>. Nothing is charged before then.',
+              'After your trial, your membership is <b>$' + (p.foundingRate ? MEMBERSHIP_FOUNDING + '/month — your founding rate, locked in for life' : MEMBERSHIP_STANDARD + '/month') + '</b>. It’s a flat subscription; AXESS never charges per listing or per deal.',
+              'To keep your membership, open AXESS → Membership &amp; billing and start your membership any time during the trial. If you’d rather not continue, you don’t need to do anything — you won’t be charged.'],
+            cta: { label: 'Membership & billing', url: PM_BASE + '/app.html?billing=1' }
+          });
+          notified++;
+        } catch (e) {}
+      }
+    }
+    res.json({ ok: true, billingOn: on, billingStartedAt: s.billingStartedAt || '', notified });
   } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
 });
+// Members: open the Stripe customer portal to update a card or cancel.
+app.post('/api/pm/billing/portal', ensureAuth, pmGate, async (req, res) => {
+  if (!stripe) return res.status(503).json({ ok: false, error: 'not_configured' });
+  try {
+    const profs = await pmLoad('pm_profiles');
+    const me = profs.find(p => p && _lc(p.email) === pmEmail(req.user)) || {};
+    if (!me.stripeCustomer) return res.status(400).json({ ok: false, error: 'no_subscription', message: 'You don’t have an active subscription yet.' });
+    const ps = await stripe.billingPortal.sessions.create({ customer: me.stripeCustomer, return_url: PM_BASE + '/app.html?billing=1' });
+    res.json({ ok: true, url: ps.url });
+  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+});
+// Stripe → AXESS: keep each member's subscription status current (renewals,
+// failed payments, cancellations). Signature-checked with STRIPE_WEBHOOK_SECRET.
+async function pmStripeWebhook(req, res) {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET || '';
+  if (!stripe || !secret) return res.status(503).json({ ok: false, error: 'not_configured' });
+  let ev;
+  try { ev = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], secret); }
+  catch (e) { return res.status(400).json({ ok: false, error: 'bad_signature' }); }
+  try {
+    const o = (ev.data && ev.data.object) || {};
+    let customer = '', subStatus = '';
+    if (ev.type === 'customer.subscription.created' || ev.type === 'customer.subscription.updated' || ev.type === 'customer.subscription.deleted') {
+      customer = o.customer; subStatus = ev.type === 'customer.subscription.deleted' ? 'canceled' : o.status;
+    } else if (ev.type === 'invoice.payment_failed') { customer = o.customer; subStatus = 'past_due'; }
+    else if (ev.type === 'invoice.paid') { customer = o.customer; subStatus = 'active'; }
+    if (customer && subStatus) {
+      const profs = await pmLoad('pm_profiles');
+      const p = profs.find(x => x && x.stripeCustomer === customer);
+      if (p) {
+        p.subStatus = subStatus; p.subUpdatedAt = new Date().toISOString();
+        p.paid = subStatus === 'active' || subStatus === 'trialing';
+        await pmSave('pm_profiles', profs);
+      }
+    }
+    res.json({ ok: true, received: true });
+  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+}
+// Daily-ish: remind members 3 days before their trial ends (only while billing
+// is on and they haven't started their membership).
+async function pmTrialReminders() {
+  const s = await pmSettings();
+  if (!s.billingOn || !s.billingStartedAt) return 0;
+  const profs = await pmLoad('pm_profiles'); let sent = 0;
+  for (const p of pmRealMembers(profs)) {
+    if (p.paid) continue;
+    const end = compliance.trialEndsAt(p.approvedAt || p.createdAt, s.billingStartedAt);
+    const days = (new Date(end) - Date.now()) / 864e5;
+    if (days > 0 && days <= 3 && p.trialReminderFor !== end) {
+      try {
+        await pmSendRich(p.email, 'AXESS · your free trial ends soon', {
+          heading: 'Your free trial ends in ' + Math.ceil(days) + ' day' + (Math.ceil(days) === 1 ? '' : 's'),
+          paras: ['Your AXESS free trial ends on <b>' + _emailEsc(new Date(end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'America/New_York' })) + '</b>. To keep your membership, start it now — <b>$' + (p.foundingRate ? MEMBERSHIP_FOUNDING + '/month, your founding rate for life' : MEMBERSHIP_STANDARD + '/month') + '</b>, flat, cancel anytime.'],
+          cta: { label: 'Start my membership', url: PM_BASE + '/app.html?billing=1' }
+        });
+        p.trialReminderFor = end; sent++;
+      } catch (e) {}
+    }
+  }
+  if (sent) await pmSave('pm_profiles', profs);
+  return sent;
+}
+setInterval(() => { pmTrialReminders().catch(() => {}); }, 6 * 3600 * 1000);
 app.post('/api/pm/checkout', ensureAuth, pmGate, async (req, res) => {
   if (!stripe) return res.status(503).json({ ok: false, error: 'not_configured' });
   const b = req.body || {}, kind = String(b.kind || '');
@@ -1951,7 +2061,7 @@ app.get('/api/pm/pay/confirm', ensureAuth, pmGate, async (req, res) => {
     if (pays.some(p => p && p.sid === sid)) return res.json({ ok: true, already: true, kind });
     if (kind === 'membership') {
       const profs = await pmLoad('pm_profiles'); const p = profs.find(x => x && _lc(x.email) === _lc(m.email || pmEmail(req.user)));
-      if (p) { p.status = 'approved'; p.paid = true; p.paidAt = new Date().toISOString(); await pmSave('pm_profiles', profs); }
+      if (p) { p.paid = true; p.paidAt = new Date().toISOString(); p.stripeCustomer = s.customer || p.stripeCustomer || ''; p.stripeSubscription = s.subscription || p.stripeSubscription || ''; p.subStatus = 'active'; await pmSave('pm_profiles', profs); }
     }
     pays.push({ sid, kind, email: m.email || pmEmail(req.user), at: new Date().toISOString() });
     await pmSave('pm_pays', pays.length > 5000 ? pays.slice(-5000) : pays);
@@ -2034,7 +2144,7 @@ app.all('/api/pm/cron', async (req, res) => {
   const tok = String((req.query && req.query.token) || (req.body && req.body.token) || '');
   const authed = (PM_CRON_TOKEN && tok === PM_CRON_TOKEN) || (req.user && req.user.role === 'owner');
   if (!authed) return res.status(403).json({ ok: false, error: 'forbidden' });
-  try { res.json({ ok: true, sent: await pmRunRenewals() }); }
+  try { res.json({ ok: true, sent: await pmRunRenewals(), trialReminders: await pmTrialReminders() }); }
   catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 setTimeout(() => { pmRunRenewals().catch(() => {}); }, 30000);
