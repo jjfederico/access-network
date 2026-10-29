@@ -394,6 +394,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 <div class="dwrap"><section id="feed"><div class="wrap">
   <div class="center"><div class="kick">The feed</div><h2>A live look, addresses locked.</h2><p>Members see the full numbers and request an introduction. Non-members see the opportunity — never the address.</p></div>
   <div class="grid" id="grid"></div>
+  <p id="gridNote" style="text-align:center;margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)">Sample listings — illustrative, not live properties</p>
   <div style="text-align:center;margin-top:32px"><button class="btn p big" onclick="openReq()">Create an account to see the full feed →</button></div>
 </div></section></div>
 
@@ -579,9 +580,9 @@ var D=[
 function typeIcon(t){var m={'Multifamily':'🏢','Single-family':'🏠','Condo':'🏙️','Condo / Conversion':'🏙️','Townhouse':'🏘️','Land':'🌳','Mixed-use':'🏬','Retail / Commercial':'🏪','Commercial':'🏪','Industrial':'🏭','Storage / Warehouse':'📦','Mobile Home Park':'🏡','Development site':'🏗️'};return m[t]||'📍';}
 var LOCK_SVG='<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.7" width="16" height="10.3" rx="2.4"/><path d="M8 10.7V7a4 4 0 0 1 8 0v3.7"/></svg>';
 function escH(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function renderDeals(list){document.getElementById('grid').innerHTML=list.map(function(d){return '<div class="deal"><div class="ph"><span class="tico">'+typeIcon(d.t)+'</span>'+LOCK_SVG+'<div class="lktxt">Pre-market · Address hidden</div></div><div class="bd"><div class="t">'+escH(d.t)+'</div><div class="s">'+escH(d.s)+'</div><div class="foot"><div class="pr mono">'+escH(d.pr)+'</div></div></div></div>';}).join('');}
-renderDeals(D); // fallback sample cards, replaced by real teaser data below if available
-fetch('/api/pm/teaser',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&j.deals&&j.deals.length){renderDeals(j.deals.map(function(x){return {t:x.type,s:x.area,pr:x.price};}));}}).catch(function(){});
+function renderDeals(list,sample){var n=document.getElementById('gridNote');if(n)n.textContent=sample?'Sample listings — illustrative, not live properties':'Live listings from the member feed — addresses hidden';document.getElementById('grid').innerHTML=list.map(function(d){return '<div class="deal"><div class="ph"><span class="tico">'+typeIcon(d.t)+'</span>'+LOCK_SVG+'<div class="lktxt">'+(sample?'Sample · ':'Pre-market · ')+'Address hidden</div></div><div class="bd"><div class="t">'+escH(d.t)+'</div><div class="s">'+escH(d.s)+'</div><div class="foot"><div class="pr mono">'+escH(d.pr)+'</div></div></div></div>';}).join('');}
+renderDeals(D,true); // labeled sample cards, replaced by live teaser data (same source as the counters) when any exist
+fetch('/api/pm/teaser',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&j.deals&&j.deals.length){renderDeals(j.deals.map(function(x){return {t:x.type,s:x.area,pr:x.price};}),false);}}).catch(function(){});
 /* hero photo rotation — random start, crossfades through the pool every 6s.
    Add more by dropping h6.jpg, h7.jpg … in /brand/axess/heroes/ and extending POOL. */
 (function(){

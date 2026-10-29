@@ -11,6 +11,8 @@
 // transaction. Postgres gives us atomicity and durability the sheet never had.
 
 const { Pool } = require('pg');
+// Demo mode partitions every list under `demo:` while a demo request is active.
+const { scopedKey } = require('./lib/demo');
 
 const URL = process.env.DATABASE_URL || '';
 // Render's managed Postgres needs SSL; local dev usually doesn't. Enable SSL
@@ -38,7 +40,7 @@ async function ensureSchema() {
 async function pmLoad(key) {
   if (!pool) return [];
   try {
-    const r = await pool.query('SELECT v FROM pm_store WHERE k=$1', [String(key)]);
+    const r = await pool.query('SELECT v FROM pm_store WHERE k=$1', [scopedKey(key)]);
     if (!r.rows.length) return [];
     const v = r.rows[0].v;
     return Array.isArray(v) ? v : [];
@@ -54,7 +56,7 @@ async function pmSave(key, arr) {
   await pool.query(
     `INSERT INTO pm_store (k, v, updated_at) VALUES ($1, $2::jsonb, now())
      ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v, updated_at = now()`,
-    [String(key), v]
+    [scopedKey(key), v]
   );
   return { ok: true };
 }
@@ -66,6 +68,7 @@ async function pmSave(key, arr) {
 // defaults to the (mutated) array, and `result` is returned to the caller.
 async function pmMutate(key, fn) {
   if (!pool) throw new Error('no_database');
+  key = scopedKey(key);
   const client = await pool.connect();
   try {
     await client.query('BEGIN');

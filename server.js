@@ -12,6 +12,7 @@ const https = require('https');
 const db = require('./db');
 const authMod = require('./auth');
 const compliance = require('./lib/compliance');
+const demo = require('./lib/demo');
 const { pmLoad, pmSave, pmMutate } = db;
 
 // Tiny HTTPS GET → JSON (used to verify Google sign-in tokens; no extra deps).
@@ -92,7 +93,25 @@ app.use(cookieSession({
 const BASE_URL = (process.env.BASE_URL || '').replace(/\/$/, '');
 const PM_BASE = BASE_URL || 'http://localhost:' + (process.env.PORT || 3000);
 
+// ── Demo mode ───────────────────────────────────────────────────────────────
+// A demo session (signed axess_demo cookie, issued only through the /demo-mode
+// gate) runs the member app and member API inside the isolated demo partition.
+// Public pages, counters, real sign-up and real sign-in always use real data.
+app.use((req, res, next) => {
+  req.demo = demo.enabled() ? demo.readCookie(req) : null;
+  if (!req.demo || !demo.pathInDemo(req.path)) return next();
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  demo.run(() => next());
+});
 app.use(authMod.attachUser());
+// Inside demo, the signed-in identity is the chosen demo account — never the
+// real session's user.
+app.use(async (req, res, next) => {
+  if (!demo.active()) return next();
+  try { req.user = (req.demo.as && demo.isDemoEmail(req.demo.as)) ? await authMod.userFor(req.demo.as) : null; } catch (e) { req.user = null; }
+  if (!req.user && req.path === '/app.html') return res.redirect('/demo-mode');
+  next();
+});
 const ensureAuth = authMod.ensureAuth;
 const ADMIN = authMod.ADMIN;
 const ADMINS = authMod.ADMINS || (ADMIN ? [ADMIN] : []);
@@ -1648,42 +1667,42 @@ app.get('/api/pm/referral', ensureAuth, pmGate, async (req, res) => {
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
-// ── public marketing stats (no auth) ────────────────────────────────────────
+// ── public marketing stats + teaser (no auth) ─────────────────────────────────
+// One live source for the homepage: the member counter, founding spots left,
+// live-deal count/volume, and the teaser cards are all computed from the same
+// snapshot. Real data only — sample (seeded) and demo records never count.
+const pmIsLiveListing = (l, now) => l && !l.sample && !l.is_demo && pmAuthorized(l) && (l.status || 'active') === 'active' && !(l.expiresAt && new Date(l.expiresAt) < now);
+async function pmPublicSnapshot() {
+  const [listings, boxes, profs] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles')]);
+  const now = new Date();
+  const live = listings.filter(l => pmIsLiveListing(l, now));
+  const members = profs.filter(p => p && !p.sample && !p.is_demo && p.status === 'approved' && !p.deactivated && !ADMINS.includes(_lc(p.email)));
+  const foundingCap = compliance.FOUNDING_CAP;
+  const foundingTaken = Math.min(foundingCap, members.filter(p => p.foundingRate).length);
+  // Teaser cards: only broadly-shared live deals (never private/matched-only).
+  const cards = live.filter(l => (l.dist || 'broad') === 'broad')
+    .map(l => ({ type: l.propType || '', area: l.area || l.city || '', price: pmNum(l.price) ? pmMoneyShort(l.price) : '', value: pmNum(l.price) }))
+    .filter(x => x.type && x.area && x.price);
+  return {
+    liveDeals: live.length, volume: Math.round(live.reduce((a, l) => a + pmNum(l.price), 0)), members: members.length,
+    clientNeeds: boxes.filter(b => b && !b.sample && !b.is_demo).length, dealsPosted: listings.filter(l => l && !l.sample && !l.is_demo).length,
+    foundingCap, foundingLeft: Math.max(0, foundingCap - foundingTaken), foundingFull: foundingTaken >= foundingCap, cards
+  };
+}
 app.get('/api/pm/stats', async (req, res) => {
-  try {
-    const [listings, boxes, profs] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles')]);
-    const now = new Date();
-    const active = listings.filter(l => l && !l.sample && pmAuthorized(l) && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !(l.expiresAt && new Date(l.expiresAt) < now));
-    const volume = active.reduce((a, l) => a + pmNum(l.price), 0);
-    const members = profs.filter(p => p && !p.sample && p.status === 'approved' && !p.deactivated).length;
-    const foundingCap = compliance.FOUNDING_CAP;
-    res.json({ ok: true, stats: { liveDeals: active.length, volume: Math.round(volume), members, clientNeeds: boxes.filter(b => b && !b.sample).length, dealsPosted: listings.filter(l => l && !l.sample).length, foundingCap, foundingLeft: Math.max(0, foundingCap - members), foundingFull: members >= foundingCap } });
-  } catch (e) { res.json({ ok: false }); }
+  res.setHeader('Cache-Control', 'no-store');
+  try { const s = await pmPublicSnapshot(); delete s.cards; res.json({ ok: true, stats: s }); }
+  catch (e) { res.json({ ok: false }); }
 });
-
-// ── public teaser cards for the landing page (no auth) ───────────────────────
-// Returns ONLY safe basics — asset type, general submarket/town, rounded price —
-// pulled from real, actively-listed, BROADLY distributed deals. Never exposes
-// address, owner, docs, photos, exact geo, notes, or compensation. Private and
-// matched-only listings are excluded. Shuffled per request so the cards rotate.
+// Teaser cards for the landing page: ONLY safe basics (type, area, rounded
+// price) from the same live snapshot as the counters. Shuffled per request.
 app.get('/api/pm/teaser', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   try {
-    const listings = await pmLoad(PM_KEYS.listings);
-    const now = new Date();
-    const items = listings
-      // Active, non-expired deals. Show the owner's own inventory as marketing teasers
-      // regardless of in-network distribution; from other members, only broadly-
-      // distributed deals (never expose a member's private/pocket deal publicly).
-      .filter(l => l && (l.status || 'active') === 'active' && pmAuthorized(l) && !(l.expiresAt && new Date(l.expiresAt) < now) && ((l.dist || 'broad') === 'broad' || ADMINS.includes(_lc(l.owner))))
-      .map(l => ({
-        type: l.propType || '',
-        area: l.area || l.city || '',
-        price: pmNum(l.price) ? pmMoneyShort(l.price) : ''
-      }))
-      .filter(x => x.type && x.area && x.price);
+    const items = (await pmPublicSnapshot()).cards.map(c => ({ type: c.type, area: c.area, price: c.price }));
     for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = items[i]; items[i] = items[j]; items[j] = t; }
-    res.json({ ok: true, deals: items.slice(0, 6) });
-  } catch (e) { res.json({ ok: true, deals: [] }); }
+    res.json({ ok: true, deals: items.slice(0, 6), total: items.length });
+  } catch (e) { res.json({ ok: true, deals: [], total: 0 }); }
 });
 
 // ── object storage (Cloudflare R2 / S3-compatible) ──────────────────────────
@@ -1711,7 +1730,8 @@ app.post('/api/pm/upload', rateLimit('upload', 60, 60 * 1000), ensureAuth, pmGat
     const mime = String(b.mime || 'application/octet-stream').slice(0, 120).toLowerCase();
     if (!/^(image\/(png|jpe?g|gif|webp|heic)|application\/pdf|application\/vnd\.openxmlformats|application\/msword|application\/vnd\.ms-excel|text\/(csv|plain))/.test(mime)) return res.status(415).json({ ok: false, error: 'bad_type', message: 'Unsupported file type — images, PDF, or Office documents only.' });
     const name = String(b.name || 'file').slice(0, 200);
-    if (R2_ENABLED) {
+    // Demo uploads stay inline in the demo partition — never in real storage.
+    if (R2_ENABLED && !demo.active()) {
       const crypto = require('crypto');
       const key = 'u/' + crypto.createHash('sha1').update(pmEmail(req.user)).digest('hex').slice(0, 10) + '/' + Date.now().toString(36) + crypto.randomBytes(6).toString('hex') + '.' + _ext(mime);
       await r2Put(key, Buffer.from(data, 'base64'), mime);
@@ -1965,6 +1985,7 @@ app.post('/api/pm/admin/billing', ensureAuth, pmGate, async (req, res) => {
 });
 // Members: open the Stripe customer portal to update a card or cancel.
 app.post('/api/pm/billing/portal', ensureAuth, pmGate, async (req, res) => {
+  if (demo.active()) return res.status(403).json({ ok: false, error: 'demo', message: 'Billing is disabled in demo mode.' });
   if (!stripe) return res.status(503).json({ ok: false, error: 'not_configured' });
   try {
     const profs = await pmLoad('pm_profiles');
@@ -2027,6 +2048,7 @@ async function pmTrialReminders() {
 }
 setInterval(() => { pmTrialReminders().catch(() => {}); }, 6 * 3600 * 1000);
 app.post('/api/pm/checkout', ensureAuth, pmGate, async (req, res) => {
+  if (demo.active()) return res.status(403).json({ ok: false, error: 'demo', message: 'Billing is disabled in demo mode.' });
   if (!stripe) return res.status(503).json({ ok: false, error: 'not_configured' });
   const b = req.body || {}, kind = String(b.kind || '');
   try {
@@ -2171,9 +2193,12 @@ function serveWithIdentity(res, file, user) {
   let html = fs.readFileSync(path.join(__dirname, 'public', file), 'utf8');
   const mapsKey = process.env.GOOGLE_MAPS_KEY || process.env.MAPS_API_KEY || '';
   const inject = `<script>window.__ROLE__=${JSON.stringify(user.role)};window.__USER__=${JSON.stringify(user.name || '')};window.__EMAIL__=${JSON.stringify(user.email)};window.__ACCT__="access";window.__STATUS__=${JSON.stringify(user.status)};window.__MAPS_KEY__=${JSON.stringify(mapsKey)};window.__GOOGLE_CLIENT_ID__=${JSON.stringify(process.env.GOOGLE_CLIENT_ID || '')};</script>`;
-  html = html.includes('</head>') ? html.replace('</head>', inject + '</head>') : inject + html;
+  html = html.includes('</head>') ? html.replace('</head>', inject + (demo.active() ? DEMO_INJECT : '') + '</head>') : inject + html;
   res.type('html').send(html);
 }
+// Demo-only chrome for the members app: a persistent DEMO banner with an
+// account switcher, demo sign-out/exit, and a seller-form placeholder button.
+const DEMO_INJECT = '<meta name="robots" content="noindex,nofollow"><script>window.__DEMO__=true;</script><script src="/demo-bar.js" defer></script>';
 // Members app: approved members + admin only. Pending/unknown bounced to landing.
 app.get('/app.html', ensureAuth, (req, res) => {
   if (req.user.role !== 'owner' && req.user.status !== 'approved') return res.redirect('/?pending=1');
@@ -2273,6 +2298,62 @@ function serveLanding(req, res) {
   } catch (e) { res.sendFile(path.join(__dirname, 'public', 'index.html')); }
 }
 app.get(['/', '/index.html'], serveLanding);
+
+// ── Demo mode: gate, account picker, switch, reset ─────────────────────────────
+// Reachable only by a signed-in admin or with ?code=DEMO_ACCESS_CODE, and only
+// while DEMO_MODE is not "off". Otherwise these routes don't exist (404).
+function demoGate(req) {
+  if (!demo.enabled()) return null;
+  if (req.demo) return { admin: !!req.demo.admin };
+  if (req.user && req.user.role === 'owner') return { admin: true };
+  if (req.query && demo.codeOk(req.query.code)) return { admin: false };
+  return null;
+}
+async function demoSeed() {
+  if (!demo.active()) throw new Error('demo_context_required');
+  const d = demo.seedData();
+  for (const k of demo.DEMO_KEYS) await pmSave(k, d[k] || []);
+}
+async function demoEnsureSeeded() { if (!(await pmLoad('pm_profiles')).length) await demoSeed(); }
+function demoPage(gate, current) {
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const rows = demo.ACCOUNTS.map(a => '<button class="acct' + (current === a.email ? ' cur' : '') + '" onclick="go(' + a.n + ')"><b>' + esc(a.name) + '</b><span>' + esc(a.market) + ' · ' + esc(demo.FOCUS_LABEL[a.focus]) + ' · ' + esc(a.brokerage) + '</span>' + (current === a.email ? '<i>signed in</i>' : '') + '</button>').join('');
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>AXESS demo mode</title>'
+    + '<style>*{box-sizing:border-box}body{margin:0;font:15px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#F7F6F3;color:#0E1013}.bar{background:#B4882E;color:#fff;font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;padding:10px 16px;text-align:center}.w{max-width:560px;margin:0 auto;padding:28px 16px 60px}h1{font-size:26px;margin:0 0 6px}p{color:#5b5a54;margin:0 0 18px}.acct{display:block;width:100%;text-align:left;background:#fff;border:1px solid #D9D4C9;border-radius:12px;padding:14px 16px;margin:0 0 10px;font:inherit;cursor:pointer;position:relative}.acct b{display:block;font-size:16px}.acct span{color:#6B6A63;font-size:13px}.acct.cur{border-color:#1D5A4A;box-shadow:0 0 0 2px #1D5A4A inset}.acct i{position:absolute;right:14px;top:14px;font-style:normal;font-size:11px;color:#1D5A4A;font-weight:700}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.b{border:1px solid #D9D4C9;background:#fff;border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer}.b.red{color:#C0492E}#msg{margin-top:12px;color:#6B6A63;font-size:13px}</style></head><body>'
+    + '<div class="bar">Demo mode · test data only · not real agents or properties</div><div class="w"><h1>AXESS demo workspace</h1>'
+    + '<p>Five fake accounts and seeded DEMO listings and client needs, fully isolated from real members and data. No emails are sent and billing is disabled. Pick an account to sign in.</p>'
+    + rows + '<div class="row">' + (gate.admin ? '<button class="b red" onclick="reset()">Reset demo data</button>' : '') + (current ? '<button class="b" onclick="post(\'/api/demo/signout\').then(function(){location.reload();})">Sign out</button>' : '') + '<button class="b" onclick="post(\'/api/demo/exit\').then(function(){location.href=\'/\';})">Exit demo mode</button></div><div id="msg"></div></div>'
+    + '<script>function post(u,b){return fetch(u,{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})}).then(function(r){return r.json();});}'
+    + 'function go(n){post("/api/demo/signin",{n:n}).then(function(j){if(j&&j.ok)location.href="/app.html";else document.getElementById("msg").textContent=(j&&j.message)||"Could not sign in.";});}'
+    + 'function reset(){if(!confirm("Reset all demo data to the seed state? Demo listings, needs, intros and messages created during testing are erased."))return;post("/api/demo/reset").then(function(j){document.getElementById("msg").textContent=j&&j.ok?"Demo data reset ✓":"Reset failed.";});}</script></body></html>';
+}
+app.get('/demo-mode', async (req, res, next) => {
+  const gate = demoGate(req);
+  if (!gate) return next(); // not admin, no code, or disabled → behaves as if it doesn't exist
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  res.setHeader('Cache-Control', 'no-store');
+  if (!req.demo) { demo.writeCookie(res, { admin: gate.admin, as: '' }, IS_DEPLOYED); if (req.query.code) return res.redirect('/demo-mode'); }
+  try { await demo.run(() => demoEnsureSeeded()); } catch (e) { return res.status(502).send('Demo data unavailable: ' + String(e).slice(0, 120)); }
+  res.type('html').send(demoPage(gate, (req.demo && req.demo.as) || ''));
+});
+// All /api/demo/* run inside the demo partition and require a demo session.
+// The demo banner script is served only to demo sessions.
+app.get('/demo-bar.js', (req, res, next) => req.demo ? res.type('application/javascript').sendFile(path.join(__dirname, 'lib', 'demo-bar.js')) : next());
+app.use('/api/demo', (req, res, next) => (req.demo && demo.active()) ? next() : res.status(404).json({ ok: false, error: 'not_found' }));
+app.get('/api/demo/state', (req, res) => res.json({ ok: true, admin: !!req.demo.admin, current: req.demo.as || '', placeholder: demo.PLACEHOLDER_FORM, accounts: demo.ACCOUNTS.map(a => ({ n: a.n, name: a.name, email: a.email, market: a.market, focus: demo.FOCUS_LABEL[a.focus] })) }));
+app.post('/api/demo/signin', async (req, res) => {
+  const a = demo.accountByN((req.body || {}).n);
+  if (!a) return res.status(400).json({ ok: false, error: 'bad_account' });
+  try { await demoEnsureSeeded(); } catch (e) { return res.status(502).json({ ok: false, error: String(e).slice(0, 120) }); }
+  demo.writeCookie(res, { admin: !!req.demo.admin, as: a.email }, IS_DEPLOYED);
+  res.json({ ok: true, as: a.email });
+});
+app.post('/api/demo/signout', (req, res) => { demo.writeCookie(res, { admin: !!req.demo.admin, as: '' }, IS_DEPLOYED); res.json({ ok: true }); });
+app.post('/api/demo/exit', (req, res) => { demo.clearCookie(res, IS_DEPLOYED); res.json({ ok: true }); });
+app.post('/api/demo/reset', async (req, res) => {
+  if (!req.demo.admin) return res.status(403).json({ ok: false, error: 'admin_only' });
+  try { await demoSeed(); res.json({ ok: true }); } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 120) }); }
+});
 
 // Google Sign-In: the client sends the Google ID token (JWT). We verify it with
 // Google's tokeninfo endpoint, confirm the audience is our OAuth client and the

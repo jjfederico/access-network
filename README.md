@@ -44,10 +44,30 @@ free trial; then $25/month for life for the first 100 members (founding rate)
 and $50/month after the 100th. The trial clock starts at join or when billing
 is first switched on (`billingStartedAt`), whichever is later.
 
+## Demo mode (audit/testing workspace)
+
+An isolated copy of the member app with five fake accounts (Demo Agent 1–5),
+six DEMO listings and three DEMO client needs. Nothing is linked publicly and
+it is `noindex` + excluded in `robots.txt`.
+
+- **Enter:** signed in as an admin, open `/demo-mode`; or anyone with the code
+  opens `/demo-mode?code=<DEMO_ACCESS_CODE>`. Without one of those it is a 404.
+- **Use:** pick an account; the gold DEMO bar in the app switches accounts,
+  signs out (back to the picker) and exits. The seller-form step has a
+  "Use DEMO placeholder form" button.
+- **Reset:** admins see "Reset demo data" on `/demo-mode`.
+- **Off switch:** `DEMO_MODE=off` removes demo mode entirely.
+
+Isolation: demo requests run in an AsyncLocalStorage context and `db.js`
+stores every list under `demo:<key>` (`lib/demo.js`). Public counters, the
+teaser, real sign-up and real sign-in always use real data. Demo sends no
+email, uploads stay inline (never R2), and checkout/portal are refused.
+
 ## What you provision
 
 1. GitHub repo → Render web service (`npm install` / `npm start`).
 2. Render Postgres → `DATABASE_URL`.
 3. Env: `SESSION_SECRET`, `ACCESS_ADMIN`, `BASE_URL`, optional
    `RESEND_API_KEY`, `STRIPE_SECRET_KEY` / price IDs,
-   `STRIPE_PRICE_FOUNDING`, `STRIPE_PRICE_STANDARD`.
+   `STRIPE_PRICE_FOUNDING`, `STRIPE_PRICE_STANDARD`, `STRIPE_WEBHOOK_SECRET`,
+   optional `DEMO_ACCESS_CODE` (demo link code) and `DEMO_MODE=off`.
