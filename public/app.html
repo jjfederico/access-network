@@ -1985,7 +1985,9 @@ function openBilling(){
     if(!j||!j.ok){alert('Couldn’t load your membership right now — try again in a moment.');return;}
     var rate=j.founder?('$'+j.prices.founding+'/month — founding rate, locked in for life'):('$'+j.prices.standard+'/month');
     var st,act='';
-    if(j.paid){st='<b style="color:#1E7A52">Active.</b> Your membership is '+esc(rate)+'.';
+    if(j.paid&&j.cancelAt){st='<b>Cancellation scheduled.</b> Your membership ends on <b>'+esc(fmtDay(j.cancelAt))+'</b>, the end of your current paid period. You keep full access until then and won’t be charged again.';
+      act='<button class="btn acc" onclick="resumeMembership()">Keep my membership</button>';}
+    else if(j.paid){st='<b style="color:#1E7A52">Active.</b> Your membership is '+esc(rate)+'. If you cancel, it ends at the end of your current paid month — you keep access until then and aren’t charged again.';
       if(j.canManage)act='<button class="btn ghost" onclick="billingPortal()">Update card or cancel</button>';}
     else if(j.subStatus==='past_due'){st='<b style="color:var(--bad)">Payment failed.</b> Update your card to keep your membership.';
       if(j.canManage)act='<button class="btn acc" onclick="billingPortal()">Update card</button>';}
@@ -2004,6 +2006,8 @@ function openBilling(){
 }
 function startMembership(){var b=$('subBtn'),m=$('billMsg');if(b)b.disabled=true;if(m)m.textContent='Opening secure checkout…';
   api('/api/pm/checkout',{kind:'membership'}).then(function(j){if(j&&j.ok&&j.url){location.href=j.url;return;}if(b)b.disabled=false;if(m)m.textContent=(j&&j.message)||'Could not start checkout — try again.';});}
+function resumeMembership(){var m=$('billMsg');if(m)m.textContent='Saving…';
+  api('/api/pm/billing/resume',{}).then(function(j){if(j&&j.ok){close_('mBilling');openBilling();return;}if(m)m.textContent=(j&&j.message)||'Could not update — try again.';});}
 function billingPortal(){var m=$('billMsg');if(m)m.textContent='Opening…';
   api('/api/pm/billing/portal',{}).then(function(j){if(j&&j.ok&&j.url){location.href=j.url;return;}if(m)m.textContent=(j&&j.message)||'Could not open billing — try again.';});}
 /* ── billing switch (owner) ── */
@@ -2059,7 +2063,7 @@ function openProfile(){
     +'</div>'
     +'<div class="f full"><label>Website</label><input id="pWebsite" value="'+esc(p.website||'')+'" placeholder="yourbrokerage.com"></div>'
     +pofSection(p)
-    +(ME.role!=='owner'?'<div style="border-top:1px solid var(--line);margin-top:20px;padding-top:14px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:8px">Account</div><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div style="color:var(--mut);font-size:12.5px;max-width:430px;line-height:1.5">Cancel your account and end access. We keep your records, so you can rejoin anytime.</div><button class="btn ghost" style="color:#b00020;border-color:#e6b8bf" onclick="cancelAccount()">Cancel my account</button></div></div>':'')
+    +(ME.role!=='owner'?'<div style="border-top:1px solid var(--line);margin-top:20px;padding-top:14px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:8px">Account</div><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div style="color:var(--mut);font-size:12.5px;max-width:430px;line-height:1.5">Cancel your membership. If you’re paying, it ends at the end of your current paid month and you keep access until then; otherwise access ends now. We keep your records, so you can rejoin anytime.</div><button class="btn ghost" style="color:#b00020;border-color:#e6b8bf" onclick="cancelAccount()">Cancel my account</button></div></div>':'')
     +'<div class="mact"><span class="msg" id="pMsg"></span><button class="btn ghost" onclick="close_(\'mProfile\')">Cancel</button><button class="btn acc" onclick="saveProfile()">Save profile</button></div></div></div>';
   open_('mProfile');
 }
@@ -2094,12 +2098,20 @@ function saveProfile(){
 /* ── self-serve: member cancels their own account (records kept, access ends) ── */
 function cancelAccount(){
   if(ME.role==='owner'){alert('The owner account can\'t be cancelled here.');return;}
-  if(!confirm('Cancel your AXESS account?\n\nYour access ends right away. We keep your records, so you can rejoin anytime by creating an account again — if you still meet the published criteria.'))return;
-  if(!confirm('Just to confirm — this signs you out and ends your access now. Continue?'))return;
+  api('/api/pm/pay/status').then(function(ps){
+  var paying=!!(ps&&ps.ok&&ps.paid);
+  if(paying){
+    if(!confirm('Cancel your AXESS membership?\n\nIt ends at the end of your current paid month. You keep full access until then and won’t be charged again. You can undo this any time before then.'))return;
+  }else{
+    if(!confirm('Cancel your AXESS account?\n\nYou haven’t started a paid membership, so nothing is charged and your access ends right away. We keep your records, so you can rejoin anytime by creating an account again — if you still meet the published criteria.'))return;
+    if(!confirm('Just to confirm — this signs you out and ends your access now. Continue?'))return;
+  }
   var m=$('pMsg');if(m)m.textContent='Cancelling…';
   api('/api/pm/cancel',{}).then(function(j){
+    if(j&&j.ok&&j.immediate===false){alert('Cancellation scheduled. Your membership ends on '+fmtDay(j.endsAt)+' — you keep full access until then and won’t be charged again.');if(m)m.textContent='';return;}
     if(j&&j.ok){alert('Your account has been cancelled. Thanks for being part of AXESS — you can rejoin anytime.');location.href='/';}
     else{if(m)m.textContent=(j&&j.message)||'Could not cancel — please try again.';}
+  });
   });
 }
 

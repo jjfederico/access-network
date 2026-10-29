@@ -1363,6 +1363,20 @@ app.post('/api/pm/cancel', ensureAuth, pmGate, async (req, res) => {
     const profs = await pmLoad('pm_profiles');
     const idx = profs.findIndex(p => p && _lc(p.email) === email);
     const now = new Date().toISOString();
+    // A paying member's cancellation takes effect at the end of the current
+    // paid billing period (Terms §8): Stripe stops renewing, access continues
+    // until then, and the webhook ends access when the period closes.
+    const me = idx >= 0 ? profs[idx] : null;
+    if (me && me.paid && me.stripeSubscription && stripe && !demo.active()) {
+      const sub = await stripe.subscriptions.update(me.stripeSubscription, { cancel_at_period_end: true });
+      const endsAt = sub && sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : '';
+      me.cancelAt = endsAt; me.cancelRequestedAt = now;
+      await pmSave('pm_profiles', profs);
+      const endTxt = endsAt ? new Date(endsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }) : 'the end of your current billing period';
+      try { await pmSendEmail(email, 'AXESS · cancellation scheduled', 'Your AXESS membership is cancelled effective ' + endTxt + ', the end of your current paid billing period. You keep full access until then and you won\'t be charged again. Changed your mind? Open AXESS → Membership & billing → Keep my membership before that date.'); } catch (e) {}
+      if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · a member scheduled cancellation', (req.user.name || email) + ' cancelled; access ends ' + endTxt + '.\n\nEmail: ' + email); } catch (e) {} }
+      return res.json({ ok: true, endsAt, immediate: false });
+    }
     if (idx >= 0) {
       profs[idx].deactivated = true;
       profs[idx].deactivatedAt = now;
@@ -1373,9 +1387,10 @@ app.post('/api/pm/cancel', ensureAuth, pmGate, async (req, res) => {
     // Confirm to the member, and let the owner know someone left.
     try { await pmSendEmail(email, 'AXESS · your account is cancelled', 'Your AXESS account has been cancelled and your access has ended. We\'ve kept your records on file. If you\'d like to come back, sign up again at ' + PM_BASE + ' — membership is open to any Massachusetts licensed agent in good standing who meets the published criteria (' + PM_BASE + '/membership).\n\nThanks for being part of AXESS.'); } catch (e) {}
     if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · a member cancelled', (req.user.name || email) + ' cancelled their AXESS account.\n\nEmail: ' + email + '\n\nTheir records are retained. You can restore access from the Members tab if they return.'); } catch (e) {} }
-    // End their session so access stops right away.
-    req.session = null;
-    res.json({ ok: true });
+    // End their session so access stops right away (in demo, only the demo sign-in).
+    if (demo.active()) demo.writeCookie(res, { admin: !!req.demo.admin, as: '' }, IS_DEPLOYED);
+    else req.session = null;
+    res.json({ ok: true, immediate: true });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.post('/api/pm/admin/verify', ensureAuth, pmGate, async (req, res) => {
@@ -1923,7 +1938,7 @@ app.get('/api/pm/pay/status', ensureAuth, pmGate, async (req, res) => {
     const membershipConfigured = !!(stripe && priceIdForMember(me));
     const trialEndsAt = compliance.trialEndsAt(me.approvedAt || me.createdAt, settings.billingStartedAt);
     const trialDaysLeft = trialEndsAt ? Math.max(0, Math.ceil((new Date(trialEndsAt) - Date.now()) / 864e5)) : null;
-    res.json({ ok: true, enabled: !!stripe, membership: membershipConfigured, billingOn: !!settings.billingOn, trialDays: compliance.TRIAL_DAYS, trialEndsAt, trialDaysLeft, subStatus: me.subStatus || '', canManage: !!(stripe && me.stripeCustomer), founder, monthly, memberNo: me.memberNo || null, paid: !!me.paid, prices: { founding: MEMBERSHIP_FOUNDING, standard: MEMBERSHIP_STANDARD } });
+    res.json({ ok: true, enabled: !!stripe, membership: membershipConfigured, billingOn: !!settings.billingOn, trialDays: compliance.TRIAL_DAYS, trialEndsAt, trialDaysLeft, subStatus: me.subStatus || '', cancelAt: me.cancelAt || '', canManage: !!(stripe && me.stripeCustomer), founder, monthly, memberNo: me.memberNo || null, paid: !!me.paid, prices: { founding: MEMBERSHIP_FOUNDING, standard: MEMBERSHIP_STANDARD } });
   } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
 });
 // Owner: switch membership billing on/off. Off = nobody charged. The first time
@@ -1983,6 +1998,20 @@ app.post('/api/pm/admin/billing', ensureAuth, pmGate, async (req, res) => {
     res.json({ ok: true, billingOn: on, billingStartedAt: s.billingStartedAt || '', notified });
   } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
 });
+// Members: undo a scheduled cancellation before the period ends.
+app.post('/api/pm/billing/resume', ensureAuth, pmGate, async (req, res) => {
+  if (demo.active()) return res.status(403).json({ ok: false, error: 'demo', message: 'Billing is disabled in demo mode.' });
+  if (!stripe) return res.status(503).json({ ok: false, error: 'not_configured' });
+  try {
+    const profs = await pmLoad('pm_profiles');
+    const me = profs.find(p => p && _lc(p.email) === pmEmail(req.user));
+    if (!me || !me.stripeSubscription || !me.cancelAt) return res.status(400).json({ ok: false, error: 'nothing_to_resume', message: 'There’s no scheduled cancellation to undo.' });
+    await stripe.subscriptions.update(me.stripeSubscription, { cancel_at_period_end: false });
+    me.cancelAt = ''; me.cancelRequestedAt = '';
+    await pmSave('pm_profiles', profs);
+    res.json({ ok: true });
+  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+});
 // Members: open the Stripe customer portal to update a card or cancel.
 app.post('/api/pm/billing/portal', ensureAuth, pmGate, async (req, res) => {
   if (demo.active()) return res.status(403).json({ ok: false, error: 'demo', message: 'Billing is disabled in demo mode.' });
@@ -2014,8 +2043,18 @@ async function pmStripeWebhook(req, res) {
       const profs = await pmLoad('pm_profiles');
       const p = profs.find(x => x && x.stripeCustomer === customer);
       if (p) {
-        p.subStatus = subStatus; p.subUpdatedAt = new Date().toISOString();
+        const now = new Date().toISOString();
+        p.subStatus = subStatus; p.subUpdatedAt = now;
         p.paid = subStatus === 'active' || subStatus === 'trialing';
+        if (o.object === 'subscription') {
+          // Cancellation scheduled (from the app or the Stripe portal) or undone.
+          p.cancelAt = o.cancel_at_period_end && o.current_period_end ? new Date(o.current_period_end * 1000).toISOString() : '';
+        }
+        // A member-requested cancellation reached the end of the paid period:
+        // access ends now (records kept, same as any self-cancel).
+        if (ev.type === 'customer.subscription.deleted' && (p.cancelRequestedAt || o.cancel_at_period_end)) {
+          p.deactivated = true; p.deactivatedAt = now; p.cancelledAt = now; p.cancelledSelf = true; p.cancelAt = '';
+        }
         await pmSave('pm_profiles', profs);
       }
     }
