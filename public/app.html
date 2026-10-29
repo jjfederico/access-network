@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AXESS · Off-Market Real Estate Network</title>
+<title>AXESS · Pre-Market, Agent-to-Agent Real Estate Software</title>
 <link rel="icon" type="image/svg+xml" href="/brand/axess/favicon/favicon.svg">
 <link rel="icon" href="/brand/axess/favicon/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/brand/axess/favicon/apple-touch-icon-180.png">
@@ -553,7 +553,7 @@ html.dark .deal .lock{background:rgba(20,24,31,.72)!important}
       <a onclick="close_acct();openNotifSettings()">Notifications</a>
       <a onclick="close_acct();openReferral()">Refer &amp; earn <span style="color:var(--gold)">◆</span></a>
       <a id="adminLink" style="display:none;color:var(--gold)" onclick="close_acct();openAdmin()">Admin <span id="adminDot" style="display:none"></span></a>
-      <a id="inviteLink" style="display:none;color:var(--acc2)" onclick="close_acct();openInvite()">✉ Invite a member</a>
+      <a id="inviteLink" style="display:none;color:var(--acc2)" onclick="close_acct();openInvite()">✉ Send a sign-up link</a>
       <a id="importLink" style="display:none;color:var(--gold)" onclick="close_acct();openImport()">＋ Import inventory</a>
       <div class="acctSep"></div>
       <a href="/logout">Sign out</a>
@@ -1211,7 +1211,7 @@ function renderWelcome(){
   if(!show){el.style.display='none';return;}
   el.innerHTML='<button class="wx" onclick="dismissWelcome()" aria-label="Dismiss">×</button>'
     +'<h3>Welcome to AXESS 👋</h3>'
-    +'<div class="wsub">A private network where licensed Massachusetts agents share seller-directed, pre-market property — agent to agent. Three ways to use it:</div>'
+    +'<div class="wsub">Software where licensed Massachusetts agents share seller-directed, pre-market property — agent to agent. Three ways to use it:</div>'
     +'<div class="steps">'
       +'<div class="step"><div class="n">🔑</div><b>Post</b><span>Share a deal or a client need whenever you have one.</span></div>'
       +'<div class="step"><div class="n">🔔</div><b>Get matched</b><span>Save what your buyers want — we email you only the deals that fit, never a blast.</span></div>'
@@ -1239,7 +1239,7 @@ function toggleFilters(force){var r=document.getElementById('rail'),s=document.g
 // Trust chips. verified=license; pof can be {amount} (card shorthand, already verified)
 // or {status,amount} (directory/intro/profile). Only renders POF when verified.
 function badgeVer(v){return v?'<span class="bdg ver" title="License verified">✓ Verified</span>':'';}
-function badgeProd(v){return v?'<span class="bdg prod" title="Curated producer — verified by AXESS">⭐ Producer</span>':'';}
+function badgeProd(v){return v?'<span class="bdg prod" title="Producer badge — assigned by AXESS; has no effect on membership, price, or feed access">⭐ Producer</span>':'';}
 function badgePof(p){if(!p)return '';var ok=(p.status==='verified')||(p.status===undefined&&(p.amount!==undefined));if(!ok)return '';var amt=p.amount?(' '+esc(String(p.amount))):'';return '<span class="bdg pof" title="Proof of funds verified">💰 POF'+amt+'</span>';}
 // ── Reputation layer: earned badges + real activity stats (server-computed, never self-reported) ──
 function fmtSince(iso){if(!iso)return '';var d=new Date(iso);if(isNaN(d))return '';return d.toLocaleDateString('en-US',{month:'short',year:'numeric'});}
@@ -1478,7 +1478,7 @@ function renderMap(list){
       var pos=dealLatLng(d);if(!pos)return;
       var mk=new google.maps.Marker({position:{lat:pos.lat,lng:pos.lng},map:DEALMAP,title:(d.submarket||'Deal')+' · '+money(d.price)});
       mk.addListener('click',function(){
-        MAP_INFO.setContent('<div style="font-family:Inter,system-ui,sans-serif;min-width:150px"><div style="font-weight:700;font-size:14px">'+esc(d.submarket||'Off-market deal')+'</div><div style="font-size:12px;color:#5F636D;margin:2px 0 6px">'+esc(d.type||'')+' · '+money(d.price)+(pos.exact?'':' · approx. area')+'</div><a href="#" onclick="MAP_INFO.close();openDetail(\''+d.id+'\');return false" style="color:#0A3D8F;font-weight:600;font-size:12.5px;text-decoration:none">View deal →</a></div>');
+        MAP_INFO.setContent('<div style="font-family:Inter,system-ui,sans-serif;min-width:150px"><div style="font-weight:700;font-size:14px">'+esc(d.submarket||'Pre-market deal')+'</div><div style="font-size:12px;color:#5F636D;margin:2px 0 6px">'+esc(d.type||'')+' · '+money(d.price)+(pos.exact?'':' · approx. area')+'</div><a href="#" onclick="MAP_INFO.close();openDetail(\''+d.id+'\');return false" style="color:#0A3D8F;font-weight:600;font-size:12.5px;text-decoration:none">View deal →</a></div>');
         MAP_INFO.open(DEALMAP,mk);
       });
       MAP_MARKERS.push(mk);bounds.extend(mk.getPosition());any=true;
@@ -1689,13 +1689,14 @@ function openDetail(id){
         ? '<button class="btn acc" onclick="markClosed(\''+d.id+'\',false)">Reopen deal</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>'
       : d.status==='mls'
         ? '<button class="btn acc" onclick="markMLS(\''+d.id+'\',false)">Relist to network</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>'
-        : '<button class="btn acc" onclick="openEdit(\''+d.id+'\')">✎ Edit</button><button class="btn acc" onclick="markClosed(\''+d.id+'\',true)" style="background:#1E7A52;border-color:#1E7A52">✓ Mark closed</button><button class="btn ghost" onclick="renewDeal(\''+d.id+'\')">'+renewLbl+'</button>'+featBtn+'<button class="btn ghost" onclick="toggleOff(\''+d.id+'\')">'+(d.status==='off'?'Relist':'Take off-market')+'</button><button class="btn ghost" onclick="markMLS(\''+d.id+'\',true)">Moved to MLS</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>')
+        : '<button class="btn acc" onclick="openEdit(\''+d.id+'\')">✎ Edit</button><button class="btn acc" onclick="markClosed(\''+d.id+'\',true)" style="background:#1E7A52;border-color:#1E7A52">✓ Mark closed</button><button class="btn ghost" onclick="renewDeal(\''+d.id+'\')">'+renewLbl+'</button>'+featBtn+'<button class="btn ghost" onclick="toggleOff(\''+d.id+'\')">'+(d.status==='off'?'Relist':'Withdraw')+'</button><button class="btn ghost" onclick="markMLS(\''+d.id+'\',true)">Moved to MLS</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>')
     : nonOwnerCta;
   var expBadge=d.expiresAt?('<div class="drow"><span>Expires</span><b class="mono">'+ago2(d.expiresAt)+'</b></div>'):'';
   $('detailBody').innerHTML=
-    '<div class="mhead"><div><h3>'+esc(d.submarket||'Off-market deal')+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★ Featured</span>':'')+(d.soon?' <span class="pill req" style="background:var(--acc);color:#fff">◔ Coming soon</span>':'')+'</h3><div style="color:var(--acc2);font-weight:700;font-size:12.5px;margin-top:3px">'+esc(d.type||'')+' · '+money(d.price)+'</div></div><button class="x" onclick="close_(\'mDetail\')">×</button></div>'
+    '<div class="mhead"><div><h3>'+esc(d.submarket||'Pre-market deal')+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★ Featured</span>':'')+(d.soon?' <span class="pill req" style="background:var(--acc);color:#fff">◔ Coming soon</span>':'')+'</h3><div style="color:var(--acc2);font-weight:700;font-size:12.5px;margin-top:3px">'+esc(d.type||'')+' · '+money(d.price)+'</div></div><button class="x" onclick="close_(\'mDetail\')">×</button></div>'
     +'<div class="mbody">'
-      +(d.status==='closed'?'<div class="reveal" style="background:rgba(30,122,82,.08);border-color:#1E7A52"><b style="color:#1E7A52">🎉 Closed through AXESS'+(d.closedAt?(' · '+new Date(d.closedAt).toLocaleDateString()):'')+(num(d.closePrice)?(' · '+money(d.closePrice)):'')+'.</b> Counted in the network\'s closed-deal proof. Removed from the live feed.</div>':'')
+      +(d.status==='closed'?'<div class="reveal" style="background:rgba(30,122,82,.08);border-color:#1E7A52"><b style="color:#1E7A52">🎉 Marked closed'+(d.closedAt?(' · '+new Date(d.closedAt).toLocaleDateString()):'')+(num(d.closePrice)?(' · '+money(d.closePrice)):'')+'.</b> Counted in the network\'s closed-deal proof. Removed from the live feed.</div>':'')
+      +(mine&&d.status==='live'&&!d.hasSellerForm?'<div class="reveal" style="background:var(--card);border-color:var(--bad)"><b style="color:var(--bad)">Not live — seller authorization required.</b> Other members can’t see this listing until you upload the seller-signed Non-MLS or delayed-listing form. Use ✎ Edit to upload it.</div>':'')
       +(d.status==='mls'?'<div class="reveal" style="background:var(--card);border-color:var(--gold)"><b style="color:var(--gold)">✓ Moved to the MLS'+(d.mlsAt?(' · '+new Date(d.mlsAt).toLocaleDateString()):'')+'.</b> This deal is now public and has been removed from the AXESS feed.</div>':'')
       +(d.desc?'<p style="color:var(--mut);font-size:14px;margin-bottom:12px">'+esc(d.desc)+'</p>':'')
       +addrBlock
@@ -1943,14 +1944,14 @@ function markMLS(id,on){
   if(on&&!confirm('Mark this deal as moved to the MLS?\n\nIt will be removed from the AXESS feed and members can no longer contact you about it here. You can relist it later from “My activity.”'))return;
   api('/api/pm/listing/mls',{id:id,on:on}).then(function(j){
     if(j&&j.ok){close_('mDetail');loadAll();}
-    else alert((j&&j.error)||'Could not update — try again.');
+    else alert((j&&(j.message||j.error))||'Could not update — try again.');
   });
 }
 function markClosed(id,on){
   if(!on){ if(!confirm('Reopen this deal to the network? It will no longer count as closed.'))return;
-    api('/api/pm/listing/close',{id:id,on:false}).then(function(j){if(j&&j.ok){close_('mDetail');loadAll();}else alert((j&&j.error)||'Could not update — try again.');});return; }
+    api('/api/pm/listing/close',{id:id,on:false}).then(function(j){if(j&&j.ok){close_('mDetail');loadAll();}else alert((j&&(j.message||j.error))||'Could not update — try again.');});return; }
   var d=LISTINGS.find(function(x){return x.id===id;})||{};
-  var pr=prompt('🎉 Closed through AXESS!\n\nClosing price (optional — leave blank to keep private, or enter to show it in the network\'s closed-deal proof):', d.price?String(d.price):'');
+  var pr=prompt('🎉 Mark this deal closed\n\nClosing price (optional — leave blank to keep private, or enter to show it in the network\'s closed-deal proof):', d.price?String(d.price):'');
   if(pr===null)return;
   var clean=String(pr).replace(/[^0-9.]/g,'');
   var show=true;
@@ -1965,7 +1966,7 @@ function toggleOff(id){var d=LISTINGS.find(function(x){return x.id===id;});if(!d
     address:d.addr,area:d.area,city:d.city,state:'MA',zip:d.zip,ownerName:d.by,propType:d.type,dist:d.dist,
     price:d.price,units:d.units,capRate:d.cap,noi:d.noi,
     sqft:d.sf,grossIncome:d.gross,expenses:d.exp,beds:d.beds,baths:d.baths,yearBuilt:d.yb,notes:d.desc
-  }).then(function(){close_('mDetail');loadAll();});
+  }).then(function(j){if(j&&!j.ok){alert((j&&j.message)||'Could not update — try again.');return;}close_('mDetail');loadAll();});
 }
 function delDeal(id){if(!confirm('Delete this deal permanently?'))return;
   api('/api/pm/listing/delete',{id:id}).then(function(){close_('mDetail');loadAll();});
@@ -1975,7 +1976,7 @@ function renewDeal(id){
   if(PAYCFG.enabled){ return payCheckout('renew',id); }        // paid renew via Stripe
   api('/api/pm/renew',{id:id}).then(function(j){                // free fallback until Stripe is on
     if(j&&j.ok){loadAll();openDetail(id);}
-    else{alert('Could not renew — try again.');}
+    else{alert((j&&j.message)||'Could not renew — try again.');}
   });
 }
 function featureDeal(id){ if(PAYCFG.enabled) payCheckout('feature',id); }
@@ -2120,25 +2121,25 @@ function saveNotifPrefs(){
 }
 /* ── admin panel (owner) ── */
 function openAdmin(){
-  Promise.all([api('/api/pm/admin/members'),api('/api/pm/feed'),api('/api/pm/admin/requests'),api('/api/pm/admin/invites')]).then(function(r){
-    var mj=r[0]||{},fj=r[1]||{},rj=r[2]||{},vj=r[3]||{};var members=(mj&&mj.members)||[];var deals=(fj.listings||[]).map(nL).filter(Boolean);var requests=(rj&&rj.requests)||[];var invites=(vj&&vj.invites)||[];
+  Promise.all([api('/api/pm/admin/members'),api('/api/pm/feed'),api('/api/pm/admin/requests'),api('/api/pm/admin/invites'),api('/api/pm/admin/admissions')]).then(function(r){
+    var mj=r[0]||{},fj=r[1]||{},rj=r[2]||{},vj=r[3]||{},aj=r[4]||{};var adm=(aj&&aj.entries)||[];var members=(mj&&mj.members)||[];var deals=(fj.listings||[]).map(nL).filter(Boolean);var requests=(rj&&rj.requests)||[];var invites=(vj&&vj.invites)||[];
     var invRows=invites.length?invites.map(function(v){
-      var st=v.status==='verified'?'<span class="pill appr">Signed up · verified</span>':v.status==='signed_up'?'<span class="pill appr">Signed up</span>':'<span class="pill req">Invite sent</span>';
+      var st=v.status==='verified'?'<span class="pill appr">Signed up · verified</span>':v.status==='signed_up'?'<span class="pill appr">Signed up</span>':'<span class="pill req">Link sent</span>';
       var resend=v.status==='invited'?'<button class="btn ghost sm" onclick="resendInvite(\''+escJS(v.email)+'\')">Resend</button>':'';
-      return '<div class="reqrow"><div class="grow"><b>'+esc(v.name||v.email)+'</b> '+st+'<div style="color:var(--mut2);font-size:11.5px;margin-top:3px">'+esc(v.email)+' · invited '+ago(v.at)+'</div></div>'+resend+'</div>';
-    }).join(''):'<div class="empty">No invites sent yet. Use “Invite a member” in your account menu.</div>';
+      return '<div class="reqrow"><div class="grow"><b>'+esc(v.name||v.email)+'</b> '+st+'<div style="color:var(--mut2);font-size:11.5px;margin-top:3px">'+esc(v.email)+' · link sent '+ago(v.at)+'</div></div>'+resend+'</div>';
+    }).join(''):'<div class="empty">No sign-up links sent yet. Use “Send a sign-up link” in your account menu.</div>';
     function reqRow(q,pending){
       var badge=q.status==='approved'?'<span class="pill appr">Approved</span>':q.status==='denied'?'<span class="pill dec">Denied</span>':'<span class="pill req">Pending</span>';
       var lookup=q.license?(' <a href="'+MA_LICENSE_URL+'" target="_blank" rel="noopener" title="Look up this license on the MA state portal" style="color:var(--acc);text-decoration:none;font-weight:600">🔎 look up license ↗</a>'):'';
-      var act=pending?('<button class="btn acc sm" onclick="adminReq(\''+q.id+'\',\'approved\')">Verify &amp; approve</button><button class="btn ghost sm" onclick="adminReq(\''+q.id+'\',\'denied\')">Deny</button>'):badge;
+      var act=pending?('<button class="btn acc sm" onclick="adminReq(\''+q.id+'\',\'approved\')">Admit</button><button class="btn ghost sm" onclick="adminReq(\''+q.id+'\',\'denied\')">Deny for cause</button>'):badge;
       return '<div class="reqrow"><div class="grow"><b>'+esc(q.name||q.email)+'</b>'+(pending?'':' '+badge)+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">Lic <b>'+esc(q.license||'—')+'</b>'+lookup+' · '+esc(q.brokerage||'—')+(q.markets?(' · '+esc(q.markets)):'')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(q.email)+(q.phone?(' · '+esc(q.phone)):'')+(q.note?(' · “'+esc(q.note)+'”'):'')+'</div></div>'+(pending?('<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div>'):'')+'</div>';
     }
     var pendReq=requests.filter(function(q){return q.status==='pending';});
     var doneReq=requests.filter(function(q){return q.status!=='pending';});
-    var reqRows=(pendReq.length?('<div style="color:var(--mut);font-size:12px;margin-bottom:8px">Verify each agent’s license on the state portal, then approve or deny. Approving grants access and emails them.</div>'+pendReq.map(function(q){return reqRow(q,true);}).join('')):'<div class="empty">No pending requests — you’re all caught up. 🎉</div>')
+    var reqRows=(pendReq.length?('<div style="color:var(--mut);font-size:12px;margin-bottom:8px">Admission is automatic for every applicant who meets the published criteria. Check the license on the state portal; deny only for a stated cause (license, non-payment, or material breach). Every decision is recorded in the Admissions log.</div>'+pendReq.map(function(q){return reqRow(q,true);}).join('')):'<div class="empty">No pending requests — you’re all caught up. 🎉</div>')
       +(doneReq.length?('<details style="margin-top:16px"><summary style="cursor:pointer;color:var(--mut);font-size:12.5px;font-weight:600;padding:4px 0">Recently decided ('+doneReq.length+')</summary><div style="margin-top:8px">'+doneReq.slice(0,50).map(function(q){return reqRow(q,false);}).join('')+'</div></details>'):'');
     var memRows=members.length?members.map(function(m){
-      var badge=m.status==='approved'?'<span class="pill appr">Approved</span>':m.status==='rejected'?'<span class="pill dec">Rejected</span>':'<span class="pill req">Pending</span>';
+      var badge=m.status==='approved'?'<span class="pill appr">Member</span>':(m.status==='rejected'||m.status==='denied')?'<span class="pill dec">Denied'+(m.denialCause?(' · '+esc(CAUSE_LBL[m.denialCause]||m.denialCause)):'')+'</span>':'<span class="pill req">Pending</span>';
       var verBadge=m.verified?' <span title="License verified" style="color:var(--acc);font-weight:700;font-size:11px">✓ Verified</span>':'';
       var pofBadge=m.pof==='verified'?(' <span style="color:#8A6A12;font-weight:700;font-size:11px">💰 POF'+(m.pofAmount?(' '+esc(m.pofAmount)):'')+'</span>'):(m.pof==='pending'?' <span class="pill req">POF pending</span>':'');
       var prodBadge=m.producer?' <span style="color:#7A4FCC;font-weight:700;font-size:11px">⭐ Producer</span>':'';
@@ -2155,16 +2156,24 @@ function openAdmin(){
       var reactBtn='<button class="btn acc sm" onclick="adminDeactivate(\''+escJS(m.email)+'\',false)">Reactivate</button>';
       var deactBtn='<button class="btn ghost sm" style="color:var(--bad)" onclick="adminDeactivate(\''+escJS(m.email)+'\',true)">Deactivate</button>';
       var act=m.deactivated?reactBtn
-        :m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+escJS(m.email)+'\',\'approved\')">Verify &amp; approve</button><button class="btn ghost sm" onclick="adminApprove(\''+escJS(m.email)+'\',\'rejected\')">Reject</button>'+deactBtn)
-        :(verBtn+prodBtn+pofBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+escJS(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke':'Approve')+'</button>'+deactBtn);
+        :m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+escJS(m.email)+'\',\'approved\')">Admit</button><button class="btn ghost sm" onclick="adminApprove(\''+escJS(m.email)+'\',\'rejected\')">Deny for cause</button>'+deactBtn)
+        :(verBtn+prodBtn+pofBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+escJS(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke for cause':'Admit')+'</button>'+deactBtn);
       return '<div class="reqrow"'+(m.deactivated?' style="opacity:.6"':'')+'><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+deactBadge+verBadge+prodBadge+pofBadge+att+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+esc(m.state||'MA')+' Lic <b>'+esc(m.license||'—')+'</b>'+lookup+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+(m.phone?(' · '+esc(m.phone)):'')+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
     }).join(''):'<div class="empty">No members yet.</div>';
+    var admRows=adm.length?adm.slice(0,300).map(function(e){
+      var a=e.applicant||{},c=e.criteria||null,lv=e.licenseVerification||{};
+      var dc={admit:'appr',reinstate:'appr',deny:'dec',revoke:'dec',terminate:'dec',license_check:'req'}[e.decision]||'req';
+      var crit=c?(['maLicense','maBrokerage','termsAccepted'].map(function(k){return (c[k]?'✓ ':'✗ ')+{maLicense:'MA license',maBrokerage:'MA brokerage',termsAccepted:'Terms'}[k];}).join(' · ')+' · '+esc(c.subscription==='launch_period_free'?'Launch period ($0)':'Published rate due')):'—';
+      return '<div class="reqrow"><div class="grow"><b>'+esc(a.name||a.email||'—')+'</b> <span class="pill '+dc+'">'+esc(String(e.decision||'').replace('_',' '))+'</span>'+(e.cause?(' <span style="color:var(--bad);font-size:11.5px;font-weight:600">Cause: '+esc(e.causeLabel||CAUSE_LBL[e.cause]||e.cause)+'</span>'):'')
+        +'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+new Date(e.at).toLocaleString()+' · Lic <b>'+esc(a.license||'—')+'</b> · '+esc(a.brokerage||'—')+' · '+esc(a.email||'')+'</div>'
+        +'<div style="color:var(--mut2);font-size:11.5px">Criteria: '+crit+' · License check: '+esc((lv.method||'')+' — '+String(lv.result||'—').replace(/_/g,' '))+' · By: '+esc(e.decidedBy||'—')+' · Source: '+esc(e.source||'—')+(e.note?(' · '+esc(e.note)):'')+'</div></div></div>';
+    }).join(''):'<div class="empty">No admission decisions recorded yet.</div>';
     var dealRows=deals.length?deals.slice(0,40).map(function(d){
       return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+money(d.price)+' · '+esc(d.by||d.byEmail)+'</span>'+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★</span>':'')+(d.expired?' <span class="pill dec">Expired</span>':'')+(d.status==='mls'?' <span class="pill dec">On MLS</span>':'')+'</div><button class="btn '+(d.featured?'ghost':'acc')+' sm" onclick="adminFeature(\''+d.id+'\','+(!d.featured)+')">'+(d.featured?'Unfeature':'Feature')+'</button></div>';
     }).join(''):'<div class="empty">No deals.</div>';
     $('mAdmin').innerHTML='<div class="modal wide"><div class="mhead"><h3>Admin</h3><button class="x" onclick="close_(\'mAdmin\')">×</button></div><div class="mbody">'
-      +'<div class="tabs"><span class="tab on" onclick="admTab(\'r\')" id="admTabR">Requests'+((rj.pending)?(' <span class="pill req">'+rj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'m\')" id="admTabM">Members'+((mj.pending)?(' <span class="pill req">'+mj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'i\')" id="admTabI">Invites'+(invites.length?(' <span class="pill req">'+invites.length+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'d\')" id="admTabD">Deals</span></div>'
-      +'<div id="admRequests">'+reqRows+'</div><div id="admMembers" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap"><span style="color:var(--mut);font-size:12px">Full member list with marketing opt-in status.</span><a class="btn ghost sm" href="/api/pm/admin/export.csv" download="axess-members.csv">⬇ Export members (CSV)</a></div>'+memRows+'</div><div id="admInvites" style="display:none">'+invRows+'</div><div id="admDeals" style="display:none">'+dealRows+'</div>'
+      +'<div class="tabs"><span class="tab on" onclick="admTab(\'r\')" id="admTabR">Requests'+((rj.pending)?(' <span class="pill req">'+rj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'m\')" id="admTabM">Members'+((mj.pending)?(' <span class="pill req">'+mj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'i\')" id="admTabI">Sign-up links'+(invites.length?(' <span class="pill req">'+invites.length+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'a\')" id="admTabA">Admissions log</span><span class="tab" onclick="admTab(\'d\')" id="admTabD">Deals</span></div>'
+      +'<div id="admRequests">'+reqRows+'</div><div id="admMembers" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap"><span style="color:var(--mut);font-size:12px">Full member list with marketing opt-in status.</span><a class="btn ghost sm" href="/api/pm/admin/export.csv" download="axess-members.csv">⬇ Export members (CSV)</a></div>'+memRows+'</div><div id="admInvites" style="display:none">'+invRows+'</div><div id="admAdmissions" style="display:none"><div style="color:var(--mut);font-size:12px;margin-bottom:10px">Every admission decision: date, applicant, criteria checked, license verification result, and decision — with the stated cause for any denial. Admin-only.</div>'+admRows+'</div><div id="admDeals" style="display:none">'+dealRows+'</div>'
       +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
         +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Smart-match digest</div>'
         +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn ghost sm" onclick="adminDigest(true)">Preview</button><button class="btn acc sm" onclick="adminDigest(false)">Send digest now</button><span id="digMsg" style="font-size:12.5px;color:var(--mut)"></span></div>'
@@ -2179,10 +2188,21 @@ function openAdmin(){
     open_('mAdmin');
   });
 }
-function admTab(t){$('admRequests').style.display=t==='r'?'':'none';$('admMembers').style.display=t==='m'?'':'none';var ai=$('admInvites');if(ai)ai.style.display=t==='i'?'':'none';$('admDeals').style.display=t==='d'?'':'none';$('admTabR').classList.toggle('on',t==='r');$('admTabM').classList.toggle('on',t==='m');var ti=$('admTabI');if(ti)ti.classList.toggle('on',t==='i');$('admTabD').classList.toggle('on',t==='d');}
+function admTab(t){var aa=$('admAdmissions');if(aa)aa.style.display=t==='a'?'':'none';var ta=$('admTabA');if(ta)ta.classList.toggle('on',t==='a');$('admRequests').style.display=t==='r'?'':'none';$('admMembers').style.display=t==='m'?'':'none';var ai=$('admInvites');if(ai)ai.style.display=t==='i'?'':'none';$('admDeals').style.display=t==='d'?'':'none';$('admTabR').classList.toggle('on',t==='r');$('admTabM').classList.toggle('on',t==='m');var ti=$('admTabI');if(ti)ti.classList.toggle('on',t==='i');$('admTabD').classList.toggle('on',t==='d');}
 function resendInvite(email){api('/api/pm/admin/invite',{email:email}).then(function(j){openAdmin();});}
-function adminReq(id,decision){api('/api/pm/admin/request/decide',{id:id,decision:decision}).then(function(){openAdmin();loadAdminDot();});}
-function adminApprove(email,status){api('/api/pm/admin/approve',{email:email,status:status}).then(function(){openAdmin();loadAdminDot();});}
+var CAUSE_LBL={license_lapse:'License not active or not in good standing',non_payment:'Non-payment of the published subscription',material_breach:'Material breach of the Terms'};
+// Denials, revocations, and terminations require one of the stated causes.
+function askCause(verb,who){
+  var c=prompt(verb+' '+who+' — stated cause required. Type one of:\n  license_lapse   ('+CAUSE_LBL.license_lapse+')\n  non_payment     ('+CAUSE_LBL.non_payment+')\n  material_breach ('+CAUSE_LBL.material_breach+')','');
+  if(!c)return '';
+  c=String(c).trim();
+  if(!CAUSE_LBL[c]){alert('Cause must be license_lapse, non_payment, or material_breach.');return '';}
+  return c;
+}
+function adminReq(id,decision){var cause='';if(decision==='denied'){cause=askCause('Deny','this application');if(!cause)return;}
+  api('/api/pm/admin/request/decide',{id:id,decision:decision,cause:cause}).then(function(j){if(j&&!j.ok){alert(j.message||'Could not update.');return;}openAdmin();loadAdminDot();});}
+function adminApprove(email,status){var cause='';if(status==='rejected'){cause=askCause('Deny / revoke',email);if(!cause)return;}
+  api('/api/pm/admin/approve',{email:email,status:status,cause:cause}).then(function(j){if(j&&!j.ok){alert(j.message||'Could not update.');return;}openAdmin();loadAdminDot();});}
 function adminFeature(id,on){api('/api/pm/admin/feature',{id:id,featured:on}).then(function(){openAdmin();loadAll();});}
 function adminDigest(dry){var m=$('digMsg');if(m)m.textContent=dry?'Previewing…':'Sending…';
   api('/api/pm/digest/run',{dry:dry?'1':'0'}).then(function(j){if(!m)return;
@@ -2192,10 +2212,8 @@ function adminVerify(email,on){api('/api/pm/admin/verify',{email:email,verified:
 function adminDeactivate(email,on){
   var cause='';
   if(on){
-    cause=prompt('Stated cause required. Type one of:\n  license_lapse\n  non_payment\n  material_breach','');
+    cause=askCause('Deactivate',email);
     if(!cause)return;
-    cause=String(cause).trim();
-    if(['license_lapse','non_payment','material_breach'].indexOf(cause)<0){alert('Cause must be license_lapse, non_payment, or material_breach.');return;}
     if(!confirm('Deactivate '+email+' for '+cause+'?\n\nThey lose access immediately. Records are kept. You can reactivate later.'))return;
   }
   api('/api/pm/admin/deactivate',{email:email,deactivated:on,cause:cause}).then(function(j){
@@ -2226,13 +2244,13 @@ function openReferral(){
     var stat=function(v,l){return '<div style="flex:1;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:12px 10px;text-align:center"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;color:var(--tx)">'+(v||0)+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-top:3px">'+l+'</div></div>';};
     var refd=(j.referred||[]).map(function(e){return '<div style="font-size:12.5px;color:var(--mut);padding:5px 0;border-bottom:1px solid var(--line)">'+esc(e)+'</div>';}).join('');
     $('mReferral').innerHTML='<div class="modal">'
-      +'<div class="mhead"><div><h3>Refer &amp; earn</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Invite agents you trust. Each approved member is <b>1 free month</b> for you.</div></div><button class="x" onclick="close_(\'mReferral\')">×</button></div>'
+      +'<div class="mhead"><div><h3>Refer &amp; earn</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Share AXESS with Massachusetts agents. Each agent who joins through your link is <b>1 free month</b> for you.</div></div><button class="x" onclick="close_(\'mReferral\')">×</button></div>'
       +'<div class="mbody">'
         +'<div style="display:flex;gap:10px;margin-bottom:16px">'+stat(j.approved,'Joined')+stat(j.pending,'Pending')+stat(j.credits,'Free months')+'</div>'
-        +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:6px">Your invite link</div>'
+        +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:6px">Your referral link</div>'
         +'<div style="display:flex;gap:8px"><input id="refLink" readonly value="'+esc(j.link)+'" onclick="this.select()" style="flex:1;background:var(--card);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:10px 12px;font:inherit;font-size:13px"><button class="btn acc sm" onclick="copyRef()">Copy</button></div>'
         +'<div id="refCopied" style="display:none;color:var(--acc);font-size:12px;font-weight:600;margin-top:7px">Copied ✓</div>'
-        +'<p style="color:var(--mut);font-size:12px;line-height:1.5;margin-top:14px">Share it by text or email. When an agent requests access through your link and gets approved, you earn a free month — applied when membership billing begins.</p>'
+        +'<p style="color:var(--mut);font-size:12px;line-height:1.5;margin-top:14px">Share it by text or email. Your link only pre-fills the public sign-up form — membership is open to any Massachusetts licensed agent in good standing who meets the published criteria. When an agent joins through your link, you earn a free month — applied when membership billing begins.</p>'
         +(refd?('<div style="margin-top:12px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:4px">Agents you\'ve brought in</div>'+refd+'</div>'):'')
       +'</div></div>';
     open_('mReferral');
@@ -2375,7 +2393,7 @@ function renderActivity(){
   var b=$('actBody'),h='';
   if(ACTTAB==='mydeals'){
     var mine=LISTINGS.filter(isMine);
-    h=mine.length?mine.map(function(d){var reqs=INBOUND.filter(function(x){return x.listingId===d.id&&x.status==='pending';}).length;return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+'</span>'+(d.status==='off'?' <span class="pill dec">Off-market</span>':'')+(d.status==='mls'?' <span class="pill dec" style="background:var(--gold);color:var(--bg)">Moved to MLS</span>':'')+(reqs?(' <span class="pill req">'+reqs+' pending intro'+(reqs>1?'s':'')+'</span>'):'')+'</div><button class="btn ghost sm" onclick="openDetail(\''+d.id+'\')">Open</button></div>';}).join(''):'<div class="empty">You haven\'t posted a deal yet.</div>';
+    h=mine.length?mine.map(function(d){var reqs=INBOUND.filter(function(x){return x.listingId===d.id&&x.status==='pending';}).length;return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+'</span>'+(d.status==='off'?' <span class="pill dec">Withdrawn</span>':'')+(d.status==='mls'?' <span class="pill dec" style="background:var(--gold);color:var(--bg)">Moved to MLS</span>':'')+(d.status==='live'&&!d.hasSellerForm?' <span class="pill dec" title="Not visible to other members until the seller-signed Non-MLS or delayed-listing form is uploaded">Needs seller authorization</span>':'')+(reqs?(' <span class="pill req">'+reqs+' pending intro'+(reqs>1?'s':'')+'</span>'):'')+'</div><button class="btn ghost sm" onclick="openDetail(\''+d.id+'\')">Open</button></div>';}).join(''):'<div class="empty">You haven\'t posted a deal yet.</div>';
   } else if(ACTTAB==='requests'){
     h=INBOUND.length?INBOUND.map(function(x){var sub=x.listing?(x.listing.area||x.listing.city||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(x.buyerName||x.buyer||'Buyer')+'</b> '+trustBadges(x.buyerVerified,x.buyerPof,x.buyerProducer)+' '+pill(x.status)+'<div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(sub)+' · '+esc(x.message||'(no note)')+'</div></div>'+(x.status==='pending'?'<button class="btn acc sm" onclick="setIntro(\''+x.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="setIntro(\''+x.id+'\',\'declined\')">Decline</button>':(x.status==='approved'?'<button class="btn acc sm" onclick="close_(\'mActivity\');openThread(\''+escJS(x.buyer)+'\',\''+escJS(x.listingId||'')+'\')">💬 Deal room</button>':'<span style="color:var(--mut);font-size:12px">'+esc(x.buyer||'')+'</span>'))+'</div>';}).join(''):'<div class="empty">No introduction requests yet.</div>';
   } else if(ACTTAB==='sent'){
@@ -2629,7 +2647,7 @@ function mcFromDeal(price){$('mcPrice').value=Math.round(num(price))||'';close_(
 
 /* ── guided tour ── */
 var TOUR=[
- {title:'Welcome to AXESS',body:'A private network where licensed Massachusetts agents share seller-directed, pre-market property — agent to agent. This 60-second tour shows you around; replay it anytime from the “?” in the top bar.'},
+ {title:'Welcome to AXESS',body:'Software where licensed Massachusetts agents share seller-directed, pre-market property — agent to agent. This 60-second tour shows you around; replay it anytime from the “?” in the top bar.'},
  {el:'#regionTabs',title:'Choose your market',body:'Browse deals by region across Massachusetts.',place:'bottom'},
  {el:'#rail',title:'Filter the feed',body:'Narrow by property type, price, cap rate, units, and how the deal is being shared.',place:'right'},
  {el:'.rail .save',title:'Save a search & get alerted',body:'Turn any filter into a saved alert — the moment a matching deal posts, you hear about it first.',place:'right'},
@@ -2685,15 +2703,15 @@ payReturn();
 </script>
 <div class="lbx" id="lbx" onclick="if(event.target===this)albLbClose()"><button class="lx" onclick="albLbClose()">×</button><img id="lbxImg" src="" alt=""><div class="lc" id="lbxCap"></div></div>
 
-<!-- OWNER: invite a member by email only -->
+<!-- OWNER: email someone the public sign-up link (same criteria, same price) -->
 <div class="mbg" id="mInvite" onclick="if(event.target===this)close_('mInvite')">
   <div class="modal" style="max-width:440px">
-    <div class="mhead"><div><h3>Invite a member</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Just enter their email — we'll send them a one-click link to sign up. You don't fill in anything else.</div></div><button class="x" onclick="close_('mInvite')">×</button></div>
+    <div class="mhead"><div><h3>Send a sign-up link</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Enter an agent's email and we'll send them the public sign-up form with their email pre-filled. It doesn't change the membership criteria, the price, or admission — membership is open to any Massachusetts licensed agent in good standing.</div></div><button class="x" onclick="close_('mInvite')">×</button></div>
     <div style="padding:16px 20px 20px">
       <label style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)">Agent's email</label>
       <input id="invEmail" type="email" autocomplete="off" placeholder="agent@brokerage.com" style="width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:12px;font:inherit;font-size:15px" onkeydown="if(event.key==='Enter')sendInvite()">
       <div id="invMsg" style="font-size:13px;color:var(--mut);min-height:20px;margin:9px 0"></div>
-      <button class="btn acc" id="invBtn" onclick="sendInvite()" style="width:100%;justify-content:center">Send invite</button>
+      <button class="btn acc" id="invBtn" onclick="sendInvite()" style="width:100%;justify-content:center">Send sign-up link</button>
     </div>
   </div>
 </div>
@@ -2702,9 +2720,9 @@ function openInvite(){if(!(window.ME&&ME.role==='owner'))return;var i=$('invEmai
 function sendInvite(){
   var email=($('invEmail').value||'').trim(),msg=$('invMsg'),btn=$('invBtn');
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg.style.color='#C0492E';msg.textContent='Enter a valid email address.';return;}
-  btn.disabled=true;msg.style.color='var(--mut)';msg.textContent='Sending invite…';
+  btn.disabled=true;msg.style.color='var(--mut)';msg.textContent='Sending…';
   api('/api/pm/admin/invite',{email:email}).then(function(r){
-    if(r&&r.ok){msg.style.color='#1E7A52';msg.textContent='Invite sent to '+email+' ✓';$('invEmail').value='';}
+    if(r&&r.ok){msg.style.color='#1E7A52';msg.textContent='Sign-up link sent to '+email+' ✓';$('invEmail').value='';}
     else{msg.style.color='#C0492E';msg.textContent=(r&&r.message)||'Could not send — try again.';}
     btn.disabled=false;
   });
