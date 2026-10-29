@@ -455,10 +455,10 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
         gatedCount: rows.length,
         gatedValue: rows.reduce((a, r) => a + _n(r && r.price), 0),
         gatedSubmarkets: Object.keys(subs).length,
-        me: { email: req.user.email, role: req.user.role, focus: meProf.focus || '', reciprocity: recip }
+        me: { email: req.user.email, name: meProf.name || req.user.name || '', role: req.user.role, focus: meProf.focus || '', reciprocity: recip }
       });
     }
-    res.json({ ok: true, listings: rows, me: { email: req.user.email, role: req.user.role, focus: meProf.focus || '', reciprocity: recip } });
+    res.json({ ok: true, listings: rows, me: { email: req.user.email, name: meProf.name || req.user.name || '', role: req.user.role, focus: meProf.focus || '', reciprocity: recip } });
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
@@ -686,7 +686,17 @@ app.post('/api/pm/intro', rateLimit('intro', 30, 60 * 1000), ensureAuth, pmGate,
     const intros = await pmLoad(PM_KEYS.intros);
     const email = pmEmail(req.user);
     const live = intros.find(i => i && i.listingId === listingId && _lc(i.buyer) === email && i.status !== 'declined');
-    if (live) return res.json({ ok: true, intro: live, already: true });
+    if (live) {
+      // Re-sending a still-pending request updates its note instead of silently
+      // keeping the old (often empty) one.
+      const note = String(b.message || '').trim().slice(0, 1000);
+      if (live.status === 'pending' && note && note !== live.message) {
+        await pmMutate(PM_KEYS.intros, arr => { const r = arr.find(i => i && i.id === live.id); if (r) { r.message = note; r.updatedAt = new Date().toISOString(); } return { save: arr }; });
+        live.message = note;
+        return res.json({ ok: true, intro: live, already: true, updated: true });
+      }
+      return res.json({ ok: true, intro: live, already: true });
+    }
     const allProfs = await pmLoad('pm_profiles');
     const buyerProf = allProfs.find(p => p && _lc(p.email) === email) || {};
     const buyerPof = pmPofPublic(buyerProf); // snapshot buyer's credibility onto the intro
