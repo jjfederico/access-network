@@ -2149,7 +2149,7 @@ function openAdmin(){
     var admRows=adm.length?adm.slice(0,300).map(function(e){
       var a=e.applicant||{},c=e.criteria||null,lv=e.licenseVerification||{};
       var dc={admit:'appr',reinstate:'appr',deny:'dec',revoke:'dec',terminate:'dec',license_check:'req'}[e.decision]||'req';
-      var crit=c?(['maLicense','maBrokerage','termsAccepted'].map(function(k){return (c[k]?'✓ ':'✗ ')+{maLicense:'MA license',maBrokerage:'MA brokerage',termsAccepted:'Terms'}[k];}).join(' · ')+' · '+esc(c.subscription==='launch_period_free'?'Launch period ($0)':'Published rate due')):'—';
+      var crit=c?(['maLicense','maBrokerage','termsAccepted'].map(function(k){return (c[k]?'✓ ':'✗ ')+{maLicense:'MA license',maBrokerage:'MA brokerage',termsAccepted:'Terms'}[k];}).join(' · ')+' · '+esc(c.subscription==='free_trial_then_published_rate'?'14-day trial, then published rate':c.subscription==='launch_period_free'?'Launch period ($0)':'Published rate due')):'—';
       return '<div class="reqrow"><div class="grow"><b>'+esc(a.name||a.email||'—')+'</b> <span class="pill '+dc+'">'+esc(String(e.decision||'').replace('_',' '))+'</span>'+(e.cause?(' <span style="color:var(--bad);font-size:11.5px;font-weight:600">Cause: '+esc(e.causeLabel||CAUSE_LBL[e.cause]||e.cause)+'</span>'):'')
         +'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+new Date(e.at).toLocaleString()+' · Lic <b>'+esc(a.license||'—')+'</b> · '+esc(a.brokerage||'—')+' · '+esc(a.email||'')+'</div>'
         +'<div style="color:var(--mut2);font-size:11.5px">Criteria: '+crit+' · License check: '+esc((lv.method||'')+' — '+String(lv.result||'—').replace(/_/g,' '))+' · By: '+esc(e.decidedBy||'—')+' · Source: '+esc(e.source||'—')+(e.note?(' · '+esc(e.note)):'')+'</div></div></div>';

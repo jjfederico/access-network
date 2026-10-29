@@ -39,8 +39,10 @@ with the seller-signed Non-MLS / delayed-listing form on file
 post, edit, relist, renew, undo-MLS, undo-closed, paid renew — enforces it.
 Owner-loaded sample data (`sample: true`) is exempt.
 
-Published pricing (honored in code): first 100 members free, then $25/month
-for life for those founding members; $50/month after the 100th.
+Published pricing (honored in code): every membership starts with a 14-day
+free trial; then $25/month for life for the first 100 members (founding rate)
+and $50/month after the 100th. The trial clock starts at join or when billing
+is first switched on (`billingStartedAt`), whichever is later.
 
 ## What you provision
 

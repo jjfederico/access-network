@@ -1514,7 +1514,7 @@ app.post('/api/pm/admin/invite', ensureAuth, pmGate, async (req, res) => {
       '<p style="margin:0 0 4px;font-size:16px"><b>AXESS</b> is agent-to-agent software where licensed Massachusetts agents share pre-market and seller-directed property.</p>'
       + '<p style="margin:10px 0 0;font-size:14px;color:#5B6472">Membership is open to any Massachusetts licensed agent in good standing who meets the <a href="' + base + '/membership" style="color:#0A3D8F">published criteria</a>. This link just pre-fills your email on the sign-up form — it doesn\'t change the criteria or the price.</p>'
       + authMod.emailBtn('Create your account →', link)
-      + '<p style="color:#5B6472;font-size:13px;margin:16px 0 0">Membership is free during the published launch period. You\'ll just confirm your license — takes about a minute. If the button doesn\'t work, paste this link:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>');
+      + '<p style="color:#5B6472;font-size:13px;margin:16px 0 0">Every membership starts with a 14-day free trial. You\'ll just confirm your license — takes about a minute. If the button doesn\'t work, paste this link:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>');
     const sent = await authMod.sendEmail(email, 'Your AXESS sign-up link', html);
     if (sent === false) return res.status(502).json({ ok: false, error: 'send_failed', message: 'Could not send the email — check email settings.' });
     res.json({ ok: true });
@@ -1603,7 +1603,7 @@ app.post('/api/pm/admin/request/decide', ensureAuth, pmGate, async (req, res) =>
         heading: 'Welcome to AXESS',
         paras: [
           'You meet the published membership criteria, so your AXESS membership is active.',
-          'Membership is free during the published launch period. When billing begins, the published subscription rate in our Terms applies to you, the same as every member, and we’ll always give you notice before anything is ever charged.'
+          'Every membership starts with a 14-day free trial; after it, the published subscription rate in our Terms applies to you, the same as every member. We’ll always email you before anything is ever charged.'
         ],
         cta: { label: 'Sign in to AXESS', url: PM_BASE + '/app.html' }
       }); } catch (e) {}
@@ -1884,8 +1884,8 @@ const STRIPE_PRICE_FOUNDING = process.env.STRIPE_PRICE_FOUNDING || '';
 const STRIPE_PRICE_STANDARD = process.env.STRIPE_PRICE_STANDARD || '';
 const MEMBERSHIP_FOUNDING = Number(process.env.PM_PRICE_FOUNDING || 25); // dollars/mo
 const MEMBERSHIP_STANDARD = Number(process.env.PM_PRICE_STANDARD || 50); // dollars/mo
-// Billing is OFF until the owner switches it on — nobody is charged during the
-// free launch period. The flag lives in pm_settings so the owner can toggle it
+// Billing is OFF until the owner switches it on — nobody is charged before
+// then. The flag lives in pm_settings so the owner can toggle it
 // from the admin panel without a redeploy.
 async function pmSettings() { const l = await pmLoad('pm_settings'); return (l && l[0]) || {}; }
 async function pmSaveSettings(s) { await pmSave('pm_settings', [s]); }
@@ -1898,16 +1898,20 @@ app.get('/api/pm/pay/status', ensureAuth, pmGate, async (req, res) => {
     const founder = !!me.foundingRate;
     const monthly = founder ? MEMBERSHIP_FOUNDING : MEMBERSHIP_STANDARD;
     const membershipConfigured = !!(stripe && priceIdForMember(me));
-    res.json({ ok: true, enabled: !!stripe, membership: membershipConfigured, billingOn: !!settings.billingOn, founder, monthly, memberNo: me.memberNo || null, paid: !!me.paid, prices: { founding: MEMBERSHIP_FOUNDING, standard: MEMBERSHIP_STANDARD } });
+    const trialEndsAt = compliance.trialEndsAt(me.approvedAt || me.createdAt, settings.billingStartedAt);
+    const trialDaysLeft = trialEndsAt ? Math.max(0, Math.ceil((new Date(trialEndsAt) - Date.now()) / 864e5)) : null;
+    res.json({ ok: true, enabled: !!stripe, membership: membershipConfigured, billingOn: !!settings.billingOn, trialDays: compliance.TRIAL_DAYS, trialEndsAt, trialDaysLeft, founder, monthly, memberNo: me.memberNo || null, paid: !!me.paid, prices: { founding: MEMBERSHIP_FOUNDING, standard: MEMBERSHIP_STANDARD } });
   } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
 });
-// Owner: switch membership billing on/off. Off = nobody charged (free launch).
+// Owner: switch membership billing on/off. Off = nobody charged. The first time
+// it goes on, billingStartedAt starts the 14-day trial clock for existing members.
 app.post('/api/pm/admin/billing', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   const on = (req.body || {}).on === true;
   try {
     const s = await pmSettings();
     s.billingOn = on; s.billingUpdatedAt = new Date().toISOString();
+    if (on && !s.billingStartedAt) s.billingStartedAt = s.billingUpdatedAt;
     await pmSaveSettings(s);
     res.json({ ok: true, billingOn: on });
   } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
@@ -1917,15 +1921,20 @@ app.post('/api/pm/checkout', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {}, kind = String(b.kind || '');
   try {
     if (kind === 'membership') {
-      // Free launch period: no charging until the owner switches billing on.
+      // No charging until the owner switches billing on; then the member's
+      // remaining free-trial days carry into the Stripe subscription.
       const settings = await pmSettings();
-      if (!settings.billingOn) return res.status(409).json({ ok: false, error: 'billing_off', message: 'Membership is free during our launch — billing hasn\'t started yet.' });
+      if (!settings.billingOn) return res.status(409).json({ ok: false, error: 'billing_off', message: 'Billing hasn\'t started yet — nothing is charged until it does.' });
       const profs = await pmLoad('pm_profiles');
       const me = profs.find(p => p && _lc(p.email) === pmEmail(req.user)) || {};
       const priceId = priceIdForMember(me);
       if (!priceId) return res.status(503).json({ ok: false, error: 'no_membership_price' });
       const tier = me.foundingRate ? 'founding' : 'standard';
-      const session = await stripe.checkout.sessions.create({ mode: 'subscription', payment_method_types: ['card'], line_items: [{ price: priceId, quantity: 1 }], customer_email: pmEmail(req.user), metadata: { kind: 'membership', email: pmEmail(req.user), tier }, success_url: PM_BASE + '/app.html?paid={CHECKOUT_SESSION_ID}', cancel_url: PM_BASE + '/app.html' });
+      const trialEnd = compliance.trialEndsAt(me.approvedAt || me.createdAt, settings.billingStartedAt);
+      // Stripe needs a trial end at least 48h out; inside that window the trial is effectively over.
+      const trialSec = trialEnd ? Math.floor(new Date(trialEnd).getTime() / 1000) : 0;
+      const subData = trialSec > Date.now() / 1000 + 48 * 3600 ? { subscription_data: { trial_end: trialSec } } : {};
+      const session = await stripe.checkout.sessions.create(Object.assign({ mode: 'subscription', payment_method_types: ['card'], line_items: [{ price: priceId, quantity: 1 }], customer_email: pmEmail(req.user), metadata: { kind: 'membership', email: pmEmail(req.user), tier }, success_url: PM_BASE + '/app.html?paid={CHECKOUT_SESSION_ID}', cancel_url: PM_BASE + '/app.html' }, subData));
       return res.json({ ok: true, url: session.url });
     }
     res.status(400).json({ ok: false, error: 'bad_kind' });
