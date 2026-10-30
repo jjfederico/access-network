@@ -46,7 +46,9 @@ else is refused with `seller_form_invalid`.
 
 Tests: `npm test` (unit + copy audit in `test/compliance.test.js`; route tests in
 `test/routes.test.js` run `server.js` against in-memory stubs — no database,
-network, or email).
+network, or email; `test/demo.test.js` covers demo gates, seed fixtures,
+partition isolation, public counters, and that demo sends no email and makes
+no Stripe call). Shared stubs live in `test/server-harness.js`.
 
 Published pricing (honored in code): every membership starts with a 14-day
 free trial; then $25/month for life for the first 100 members (founding rate)
@@ -70,7 +72,8 @@ it is `noindex` + excluded in `robots.txt`.
 Isolation: demo requests run in an AsyncLocalStorage context and `db.js`
 stores every list under `demo:<key>` (`lib/demo.js`). Public counters, the
 teaser, real sign-up and real sign-in always use real data. Demo sends no
-email, uploads stay inline (never R2), and checkout/portal are refused.
+email, uploads stay inline (never R2), and checkout, portal, resume and
+payment confirmation are refused without calling Stripe.
 
 ## What you provision
 

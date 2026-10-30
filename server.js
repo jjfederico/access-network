@@ -1729,7 +1729,7 @@ async function pmPublicSnapshot() {
 app.get('/api/pm/stats', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   try { const s = await pmPublicSnapshot(); delete s.cards; res.json({ ok: true, stats: s }); }
-  catch (e) { res.json({ ok: false }); }
+  catch (e) { console.error('[stats] public snapshot failed:', e); res.status(503).json({ ok: false, error: 'stats_unavailable' }); }
 });
 // Teaser cards for the landing page: ONLY safe basics (type, area, rounded
 // price) from the same live snapshot as the counters. Shuffled per request.
@@ -1739,7 +1739,7 @@ app.get('/api/pm/teaser', async (req, res) => {
     const items = (await pmPublicSnapshot()).cards.map(c => ({ type: c.type, area: c.area, price: c.price }));
     for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = items[i]; items[i] = items[j]; items[j] = t; }
     res.json({ ok: true, deals: items.slice(0, 6), total: items.length });
-  } catch (e) { res.json({ ok: true, deals: [], total: 0 }); }
+  } catch (e) { console.error('[teaser] public snapshot failed:', e); res.status(503).json({ ok: false, error: 'teaser_unavailable', deals: [], total: 0 }); }
 });
 
 // ── object storage (Cloudflare R2 / S3-compatible) ──────────────────────────
@@ -2134,6 +2134,8 @@ app.post('/api/pm/checkout', ensureAuth, pmGate, async (req, res) => {
   } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
 });
 app.get('/api/pm/pay/confirm', ensureAuth, pmGate, async (req, res) => {
+  // Demo never talks to Stripe and never marks anything paid.
+  if (demo.active()) return res.status(403).json({ ok: false, error: 'demo', message: 'Billing is disabled in demo mode.' });
   if (!stripe) return res.status(503).json({ ok: false, error: 'not_configured' });
   const sid = String(req.query.session_id || ''); if (!sid) return res.status(400).json({ ok: false, error: 'no_session' });
   try {
