@@ -75,6 +75,27 @@ teaser, real sign-up and real sign-in always use real data. Demo sends no
 email, uploads stay inline (never R2), and checkout, portal, resume and
 payment confirmation are refused without calling Stripe.
 
+## Cost guards (`lib/costguard.js`)
+
+AXESS isn't charging members yet, so anything metered is off or capped:
+
+- **Paid AI** (rent-roll/OM reading, description and intro drafting) is
+  **off** unless `AI_FEATURES=on` (and `ANTHROPIC_API_KEY` is set). While off,
+  the server refuses with `ai_paused` before any quota or provider call, and
+  the app shows "AI · Paused" in place of those buttons. When on, the existing
+  caps apply (`PM_EXTRACT_DAILY_PER_USER`, default 15; `PM_EXTRACT_MONTHLY_TOTAL`,
+  default 500).
+- **Email** (Resend): at most `EMAIL_DAILY_CAP` (default 300) non-essential
+  emails per UTC day. Sign-in links are never capped. Refused sends are logged
+  and returned as failures.
+- **Uploads** (R2): per member per UTC day `UPLOAD_DAILY_FILES_PER_MEMBER`
+  (150) and `UPLOAD_DAILY_MB_PER_MEMBER` (750); network-wide
+  `UPLOAD_DAILY_MB_TOTAL` (5000). Each file is still capped at
+  `PM_UPLOAD_MAX` (15MB).
+- Counters are in memory per UTC day (single instance); a restart resets them.
+- Not app-capped: Google Maps JS / Places (set quotas in Google Cloud) and
+  Stripe (fees only on real charges; billing is off until switched on).
+
 ## What you provision
 
 1. GitHub repo → Render web service (`npm install` / `npm start`).
@@ -82,4 +103,5 @@ payment confirmation are refused without calling Stripe.
 3. Env: `SESSION_SECRET`, `ACCESS_ADMIN`, `BASE_URL`, optional
    `RESEND_API_KEY`, `STRIPE_SECRET_KEY` / price IDs,
    `STRIPE_PRICE_FOUNDING`, `STRIPE_PRICE_STANDARD`, `STRIPE_WEBHOOK_SECRET`,
-   optional `DEMO_ACCESS_CODE` (demo link code) and `DEMO_MODE=off`.
+   optional `DEMO_ACCESS_CODE` (demo link code) and `DEMO_MODE=off`,
+   optional `AI_FEATURES=on` and the cost caps above.

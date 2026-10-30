@@ -7,7 +7,7 @@
   "engines": { "node": ">=18" },
   "scripts": {
     "start": "node server.js",
-    "test": "node test/compliance.test.js && node test/routes.test.js && node test/demo.test.js"
+    "test": "node test/compliance.test.js && node test/routes.test.js && node test/demo.test.js && node test/cost.test.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.658.0",

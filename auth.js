@@ -12,6 +12,7 @@
 const crypto = require('crypto');
 const { pmLoad, pmSave } = require('./db');
 const demo = require('./lib/demo');
+const costguard = require('./lib/costguard');
 
 // ACCESS_ADMIN may hold one email or several (comma-separated) — every listed
 // address is a full owner. ADMIN is the primary (first), used as the "to" for
@@ -103,9 +104,15 @@ function emailFooter(to) {
     + '<div>You\'re receiving this as an AXESS member. <a href="' + u + '" style="color:#8a909c;text-decoration:underline">Unsubscribe from marketing emails</a>.</div>'
     + '</div>';
 }
-async function sendEmail(to, subject, html) {
+// opts.essential: sign-in links. They are never capped, so sign-in and sign-up
+// behave exactly as before; everything else counts toward EMAIL_DAILY_CAP.
+async function sendEmail(to, subject, html, opts) {
   // Demo mode never sends real email.
   if (demo.active()) { console.log('[AXESS demo — email suppressed]', to, '·', subject); return true; }
+  if (!(opts && opts.essential) && !costguard.emailTake()) {
+    console.error('[cost] email NOT sent — daily cap (' + costguard.emailDailyCap() + ') reached:', to, '·', subject);
+    return false;
+  }
   html = String(html || '') + emailFooter(to);
   const key = process.env.RESEND_API_KEY;
   if (!key) { console.log('[ACCESS email — no RESEND_API_KEY, logging]\nTo:', to, '\nSubject:', subject, '\n', html); return true; }
@@ -147,7 +154,7 @@ async function sendMagicLink(email, baseUrl) {
   const sent = await sendEmail(e, 'Your AXESS sign-in link',
     emailShell('<p style="margin:0 0 4px;font-size:16px">Welcome to AXESS — you’re one tap from signing in.</p>'
       + emailBtn('Sign in to AXESS', link)
-      + '<p style="margin:14px 0 0;color:#8a909c;font-size:13px">This link expires in 30 minutes. If the button doesn’t work, paste this into your browser:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>'));
+      + '<p style="margin:14px 0 0;color:#8a909c;font-size:13px">This link expires in 30 minutes. If the button doesn’t work, paste this into your browser:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>'), { essential: true });
   if (!sent) console.error('[ACCESS] signup sign-in email FAILED for', e);
   return sent !== false;
 }
@@ -165,7 +172,7 @@ function mount(app, baseUrl) {
     const sent = await sendEmail(email, 'Your AXESS sign-in link',
       emailShell('<p style="margin:0 0 4px;font-size:16px">Tap to sign in to AXESS.</p>'
         + emailBtn('Sign in', link)
-        + '<p style="margin:14px 0 0;color:#8a909c;font-size:13px">This link expires in 30 minutes. If the button doesn’t work, paste this into your browser:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>'));
+        + '<p style="margin:14px 0 0;color:#8a909c;font-size:13px">This link expires in 30 minutes. If the button doesn’t work, paste this into your browser:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>'), { essential: true });
     // Don't leak whether an address exists, but DO record a real send failure so
     // a silent delivery problem is diagnosable instead of looking like success.
     if (!sent) console.error('[ACCESS] sign-in email send FAILED for', email, '(check RESEND_API_KEY / verified domain / rate limits)');
