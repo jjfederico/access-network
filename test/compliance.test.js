@@ -80,4 +80,47 @@ assert.strictEqual(c.admissionCriteria({ license: '9012345', brokerage: '', stat
 assert.strictEqual(c.admissionCriteria({ license: '9012345', brokerage: 'Acme', state: 'MA', attest: false }).met, false);
 assert.deepStrictEqual(Object.keys(c.CAUSE_LABELS).sort(), c.TERMINATION_CAUSES.slice().sort());
 
+// Seller-signed form: only a real upload counts; validated after sanitizing.
+const pdfUrl = 'data:application/pdf;base64,' + Buffer.from('%PDF-1.4 ' + 'y'.repeat(3000)).toString('base64');
+assert.ok(c.cleanSellerForm({ name: 'signed.pdf', key: 'u/0123456789/lzx9abc.pdf' }));
+assert.strictEqual(c.cleanSellerForm({ name: 'signed.pdf', url: pdfUrl }).url, pdfUrl);
+assert.strictEqual(c.cleanSellerForm({ name: 'signed.pdf', url: 'https://example.com/x.pdf' }), null);
+assert.strictEqual(c.cleanSellerForm({ name: 'signed.pdf', key: '!!!' }), null);
+assert.strictEqual(c.cleanSellerForm({ name: 'signed.pdf', key: '../x' }), null);
+assert.strictEqual(c.cleanSellerForm({ name: '  ', url: pdfUrl }), null);
+assert.strictEqual(c.cleanSellerForm({ name: 'x.html', url: 'data:text/html;base64,PGI+' }), null);
+assert.strictEqual(c.cleanSellerForm(null), null);
+// The demo placeholder form must still be accepted.
+assert.ok(c.cleanSellerForm(require('../lib/demo').PLACEHOLDER_FORM));
+// Legacy forms already on file keep counting (no data is re-evaluated or hidden).
+assert.ok(c.listingAuthorized({ sellerForm: { name: 'old.pdf', url: 'https://example.com/old.pdf' } }));
+
+// Sign-up shortfalls are named for the admissions log.
+assert.deepStrictEqual(c.admissionShortfalls(c.admissionCriteria({ license: '9012345', brokerage: 'Acme', state: 'MA', attest: true }).checks), []);
+assert.strictEqual(c.admissionShortfalls(c.admissionCriteria({ license: 'n/a', brokerage: 'Acme', state: 'MA', attest: false }).checks).length, 2);
+
+// Copy audit: no invite-only / exclusivity / around-public-marketing language
+// anywhere served or emailed, and the legal pages agree with each other.
+const fs = require('fs'), path = require('path');
+const root = path.join(__dirname, '..');
+const pub = fs.readdirSync(path.join(root, 'public')).filter(f => /\.(html|js|webmanifest|txt)$/.test(f)).map(f => 'public/' + f);
+const srcs = pub.concat(['server.js', 'auth.js', 'lib/demo.js', 'lib/demo-bar.js', 'README.md']);
+const BANNED = [/invite[- ]only/i, /invitation[- ]only/i, /by invitation/i, /pocket listing/i, /before it (hits|lists)/i, /off[- ]market network/i, /exclusive (network|access|club|membership|members)/i, /members[- ]only deals/i, /private network/i, /closed network/i, /hand-picked members/i, /curated (network|membership|members)/i];
+const strip = s => s.replace(/<style[\s\S]*?<\/style>/gi, '').replace(/not by invitation|is not by invitation|membership is not by invitation|free access based on brokerage, invitation/gi, '');
+for (const f of srcs) {
+  const t = strip(fs.readFileSync(path.join(root, f), 'utf8'));
+  for (const re of BANNED) assert.ok(!re.test(t), f + ' contains banned copy ' + re + ': ' + (t.match(re) || [''])[0]);
+}
+const txt = f => fs.readFileSync(path.join(root, 'public', f), 'utf8').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+const terms = txt('terms.html'), privacy = txt('privacy.html'), membership = txt('membership.html'), landing = txt('index.html');
+assert.ok(/be affiliated with a licensed Massachusetts brokerage/.test(terms), 'Terms eligibility list includes brokerage affiliation');
+assert.ok(!/immediate suspension or termination/i.test(terms), 'Terms §4 must not override the stated-cause notice-and-cure rule');
+assert.ok(/Stripe/.test(privacy) && /subscription billing/.test(terms), 'Terms vendor list matches Privacy');
+assert.ok(/\$0 during your 14-day free trial/.test(membership), 'membership page states the $0 trial period');
+for (const [n, t] of [['terms', terms], ['membership', membership], ['landing', landing]]) {
+  assert.ok(/every applicant who meets/i.test(t) || /granted to every applicant who meets/i.test(t), n + ' states every qualified applicant is admitted');
+}
+{ const idx = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8'); const j = idx.indexOf('<h3>Join AXESS</h3>'); assert.ok(j > 0 && /href="\/membership"/.test(idx.slice(j, j + 1500)), 'the sign-up form links the criteria page'); }
+for (const t of [terms, membership, landing]) assert.ok(/\$25/.test(t) && /\$50/.test(t) && /14-day/.test(t), 'pricing unchanged and consistent');
+
 console.log('compliance tests ok');

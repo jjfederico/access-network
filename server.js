@@ -544,23 +544,23 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
       rec = Object.assign({ id: pmId('L'), owner: req.user.email, createdAt: now, updatedAt: now, expiresAt: in30, views: 0, featured: false }, fields);
       listings.push(rec); isNew = true;
     }
+    // Seller-signed form: validate it AFTER sanitizing, so nothing that cleans
+    // down to an empty or bogus reference can count as authorization. A form
+    // already on file is kept when none is sent; a sent form that can't be
+    // used is refused out loud rather than dropped.
+    if (b.sellerForm && typeof b.sellerForm === 'object') {
+      const cleanForm = compliance.cleanSellerForm(b.sellerForm, now);
+      if (!cleanForm) return res.status(400).json({ ok: false, error: 'seller_form_invalid', message: 'The seller-signed form could not be read. Upload the signed Non-MLS or delayed-listing form again (PDF, image, or Word document).' });
+      rec.sellerForm = cleanForm;
+    }
     const goingLive = (rec.status || 'active') === 'active';
     if (goingLive) {
       if (!String(rec.city || '').trim())
         return res.status(400).json({ ok: false, error: 'city_required', message: 'Add the Massachusetts city before this listing can go live.' });
       if (!String(rec.brokerage || '').trim())
         return res.status(400).json({ ok: false, error: 'brokerage_required', message: 'Your profile must list your licensed Massachusetts brokerage before you can post.' });
-      const incomingForm = (b.sellerForm && typeof b.sellerForm === 'object') ? b.sellerForm : rec.sellerForm;
-      if (compliance.sellerFormOk(incomingForm)) {
-        rec.sellerForm = {
-          name: S(incomingForm.name, 160),
-          key: cleanKey(incomingForm.key),
-          url: incomingForm.key ? '' : pmSafeUrl(S(incomingForm.url, 900)),
-          uploadedAt: incomingForm.uploadedAt || now
-        };
-      } else if (!compliance.sellerFormOk(rec.sellerForm)) {
-        return res.status(400).json({ ok: false, error: 'seller_form_required', message: 'Upload the seller-signed Non-MLS or delayed-listing form before this listing can go live.' });
-      }
+      if (!compliance.sellerFormOk(rec.sellerForm))
+        return res.status(400).json({ ok: false, error: 'seller_form_required', message: SELLER_FORM_MSG });
       const zone = compliance.mlsZoneFor(rec.city, rec.area, rec.address);
       if (zone) {
         if (b.mlsZoneAck !== true && !rec.mlsZoneAckAt)
@@ -1447,11 +1447,23 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
   // are re-checked against DOL records as an operations process — this just filters
   // the obvious fakes. Admission itself is automatic when the published criteria
   // are met; it is not an owner waitlist.
-  if (!compliance.licenseFormatOk(license))
-    return res.status(400).json({ ok: false, error: 'bad_license', message: 'Enter your real Massachusetts license number as it appears on the state registry (digits only).' });
-  if (b.attest !== true) return res.status(400).json({ ok: false, error: 'attest_required', message: 'You must accept the licensure certification to join.' });
   const ip = req.ip;
   if (!(await verifyTurnstile(b.captcha, ip))) return res.status(400).json({ ok: false, error: 'captcha_failed', message: 'Please complete the verification and try again.' });
+  // Every human-submitted application is recorded in the admissions log — including
+  // one that doesn't yet meet the criteria (bad license format, certification not
+  // accepted). That is logged as "incomplete", not a denial: nothing is held against
+  // the applicant, who can correct the form and resubmit.
+  {
+    const crit0 = compliance.admissionCriteria({ license, brokerage, state: 'MA', attest: b.attest === true });
+    const shortfalls = compliance.admissionShortfalls(crit0.checks);
+    if (shortfalls.length) {
+      try {
+        await pmLogAdmission({ source: 'signup', applicant: { email, name, license, brokerage, phone }, criteria: crit0.checks, licenseVerification: { method: 'format', result: crit0.checks.maLicense ? 'format_valid_registry_check_pending' : 'format_invalid' }, decision: 'incomplete', cause: '', missing: shortfalls, decidedBy: 'automatic', note: 'Returned to the applicant to correct; not a denial.' });
+      } catch (e) { return res.status(502).json({ ok: false, error: 'log_failed', message: 'We couldn’t record your application. Please try again in a moment.' }); }
+      if (!crit0.checks.maLicense) return res.status(400).json({ ok: false, error: 'bad_license', message: 'Enter your real Massachusetts license number as it appears on the state registry (digits only).' });
+      return res.status(400).json({ ok: false, error: 'attest_required', message: 'You must accept the licensure certification to join.' });
+    }
+  }
   try {
     const now = new Date().toISOString();
     const attestation = { text: ATTEST_TEXT, accepted: true, at: now, ip };
@@ -2267,7 +2279,7 @@ function pmInsightsHtml(S) {
     + '<h1>AXESS — Insights</h1><p class="lead">Your network at a glance. The number that matters most is <b>activation</b> — the share of approved members who actually posted a deal or a need.</p>'
     + '<div class="grid">'
     + card(S.membersTotal, 'Members', S.new7 + ' new this week · ' + S.new30 + ' this month')
-    + card(S.pending, 'Awaiting approval', 'in your Requests queue')
+    + card(S.pending, 'Pending criteria check', 'admission is automatic once the published criteria are met')
     + card(S.approved, 'Approved & active', S.deactivated + ' deactivated')
     + card(S.liveDeals, 'Live deals', S.deals7 + ' new this week · ' + S.deals30 + ' this month')
     + card(S.needs, 'Client needs posted', 'active buy boxes')
@@ -2321,7 +2333,7 @@ async function pmOwnerDigest() {
   const S = await pmInsightsData();
   const body = 'Your AXESS week at a glance:\n\n'
     + 'Members: ' + S.membersTotal + ' (' + S.new7 + ' new this week, ' + S.new30 + ' this month)\n'
-    + 'Awaiting your approval: ' + S.pending + '\n'
+    + 'Pending criteria check (admission is automatic): ' + S.pending + '\n'
     + 'Approved & active: ' + S.approved + (S.deactivated ? (' · ' + S.deactivated + ' deactivated') : '') + '\n'
     + 'Live deals: ' + S.liveDeals + ' (' + S.deals7 + ' new this week)\n'
     + 'Client needs posted: ' + S.needs + '\n'
