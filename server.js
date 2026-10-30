@@ -13,6 +13,7 @@ const db = require('./db');
 const authMod = require('./auth');
 const compliance = require('./lib/compliance');
 const demo = require('./lib/demo');
+const costguard = require('./lib/costguard');
 const { pmLoad, pmSave, pmMutate } = db;
 
 // Tiny HTTPS GET → JSON (used to verify Google sign-in tokens; no extra deps).
@@ -1152,7 +1153,7 @@ async function pmRunDigest(daysArg, dry) {
   const days = Math.min(60, Math.max(1, parseInt(daysArg, 10) || 7));
   const [listings, boxes, profs, ns] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles'), pmLoad('pm_notifs')]);
   const now = new Date().toISOString(), fallback = Date.now() - days * 86400000;
-  const results = []; let sent = 0, notifs = 0;
+  const results = []; let sent = 0, failed = 0, notifs = 0;
   for (const prof of profs) {
     if (!prof || prof.status !== 'approved' || prof.deactivated) continue;
     const sinceMs = prof.lastDigestAt ? new Date(prof.lastDigestAt).getTime() : fallback;
@@ -1167,13 +1168,14 @@ async function pmRunDigest(daysArg, dry) {
         const body = matches.length + ' new pre-market deal' + (matches.length === 1 ? '' : 's') + ' match your criteria on AXESS:\n\n' +
           top.map(pmDigestLine).join('\n') + (matches.length > top.length ? ('\n…and ' + (matches.length - top.length) + ' more') : '') +
           '\n\nSee them and request intros: ' + PM_BASE + '/app.html\n\nToo many or too few? Tune your buy box and alert settings in AXESS → Notifications.';
-        try { await pmSendEmail(prof.email, 'AXESS · ' + matches.length + ' new deal' + (matches.length === 1 ? '' : 's') + ' match you', body); sent++; } catch (e) {}
+        try { if ((await pmSendEmail(prof.email, 'AXESS · ' + matches.length + ' new deal' + (matches.length === 1 ? '' : 's') + ' match you', body)) !== false) sent++; else failed++; } catch (e) { failed++; }
       }
       prof.lastDigestAt = now;
     }
   }
   if (!dry) { await pmSave('pm_profiles', profs); await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns); }
-  return { dry: !!dry, days, recipients: results.length, emailsSent: sent, notifsCreated: notifs, breakdown: results.slice(0, 100) };
+  if (failed) console.error('[digest] ' + failed + ' digest email(s) not sent (send failure or daily email cap)');
+  return { dry: !!dry, days, recipients: results.length, emailsSent: sent, emailsFailed: failed, notifsCreated: notifs, breakdown: results.slice(0, 100) };
 }
 app.post('/api/pm/digest/run', async (req, res) => {
   const q = req.query || {}, b = req.body || {};
@@ -1767,11 +1769,18 @@ app.post('/api/pm/upload', rateLimit('upload', 60, 60 * 1000), ensureAuth, pmGat
     const mime = String(b.mime || 'application/octet-stream').slice(0, 120).toLowerCase();
     if (!/^(image\/(png|jpe?g|gif|webp|heic)|application\/pdf|application\/vnd\.openxmlformats|application\/msword|application\/vnd\.ms-excel|text\/(csv|plain))/.test(mime)) return res.status(415).json({ ok: false, error: 'bad_type', message: 'Unsupported file type — images, PDF, or Office documents only.' });
     const name = String(b.name || 'file').slice(0, 200);
+    // Hard daily caps on stored bytes/files (per member and network-wide), so
+    // storage can't be run up. Generous enough that normal posting never hits them.
+    const cap = costguard.uploadTake(pmEmail(req.user), approxBytes);
+    if (!cap.ok) {
+      console.error('[cost] upload refused — daily ' + cap.scope + ' cap reached for', pmEmail(req.user));
+      return res.status(429).json({ ok: false, error: 'upload_cap', message: cap.scope === 'network' ? 'Uploads are paused for today (daily storage limit reached). Try again tomorrow.' : 'You’ve reached today’s upload limit. Try again tomorrow.' });
+    }
     // Demo uploads stay inline in the demo partition — never in real storage.
     if (R2_ENABLED && !demo.active()) {
       const crypto = require('crypto');
       const key = 'u/' + crypto.createHash('sha1').update(pmEmail(req.user)).digest('hex').slice(0, 10) + '/' + Date.now().toString(36) + crypto.randomBytes(6).toString('hex') + '.' + _ext(mime);
-      await r2Put(key, Buffer.from(data, 'base64'), mime);
+      try { await r2Put(key, Buffer.from(data, 'base64'), mime); } catch (e) { costguard.uploadRefund(pmEmail(req.user), approxBytes); throw e; }
       const url = await r2SignedGet(key, 3600); // preview URL for the submit form
       return res.json({ ok: true, url, key, name });
     }
@@ -1834,6 +1843,8 @@ async function extractQuotaRefund(email) { // give a unit back when the AI call 
   });
 }
 app.post('/api/pm/extract', rateLimit('extract', 20, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
+  // Paid AI is off unless AI_FEATURES=on: refuse before quota or any provider call.
+  if (!costguard.aiEnabled()) return res.status(503).json({ ok: false, error: 'ai_paused', message: costguard.AI_PAUSED_MESSAGE });
   const b = req.body || {};
   const data = String(b.data || ''); const mime = String(b.mime || '').toLowerCase();
   if (!data) return res.status(400).json({ ok: false, error: 'no_file' });
@@ -1881,6 +1892,7 @@ app.post('/api/pm/extract', rateLimit('extract', 20, 10 * 60 * 1000), ensureAuth
 // the extraction model if the Haiku id isn't available on this account.
 const PM_AI_MODEL = process.env.PM_AI_MODEL || 'claude-haiku-4-5';
 async function pmAIText(system, user, maxTokens) {
+  if (!costguard.aiEnabled()) return { ok: false, error: 'ai_paused' }; // belt and braces
   const KEY = process.env.ANTHROPIC_API_KEY || '';
   if (!KEY) return { ok: false, error: 'not_configured' };
   const call = model => fetch('https://api.anthropic.com/v1/messages', {
@@ -1901,6 +1913,7 @@ async function pmAIGuard(req, res) {
   return true;
 }
 app.post('/api/pm/ai/describe', rateLimit('ai', 20, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
+  if (!costguard.aiEnabled()) return res.status(503).json({ ok: false, error: 'ai_paused', message: costguard.AI_PAUSED_MESSAGE });
   const b = req.body || {}, S = (v, n) => String(v == null ? '' : v).slice(0, n || 60);
   const me = pmEmail(req.user);
   try {
@@ -1913,6 +1926,7 @@ app.post('/api/pm/ai/describe', rateLimit('ai', 20, 10 * 60 * 1000), ensureAuth,
   } catch (e) { try { await extractQuotaRefund(me); } catch (_) {} res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 app.post('/api/pm/ai/intro', rateLimit('ai', 20, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
+  if (!costguard.aiEnabled()) return res.status(503).json({ ok: false, error: 'ai_paused', message: costguard.AI_PAUSED_MESSAGE });
   const b = req.body || {}, me = pmEmail(req.user);
   try {
     if (!(await pmAIGuard(req, res))) return;
@@ -2095,12 +2109,13 @@ async function pmTrialReminders() {
     const days = (new Date(end) - Date.now()) / 864e5;
     if (days > 0 && days <= 3 && p.trialReminderFor !== end) {
       try {
-        await pmSendRich(p.email, 'AXESS · your free trial ends soon', {
+        const okSend = await pmSendRich(p.email, 'AXESS · your free trial ends soon', {
           heading: 'Your free trial ends in ' + Math.ceil(days) + ' day' + (Math.ceil(days) === 1 ? '' : 's'),
           paras: ['Your AXESS free trial ends on <b>' + _emailEsc(new Date(end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'America/New_York' })) + '</b>. To keep your membership, start it now — <b>$' + (p.foundingRate ? MEMBERSHIP_FOUNDING + '/month, your founding rate for life' : MEMBERSHIP_STANDARD + '/month') + '</b>, flat, cancel anytime.'],
           cta: { label: 'Start my membership', url: PM_BASE + '/app.html?billing=1' }
         });
-        p.trialReminderFor = end; sent++;
+        // Only mark it done if it actually went out (a capped/failed send retries next run).
+        if (okSend !== false) { p.trialReminderFor = end; sent++; } else console.error('[trial] reminder not sent to', p.email);
       } catch (e) {}
     }
   }
@@ -2256,7 +2271,8 @@ function serveWithIdentity(res, file, user) {
   let html = fs.readFileSync(path.join(__dirname, 'public', file), 'utf8');
   const mapsKey = process.env.GOOGLE_MAPS_KEY || process.env.MAPS_API_KEY || '';
   const inject = `<script>window.__ROLE__=${JSON.stringify(user.role)};window.__USER__=${JSON.stringify(user.name || '')};window.__EMAIL__=${JSON.stringify(user.email)};window.__ACCT__="access";window.__STATUS__=${JSON.stringify(user.status)};window.__MAPS_KEY__=${JSON.stringify(mapsKey)};window.__GOOGLE_CLIENT_ID__=${JSON.stringify(process.env.GOOGLE_CLIENT_ID || '')};</script>`;
-  html = html.includes('</head>') ? html.replace('</head>', inject + (demo.active() ? DEMO_INJECT : '') + '</head>') : inject + html;
+  const aiFlag = '<script>window.__AI__=' + (costguard.aiEnabled() ? 'true' : 'false') + ';</script>';
+  html = html.includes('</head>') ? html.replace('</head>', inject + aiFlag + (demo.active() ? DEMO_INJECT : '') + '</head>') : inject + aiFlag + html;
   res.type('html').send(html);
 }
 // Demo-only chrome for the members app: a persistent DEMO banner with an

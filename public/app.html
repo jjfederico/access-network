@@ -840,6 +840,10 @@ html.dark .nav{background:#0C1526!important}
 .rrbar{display:flex;align-items:center;gap:12px;background:var(--accdim);border:1px solid rgba(10,61,143,.22);border-radius:10px;padding:12px 14px;margin-bottom:12px}
 .rrbar .rr-ic{width:38px;height:38px;border-radius:10px;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
 .rrbar .rr-tx{flex:1;min-width:0}
+/* paid AI switched off (AI_FEATURES not on): clear "Paused" state, no broken buttons */
+.aipause{display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);border:1px solid var(--line2);border-radius:999px;padding:2px 8px;margin-left:8px;cursor:help;white-space:nowrap}
+.rrbar.paused{opacity:.8}
+.rrbar.paused .rr-ic{background:var(--mut2)}
 .rrbar .rr-tx b{display:block;font-size:14px}
 .rrbar .rr-tx span{font-size:12px;color:var(--mut);line-height:1.4}
 .rrbar .btn{flex:none}
@@ -1742,7 +1746,7 @@ function openIntro(id){_introDeal=id;close_('mDetail');
     +'<div class="mbody"><p style="color:var(--mut);font-size:13.5px;margin-bottom:12px">The listing broker sees your name &amp; note and approves before the address and documents are shared. No spam.</p>'
     +'<div class="f full"><label>Your name</label><input id="iName" value="'+esc(ME.name||'')+'"></div>'
     +'<div class="f full"><label>Firm</label><input id="iFirm" placeholder="Company"></div>'
-    +'<div class="f full"><label>A note to the broker — qualify your buyer for permission <a id="aiIntroBtn" onclick="aiIntro()" style="cursor:pointer;color:var(--acc);font-weight:700;font-size:12px;margin-left:8px">✍️ Draft with AI</a></label><textarea id="iMsg" rows="3" placeholder="Cash buyer, 1031, can close in 30 days. Interested in the numbers on this one."></textarea></div>'
+    +'<div class="f full"><label>A note to the broker — qualify your buyer for permission '+(AI_ON?'<a id="aiIntroBtn" onclick="aiIntro()" style="cursor:pointer;color:var(--acc);font-weight:700;font-size:12px;margin-left:8px">✍️ Draft with AI</a>':AI_PAUSED_PILL)+'</label><textarea id="iMsg" rows="3" placeholder="Cash buyer, 1031, can close in 30 days. Interested in the numbers on this one."></textarea></div>'
     +'<label class="ck" style="display:flex;gap:8px;align-items:flex-start;margin:2px 0 12px;font-size:12.5px;color:var(--mut);line-height:1.5;cursor:pointer"><input type="checkbox" id="iConf" style="margin-top:3px;flex:0 0 auto"><span>I agree to keep this listing — the address, financials, and documents — <b>strictly confidential</b>, and not to market or share it without the listing agent\'s permission.</span></label>'
     +'<div class="mact"><span class="msg" id="iMsgS"></span><button class="btn ghost" onclick="close_(\'mIntro\')">Cancel</button><button class="btn acc" onclick="sendIntro()">Agree &amp; send request</button></div></div>';
   var m=$('mIntro');if(!m){m=document.createElement('div');m.className='mbg';m.id='mIntro';m.onclick=function(e){if(e.target===m)close_('mIntro');};document.body.appendChild(m);}
@@ -1764,7 +1768,21 @@ function sendIntro(){
   });
 }
 // ── AI helpers: cheap, on-demand drafts the member can edit before saving/sending ──
+// Paid AI is off unless the server sets window.__AI__ (env AI_FEATURES=on). When
+// off, every AI entry point shows a "Paused" state instead of a working button.
+var AI_ON=(window.__AI__===true);
+var AI_PAUSED_PILL='<span class="aipause" title="AI drafting and document reading are paused for now. Type it in by hand. Everything else works as usual.">AI · Paused</span>';
+function applyAIPaused(){
+  if(AI_ON)return;
+  var d=$('aiDescBtn');if(d&&!d.dataset.paused){d.dataset.paused='1';d.removeAttribute('onclick');d.style.display='none';d.insertAdjacentHTML('afterend',AI_PAUSED_PILL);}
+  var bar=$('rrBar');if(bar&&!bar.classList.contains('paused')){bar.classList.add('paused');
+    var tx=bar.querySelector('.rr-tx');if(tx)tx.innerHTML='<b>Auto-fill from a rent roll or OM'+AI_PAUSED_PILL+'</b><span>Coming back soon. AI document reading is paused for now, so fill the numbers in by hand. The Documents field below still attaches files.</span>';
+    var b=bar.querySelector('button');if(b){b.disabled=true;b.textContent='Paused';b.removeAttribute('onclick');b.style.opacity='.6';b.style.cursor='not-allowed';}
+    var f=$('rrFile');if(f)f.disabled=true;}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyAIPaused);else applyAIPaused();
 function aiDescribe(){
+  if(!AI_ON){if($('sMsg'))$('sMsg').textContent='AI drafting is paused for now. Type the description in.';return;}
   var d=$('sDesc'); if(!d)return; var btn=$('aiDescBtn');
   function gv(id){var e=$(id);return e?(e.value||''):'';}
   var body={propType:gv('sType'),area:gv('sSub'),units:gv('sUnits'),sqft:gv('sSf'),price:gv('sPrice'),noi:gv('sNoi'),capRate:gv('sCap'),notes:d.value||''};
@@ -1777,6 +1795,7 @@ function aiDescribe(){
   });
 }
 function aiIntro(){
+  if(!AI_ON){if($('iMsgS'))$('iMsgS').textContent='AI drafting is paused for now. Type your note in.';return;}
   var t=$('iMsg'); if(!t||!_introDeal)return; var btn=$('aiIntroBtn');
   if(btn){btn.textContent='✍️ Drafting…';btn.style.pointerEvents='none';}
   api('/api/pm/ai/intro',{listingId:_introDeal,hint:t.value||''}).then(function(j){
@@ -2376,6 +2395,7 @@ function extractRentRoll(file){
   if(!file)return;
   var msg=$('rrMsg');
   function show(t,c){if(msg){msg.style.display='';msg.style.color=c||'var(--mut)';msg.innerHTML=t;}}
+  if(!AI_ON){show('AI document reading is paused for now. Fill the numbers in by hand.','var(--mut)');return;}
   if(file.size>20*1024*1024){show('That file is too large — keep it under ~20MB (or upload just the financials pages).','var(--bad)');return;}
   show('⏳ Reading your rent roll…','var(--acc)');
   var rd=new FileReader();
