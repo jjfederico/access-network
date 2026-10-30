@@ -28,7 +28,9 @@ The criteria are published at `/membership` (`public/membership.html`).
 
 Every admission decision is appended to `pm_admissions` (date, applicant,
 criteria checked, license verification result, decision, stated cause for
-any denial). Admin-only: `GET /api/pm/admin/admissions` and the Admin →
+any denial). A sign-up that is missing a valid license number or the
+certification is logged as `incomplete` (not a denial) with what is missing.
+Admin-only: `GET /api/pm/admin/admissions` and the Admin →
 Admissions log tab.
 
 ## Seller authorization
@@ -37,7 +39,14 @@ A listing is live (feed, detail, intros, alerts, digest, teaser, stats) only
 with the seller-signed Non-MLS / delayed-listing form on file
 (`compliance.listingAuthorized`). Every path that can set a listing active —
 post, edit, relist, renew, undo-MLS, undo-closed, paid renew — enforces it.
-Owner-loaded sample data (`sample: true`) is exempt.
+Owner-loaded sample data (`sample: true`) is exempt. A newly submitted form is
+validated after sanitizing (`compliance.cleanSellerForm`): it must be an upload
+key issued by `/api/pm/upload` or an inline PDF/image/Word data URL; anything
+else is refused with `seller_form_invalid`.
+
+Tests: `npm test` (unit + copy audit in `test/compliance.test.js`; route tests in
+`test/routes.test.js` run `server.js` against in-memory stubs — no database,
+network, or email).
 
 Published pricing (honored in code): every membership starts with a 14-day
 free trial; then $25/month for life for the first 100 members (founding rate)
