@@ -65,6 +65,10 @@ button{font:inherit;cursor:pointer}
 .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
 .countline{color:var(--mut);font-size:13px;margin:6px 0 14px}
 .countline b{color:var(--tx)}
+.empty{grid-column:1/-1;background:var(--card);border:1px dashed var(--line2);border-radius:8px;padding:34px 20px;text-align:center}
+.empty h4{font-size:17px;font-weight:700}
+.empty p{color:var(--mut);font-size:13.5px;margin:6px auto 14px;max-width:440px}
+.empty .acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 /* deal grid */
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding-bottom:40px}
 @media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}
@@ -142,7 +146,7 @@ button{font:inherit;cursor:pointer}
   <span class="hidemob">Sample data — explore freely. Nothing here is real, and nothing you click sends anything.</span>
   <span class="sp"></span>
   <a class="ghost" onclick="startTour()" style="cursor:pointer">Take the tour</a>
-  <a class="cta" href="/#contact-req" onclick="goJoin(event)">Create account →</a>
+  <a class="cta" href="/?join=1" onclick="goJoin(event)">Create account →</a>
 </div></div>
 
 <div class="nav"><div class="in">
@@ -157,13 +161,13 @@ button{font:inherit;cursor:pointer}
 
 <div class="wrap">
   <div class="head" id="tp-head">
-    <h1>Live pre-market deals</h1>
+    <h1 id="demoTitle">Sample pre-market deals</h1>
     <p>This is exactly what members see after they sign in — a members’ feed of seller-directed listings, agent to agent.</p>
     <div class="stats">
-      <div class="s"><div class="v a">6</div><div class="k">Live deals</div></div>
-      <div class="s"><div class="v a">$14.8M</div><div class="k">Volume on the board</div></div>
-      <div class="s"><div class="v a">6</div><div class="k">Massachusetts towns</div></div>
-      <div class="s"><div class="v">340</div><div class="k">Members &amp; growing</div></div>
+      <div class="s"><div class="v a" id="stDeals">6</div><div class="k">Sample deals</div></div>
+      <div class="s"><div class="v a" id="stVol">$14.8M</div><div class="k">Sample volume</div></div>
+      <div class="s"><div class="v a" id="stAreas">6</div><div class="k">Sample MA areas</div></div>
+      <div class="s"><div class="v">340</div><div class="k">Sample members</div></div>
     </div>
   </div>
 
@@ -176,7 +180,7 @@ button{font:inherit;cursor:pointer}
     <div class="seg"><button class="on" data-cat="all" onclick="setCat('all',this)">All</button><button data-cat="residential" onclick="setCat('residential',this)">Residential</button><button data-cat="commercial" onclick="setCat('commercial',this)">Commercial</button></div>
     <div class="chips" id="mkchips"></div>
   </div>
-  <div class="countline"><b id="cnt">6</b> deals in <b>Massachusetts</b> · sample data</div>
+  <div class="countline" id="countline" aria-live="polite"><b id="cnt">6</b> <span id="cntNoun">sample deals</span> in <b id="cntRegion">Massachusetts</b></div>
 
   <div class="grid" id="grid"></div>
 </div>
@@ -232,9 +236,30 @@ function typeIcon(t){var m={'Multifamily':'🏢','Single-family':'🏠','Condo':
 function renderChips(){document.getElementById('mkchips').innerHTML=MARKETS.map(function(m){return '<span class="chip'+(m===MARKET?' on':'')+'" onclick="setMk(\''+m+'\')">'+m+'</span>';}).join('');}
 function setMk(m){MARKET=m;renderChips();renderGrid();}
 function setCat(c,el){CAT=c;document.querySelectorAll('.seg button').forEach(function(b){b.classList.remove('on');});el.classList.add('on');renderGrid();}
+function regionName(){return MARKET==='All MA'?'Massachusetts':MARKET;}
+function catWord(){return CAT==='all'?'':CAT+' ';}
+function clearFilters(){CAT='all';MARKET='All MA';document.querySelectorAll('.seg button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-cat')==='all');});renderChips();renderGrid();}
+function renderStats(){
+  var vol=DEALS.reduce(function(t,d){return t+(+String(d.price).replace(/[^0-9.]/g,'')||0);},0);
+  var areas={};DEALS.forEach(function(d){areas[d.area]=1;});
+  document.getElementById('stDeals').textContent=DEALS.length;
+  document.getElementById('stVol').textContent='$'+(Math.round(vol/1e5)/10)+'M';
+  document.getElementById('stAreas').textContent=Object.keys(areas).length;
+}
 function visible(){return DEALS.filter(function(d){var okc=CAT==='all'||d.cat===CAT;var okm=MARKET==='All MA'||d.mk===MARKET;return okc&&okm;});}
 function renderGrid(){
-  var list=visible();document.getElementById('cnt').textContent=list.length;
+  var list=visible(),n=list.length;
+  document.getElementById('cnt').textContent=n;
+  document.getElementById('cntNoun').textContent='sample '+catWord()+(n===1?'deal':'deals');
+  document.getElementById('cntRegion').textContent=regionName();
+  if(!n){
+    var other=MARKET!=='All MA'&&CAT!=='all'&&DEALS.some(function(d){return d.mk===MARKET;});
+    document.getElementById('grid').innerHTML='<div class="empty" id="emptyState"><h4>No sample '+catWord()+'deals in '+regionName()+'</h4>'
+      +'<p>Nothing in this demo matches these filters. In the real network, members save an alert for '+regionName()+' and are notified when a matching deal is posted.</p>'
+      +'<div class="acts">'+(other?'<button class="btn g sm" onclick="setCat(\'all\',document.querySelector(\'.seg button[data-cat=all]\'))">All types in '+regionName()+'</button>':'')
+      +'<button class="btn p sm" onclick="clearFilters()">Show all sample deals</button></div></div>';
+    return;
+  }
   document.getElementById('grid').innerHTML=list.map(function(d,i){
     var kp=d.kpis.map(function(k){return '<div><div class="k">'+k[0]+'</div><div class="v">'+k[1]+'</div></div>';}).join('');
     var bdgs=(d.broad?'<span class="bdg broad">Broad</span>':'')+'<span class="bdg ver">✓ Verified</span>';
@@ -291,7 +316,7 @@ function tGo(dir){TI+=dir;if(TI<0)TI=0;if(TI>=STEPS.length){endTour();return;}
   } else {tw.classList.add('center');ring.style.display='none';
     if(window.innerWidth>560){card.style.left='calc(50% - 165px)';card.style.top='calc(50% - 120px)';}}
 }
-renderChips();renderGrid();
+renderStats();renderChips();renderGrid();
 /* auto-start the tour on first visit */
 if(!/notour/.test(location.search)){setTimeout(startTour,500);}
 </script>
