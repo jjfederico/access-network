@@ -1496,7 +1496,7 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
       profs[pIdx] = Object.assign({}, cur, { name: name || cur.name, phone: phone || cur.phone, license: license || cur.license, brokerage: brokerage || cur.brokerage, markets: S(b.markets, 200) || cur.markets, focus: pmFocus(b.focus) || cur.focus, state: 'MA', attestation, marketingOptIn: (b.marketingOptIn !== false), marketingConsentAt: (b.marketingOptIn !== false ? now : (cur.marketingConsentAt || '')), updatedAt: now, status: 'approved', approvedAt: cur.approvedAt || now, deactivated: false, deactivatedAt: '', cancelledSelf: false, denialCause: '' });
     } else {
       await pmLogAdmission({ source: 'signup', applicant, criteria: crit.checks, licenseVerification: licenseCheck, decision: 'admit', cause: '', decidedBy: 'automatic' });
-      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'approved', approvedAt: now, attestation, foundingRate: founding.founder, memberNo: founding.memberNo, marketingOptIn: b.marketingOptIn !== false, marketingConsentAt: now, createdAt: now, updatedAt: now });
+      profs.push({ email, name, phone, license, brokerage, markets: S(b.markets, 200), focus: pmFocus(b.focus), state: 'MA', status: 'approved', approvedAt: now, attestation, foundingRate: founding.founder, memberNo: founding.memberNo, marketingOptIn: b.marketingOptIn !== false, marketingConsentAt: b.marketingOptIn !== false ? now : '', createdAt: now, updatedAt: now });
     }
     // Credit the referrer (if any), now that the member is in.
     try {
