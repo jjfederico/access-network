@@ -138,6 +138,8 @@ const lc = _lc;
 const pmEmail = u => _lc((u && u.email) || '');
 function pmId(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 const PM_KEYS = { listings: 'pm_listings', intros: 'pm_intros', buyboxes: 'pm_buyboxes' };
+// How long a listing stays live before it must be renewed (posting or renewing).
+const LISTING_DAYS = parseInt(process.env.PM_LISTING_DAYS || '', 10) || 60;
 
 // Canonical licensure attestation — the exact text a member must accept at signup.
 // Stored verbatim on their profile with a timestamp + IP so acceptance is provable.
@@ -517,7 +519,7 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
     // hide-address checkbox — force it hidden at write time.
     if ((fields.dist || 'broad') !== 'broad') fields.hideAddress = true;
     if (!id && !pmNum(fields.price)) return res.status(400).json({ ok: false, error: 'no_price', message: 'Add an asking price.' });
-    const in30 = new Date(Date.now() + 30 * 864e5).toISOString();
+    const expiresIn = new Date(Date.now() + LISTING_DAYS * 864e5).toISOString();
     let rec, isNew = false;
     if (id) {
       const idx = listings.findIndex(x => x && x.id === id);
@@ -542,7 +544,7 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
       if ((rec.dist || 'broad') !== 'broad') rec.hideAddress = true;
       listings[idx] = rec;
     } else {
-      rec = Object.assign({ id: pmId('L'), owner: req.user.email, createdAt: now, updatedAt: now, expiresAt: in30, views: 0, featured: false }, fields);
+      rec = Object.assign({ id: pmId('L'), owner: req.user.email, createdAt: now, updatedAt: now, expiresAt: expiresIn, views: 0, featured: false }, fields);
       listings.push(rec); isNew = true;
     }
     // Seller-signed form: validate it AFTER sanitizing, so nothing that cleans
@@ -1051,7 +1053,7 @@ app.post('/api/pm/renew', ensureAuth, pmGate, async (req, res) => {
     if (_lc(l.owner) !== pmEmail(req.user) && req.user.role !== 'owner') return res.status(403).json({ ok: false, error: 'not_your_listing' });
     if ((l.status || 'active') === 'off' && !pmAuthorized(l)) return res.status(400).json({ ok: false, error: 'seller_form_required', message: SELLER_FORM_MSG });
     const base = l.expiresAt && new Date(l.expiresAt) > new Date() ? new Date(l.expiresAt) : new Date();
-    l.expiresAt = new Date(base.getTime() + 30 * 864e5).toISOString();
+    l.expiresAt = new Date(base.getTime() + LISTING_DAYS * 864e5).toISOString();
     l.renewedAt = new Date().toISOString(); l.renew5Sent = false; l.renew1Sent = false;
     if ((l.status || 'active') === 'off') l.status = 'active';
     await pmSave(PM_KEYS.listings, listings);
@@ -2241,7 +2243,7 @@ async function pmRunRenewals() {
   for (const l of listings) {
     if (!l || !l.expiresAt || (l.status || 'active') === 'off') continue;
     const days = (new Date(l.expiresAt) - now) / 864e5;
-    const link = 'Open AXESS and hit Renew to extend this deal another 30 days.';
+    const link = 'Open AXESS and hit Renew to keep this deal live another ' + LISTING_DAYS + ' days.';
     const label = (l.area || l.city || 'your deal') + (l.price ? (' · ' + pmMoneyShort(l.price)) : '');
     if (days <= 0) { l.status = 'off'; l.expiredAt = now.toISOString(); changed = true; sent.expired++; continue; }
     if (days <= 5 && days > 1 && !l.renew5Sent) { await pmSendEmail(l.owner, 'AXESS · your deal expires in 5 days', label + ' expires in 5 days.\n\n' + link); l.renew5Sent = true; changed = true; sent.r5++; }
@@ -2280,7 +2282,7 @@ setInterval(() => { pmMaybeRunDigest().catch(() => {}); }, 6 * 3600 * 1000);
 function serveWithIdentity(res, file, user) {
   let html = fs.readFileSync(path.join(__dirname, 'public', file), 'utf8');
   const mapsKey = process.env.GOOGLE_MAPS_KEY || process.env.MAPS_API_KEY || '';
-  const inject = `<script>window.__ROLE__=${JSON.stringify(user.role)};window.__USER__=${JSON.stringify(user.name || '')};window.__EMAIL__=${JSON.stringify(user.email)};window.__ACCT__="access";window.__STATUS__=${JSON.stringify(user.status)};window.__MAPS_KEY__=${JSON.stringify(mapsKey)};window.__GOOGLE_CLIENT_ID__=${JSON.stringify(process.env.GOOGLE_CLIENT_ID || '')};</script>`;
+  const inject = `<script>window.__ROLE__=${JSON.stringify(user.role)};window.__USER__=${JSON.stringify(user.name || '')};window.__EMAIL__=${JSON.stringify(user.email)};window.__ACCT__="access";window.__STATUS__=${JSON.stringify(user.status)};window.__LISTING_DAYS__=${LISTING_DAYS};window.__MAPS_KEY__=${JSON.stringify(mapsKey)};window.__GOOGLE_CLIENT_ID__=${JSON.stringify(process.env.GOOGLE_CLIENT_ID || '')};</script>`;
   const aiFlag = '<script>window.__AI__=' + (costguard.aiEnabled() ? 'true' : 'false') + ';</script>';
   html = html.includes('</head>') ? html.replace('</head>', inject + aiFlag + (demo.active() ? DEMO_INJECT : '') + '</head>') : inject + aiFlag + html;
   res.type('html').send(html);
