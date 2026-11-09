@@ -2039,9 +2039,13 @@ function adminBillingLoad(){
     var c=j.counts||{};
     box.innerHTML='<div style="font-size:13px;margin-bottom:8px">Billing is <b>'+(j.billingOn?'ON':'OFF')+'</b>'+(j.billingStartedAt?(' · started '+esc(fmtDay(j.billingStartedAt))):'')+' · '+(c.members||0)+' members · '+(c.paying||0)+' paying · '+(c.inTrial||0)+' not yet paying</div>'
       +(j.ready?'':('<div style="color:var(--bad);font-size:12px;margin-bottom:8px">Not ready — set these in Render first: '+esc((j.missing||[]).join(', '))+'</div>'))
+      +(j.ready&&!j.billingOn?'<div style="color:var(--mut);font-size:12px;margin:0 0 8px">Before turning billing on, run a real $25 test payment with your own card (members aren’t notified). Then check Stripe shows the webhook as delivered and your Membership &amp; billing reads Active, and refund yourself in Stripe.</div><button class="btn ghost sm" style="margin-right:6px" onclick="adminTestPayment()">Run test payment</button>':'')
       +'<button class="btn '+(j.billingOn?'ghost':'acc')+' sm" onclick="adminBillingSet('+(!j.billingOn)+','+(!j.billingStartedAt)+')"'+(!j.billingOn&&!j.ready?' disabled':'')+'>'+(j.billingOn?'Turn billing off':'Turn billing on')+'</button> <span id="billSetMsg" style="font-size:12.5px;color:var(--mut)"></span>';
   });
 }
+function adminTestPayment(){if(!confirm('Start a real $25 test payment with your own card? Members are not notified. Refund yourself in Stripe afterwards.'))return;
+  var m=$('billSetMsg');if(m)m.textContent='Opening secure checkout…';
+  api('/api/pm/checkout',{kind:'membership'}).then(function(j){if(j&&j.ok&&j.url){location.href=j.url;return;}if(m)m.textContent=(j&&j.message)||'Could not start checkout.';});}
 function adminBillingSet(on,first){
   if(on&&!confirm('Turn membership billing ON?'+(first?'\n\nThis emails every member now: their 14-day free trial starts today, then $25/mo (first 100) or $50/mo. Nobody is charged until their trial ends and they start their membership.':'')))return;
   if(!on&&!confirm('Turn billing OFF? New checkouts stop. Existing Stripe subscriptions are not cancelled.'))return;

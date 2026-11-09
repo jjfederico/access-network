@@ -2132,10 +2132,13 @@ app.post('/api/pm/checkout', ensureAuth, pmGate, async (req, res) => {
       // No charging until the owner switches billing on; then the member's
       // remaining free-trial days carry into the Stripe subscription.
       const settings = await pmSettings();
-      if (!settings.billingOn) return res.status(409).json({ ok: false, error: 'billing_off', message: 'Billing hasn\'t started yet — nothing is charged until it does.' });
+      // The owner may run a real test payment with billing still off, to prove
+      // the full money path (checkout → webhook → Active) before members pay.
+      const ownerTest = req.user.role === 'owner' && !settings.billingOn;
+      if (!settings.billingOn && !ownerTest) return res.status(409).json({ ok: false, error: 'billing_off', message: 'Billing hasn\'t started yet — nothing is charged until it does.' });
       const profs = await pmLoad('pm_profiles');
       const me = profs.find(p => p && _lc(p.email) === pmEmail(req.user)) || {};
-      const priceId = priceIdForMember(me);
+      const priceId = ownerTest ? (STRIPE_PRICE_FOUNDING || STRIPE_PRICE_MEMBERSHIP) : priceIdForMember(me);
       if (!priceId) return res.status(503).json({ ok: false, error: 'no_membership_price' });
       const tier = me.foundingRate ? 'founding' : 'standard';
       const trialEnd = compliance.trialEndsAt(me.approvedAt || me.createdAt, settings.billingStartedAt);
@@ -2161,7 +2164,14 @@ app.get('/api/pm/pay/confirm', ensureAuth, pmGate, async (req, res) => {
     if (pays.some(p => p && p.sid === sid)) return res.json({ ok: true, already: true, kind });
     if (kind === 'membership') {
       const profs = await pmLoad('pm_profiles'); const p = profs.find(x => x && _lc(x.email) === _lc(m.email || pmEmail(req.user)));
-      if (p) { p.paid = true; p.paidAt = new Date().toISOString(); p.stripeCustomer = s.customer || p.stripeCustomer || ''; p.stripeSubscription = s.subscription || p.stripeSubscription || ''; p.subStatus = 'active'; await pmSave('pm_profiles', profs); }
+      const paidFields = { paid: true, paidAt: new Date().toISOString(), subStatus: 'active' };
+      if (p) { Object.assign(p, paidFields, { stripeCustomer: s.customer || p.stripeCustomer || '', stripeSubscription: s.subscription || p.stripeSubscription || '' }); await pmSave('pm_profiles', profs); }
+      else if (req.user.role === 'owner') {
+        // Owner test payment without a member profile: keep a record so the
+        // webhook can match it and the billing screen can show Active.
+        profs.push(Object.assign({ email: pmEmail(req.user), name: req.user.name || '', status: 'approved', createdAt: new Date().toISOString(), stripeCustomer: s.customer || '', stripeSubscription: s.subscription || '' }, paidFields));
+        await pmSave('pm_profiles', profs);
+      }
     }
     pays.push({ sid, kind, email: m.email || pmEmail(req.user), at: new Date().toISOString() });
     await pmSave('pm_pays', pays.length > 5000 ? pays.slice(-5000) : pays);
