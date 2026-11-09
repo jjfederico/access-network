@@ -796,6 +796,18 @@ app.get('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
   } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
 });
 
+// A member retracts their client need: it leaves the needs board, matching,
+// new-deal alerts and the digest (they all read pm_buyboxes).
+app.post('/api/pm/buybox/delete', ensureAuth, pmGate, async (req, res) => {
+  try {
+    const email = pmEmail(req.user);
+    const removed = await pmMutate(PM_KEYS.buyboxes, arr => {
+      const keep = arr.filter(x => !(x && _lc(x.owner) === email));
+      return { save: keep, result: arr.length - keep.length };
+    });
+    res.json({ ok: true, removed });
+  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+});
 app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
   const S = (v, n) => String(v == null ? '' : v).slice(0, n || 120);
@@ -2416,7 +2428,9 @@ function demoPage(gate, current) {
     + rows + '<div class="row">' + (gate.admin ? '<button class="b red" onclick="reset()">Reset demo data</button>' : '') + (current ? '<button class="b" onclick="post(\'/api/demo/signout\').then(function(){location.reload();})">Sign out</button>' : '') + '<button class="b" onclick="post(\'/api/demo/exit\').then(function(){location.href=\'/\';})">Exit demo mode</button></div><div id="msg"></div></div>'
     + '<script>function post(u,b){return fetch(u,{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})}).then(function(r){return r.json();});}'
     + 'function go(n){post("/api/demo/signin",{n:n}).then(function(j){if(j&&j.ok)location.href="/app.html";else document.getElementById("msg").textContent=(j&&j.message)||"Could not sign in.";});}'
-    + 'function reset(){if(!confirm("Reset all demo data to the seed state? Demo listings, needs, intros and messages created during testing are erased."))return;post("/api/demo/reset").then(function(j){document.getElementById("msg").textContent=j&&j.ok?"Demo data reset ✓":"Reset failed.";});}</script></body></html>';
+    + 'function reset(){var m=document.getElementById("msg");m.innerHTML="Reset all demo data to the seed state? Listings, needs, intros and messages created during testing are erased. <button class=\\"b red\\" id=\\"resetYes\\">Yes, reset</button> <button class=\\"b\\" id=\\"resetNo\\">Cancel</button>";'
+    + 'document.getElementById("resetNo").onclick=function(){m.textContent="";};'
+    + 'document.getElementById("resetYes").onclick=function(){m.textContent="Resetting…";post("/api/demo/reset").then(function(j){m.textContent=j&&j.ok?"Demo data reset ✓":"Reset failed.";});};}</script></body></html>';
 }
 app.get('/demo-mode', async (req, res, next) => {
   const gate = demoGate(req);
