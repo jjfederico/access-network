@@ -935,7 +935,7 @@ html.dark .bdg.lease{color:#D9B368!important;background:rgba(180,136,46,.14)!imp
     <div class="f full"><label>Property types <span class="hint">— leave blank to match all</span></label><div id="bTypeChecks" style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:6px"></div></div>
     <details class="buydetails"><summary>Town / area <span class="hint">optional · matches all of Massachusetts by default</span></summary><div id="bSubChecks" style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px;max-height:180px;overflow:auto"></div></details>
     <div class="f full"><label>Criteria / notes</label><textarea id="bNotes" rows="2" placeholder="Cash, 1031 buyer, value-add 6–20 units…"></textarea></div>
-    <div class="mact"><span class="msg" id="bMsg"></span><button class="btn ghost" onclick="close_('mBuy')">Cancel</button><button class="btn acc" onclick="submitBuyBox()">Post client need</button></div>
+    <div class="mact"><span class="msg" id="bMsg"></span><button class="btn ghost" id="bDelBtn" style="display:none;color:var(--bad);margin-right:auto" onclick="deleteBuyBox()">Delete need</button><button class="btn ghost" onclick="close_('mBuy')">Cancel</button><button class="btn acc" onclick="submitBuyBox()">Post client need</button></div>
   </div>
 </div></div>
 
@@ -1361,7 +1361,7 @@ function saveSearch(){
   api('/api/pm/buybox',body).then(function(j){
     if(j&&j.ok){BUYBOX=j.buybox||BUYBOX;
       var b=document.querySelector('.rail .save');if(b){var o=b.innerHTML;b.innerHTML='✓ Saved — you\'ll be alerted';b.style.color='var(--acc)';setTimeout(function(){b.innerHTML=o;b.style.color='';},2200);}}
-    else{alert('Could not save — try again.');}
+    else{uiAlert('Could not save — try again.');}
   });
 }
 
@@ -1960,25 +1960,44 @@ function submitDeal(){
     loadAll();setTimeout(function(){close_('mSubmit');$('sMsg').textContent='';},800);
   });
 }
-function markMLS(id,on){
-  if(on&&!confirm('Mark this deal as moved to the MLS?\n\nIt will be removed from the AXESS feed and members can no longer contact you about it here. You can relist it later from “My activity.”'))return;
+/* ── in-page dialogs (no native confirm/prompt: they're unreliable on phones
+   and invisible to browser automation) ── resolves true/false, or the entered
+   value / null when o.input or o.options is given. */
+function uiDialog(o){return new Promise(function(resolve){
+  var m=$('mDlg');if(!m){m=document.createElement('div');m.className='mbg';m.id='mDlg';document.body.appendChild(m);}
+  var field=o.options?('<select id="dlgIn" style="width:100%;margin-top:10px;background:var(--bg2);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:10px;font:inherit"><option value="">— choose —</option>'+o.options.map(function(x){return '<option value="'+esc(x[0])+'">'+esc(x[1])+'</option>';}).join('')+'</select>')
+    :o.input?('<input id="dlgIn" value="'+esc(o.value||'')+'" placeholder="'+esc(o.placeholder||'')+'" style="width:100%;margin-top:10px;background:var(--bg2);border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:10px;font:inherit">'):'';
+  m.innerHTML='<div class="modal" style="max-width:460px" role="dialog" aria-modal="true"><div class="mhead"><h3>'+esc(o.title||'Confirm')+'</h3></div><div class="mbody"><div style="white-space:pre-line;font-size:14px;line-height:1.55;color:var(--tx)">'+esc(o.body||'')+'</div>'+field
+    +'<div id="dlgErr" style="color:var(--bad);font-size:12.5px;min-height:16px;margin-top:6px"></div><div class="mact">'+(o.noCancel?'':'<button class="btn ghost" id="dlgNo">'+esc(o.cancel||'Cancel')+'</button>')+'<button class="btn'+(o.danger?'':' acc')+'" id="dlgYes"'+(o.danger?' style="background:#b00020!important;border-color:#b00020!important;color:#fff!important"':'')+'>'+esc(o.ok||'Confirm')+'</button></div></div></div>';
+  var valued=!!(o.input||o.options);
+  function done(v){close_('mDlg');m.onclick=null;resolve(v);}
+  if(o.options&&$('dlgIn'))$('dlgIn').onchange=function(){$('dlgErr').textContent='';};
+  $('dlgYes').onclick=function(){if(!valued)return done(true);var v=$('dlgIn').value;if(o.required&&!String(v).trim()){$('dlgErr').textContent=o.required;return;}done(v);};
+  if($('dlgNo'))$('dlgNo').onclick=function(){done(valued?null:false);};
+  m.onclick=function(e){if(e.target===m)done(valued?null:false);};
+  open_('mDlg');var f=$('dlgIn')||$('dlgYes');if(f)setTimeout(function(){f.focus();},50);
+});}
+// Informational message (replaces native uiAlert()).
+function uiAlert(msg,title){return uiDialog({title:title||'AXESS',body:String(msg==null?'':msg),ok:'OK',noCancel:true});}
+async function markMLS(id,on){
+  if(on&&!(await uiDialog({title:'Moved to the MLS?',body:'It will be removed from the AXESS feed and members can no longer contact you about it here. You can relist it later from “My activity.”',ok:'Mark as moved to MLS'})))return;
   api('/api/pm/listing/mls',{id:id,on:on}).then(function(j){
     if(j&&j.ok){close_('mDetail');loadAll();}
-    else alert((j&&(j.message||j.error))||'Could not update — try again.');
+    else uiAlert((j&&(j.message||j.error))||'Could not update — try again.');
   });
 }
-function markClosed(id,on){
-  if(!on){ if(!confirm('Reopen this deal to the network? It will no longer count as closed.'))return;
-    api('/api/pm/listing/close',{id:id,on:false}).then(function(j){if(j&&j.ok){close_('mDetail');loadAll();}else alert((j&&(j.message||j.error))||'Could not update — try again.');});return; }
+async function markClosed(id,on){
+  if(!on){ if(!(await uiDialog({title:'Reopen this deal?',body:'It goes back to the network and no longer counts as closed.',ok:'Reopen'})))return;
+    api('/api/pm/listing/close',{id:id,on:false}).then(function(j){if(j&&j.ok){close_('mDetail');loadAll();}else uiAlert((j&&(j.message||j.error))||'Could not update — try again.');});return; }
   var d=LISTINGS.find(function(x){return x.id===id;})||{};
-  var pr=prompt('🎉 Mark this deal closed\n\nClosing price (optional — leave blank to keep private, or enter to show it in the network\'s closed-deal proof):', d.price?String(d.price):'');
+  var pr=await uiDialog({title:'🎉 Mark this deal closed',body:'Closing price (optional) — leave blank to keep it private, or enter it to show in the network’s closed-deal proof.',input:true,value:d.price?String(d.price):'',ok:'Mark closed'});
   if(pr===null)return;
   var clean=String(pr).replace(/[^0-9.]/g,'');
   var show=true;
-  if(clean){ show=confirm('Show this closing price ('+money(clean)+') publicly in the AXESS closed-deal proof & leaderboard?\n\nOK = show it · Cancel = count the deal but keep the price private'); }
+  if(clean){ show=await uiDialog({title:'Show the closing price?',body:'Show '+money(clean)+' publicly in the AXESS closed-deal proof and leaderboard? Either way, the deal counts as closed.',ok:'Show price',cancel:'Keep price private'}); }
   api('/api/pm/listing/close',{id:id,on:true,closePrice:clean,show:show}).then(function(j){
     if(j&&j.ok){close_('mDetail');loadAll();}
-    else alert((j&&j.error)||'Could not update — try again.');
+    else uiAlert((j&&j.error)||'Could not update — try again.');
   });
 }
 function toggleOff(id){var d=LISTINGS.find(function(x){return x.id===id;});if(!d)return;
@@ -1986,16 +2005,16 @@ function toggleOff(id){var d=LISTINGS.find(function(x){return x.id===id;});if(!d
     address:d.addr,area:d.area,city:d.city,state:'MA',zip:d.zip,ownerName:d.by,propType:d.type,dist:d.dist,
     price:d.price,units:d.units,capRate:d.cap,noi:d.noi,
     sqft:d.sf,grossIncome:d.gross,expenses:d.exp,beds:d.beds,baths:d.baths,yearBuilt:d.yb,notes:d.desc
-  }).then(function(j){if(j&&!j.ok){alert((j&&j.message)||'Could not update — try again.');return;}close_('mDetail');loadAll();});
+  }).then(function(j){if(j&&!j.ok){uiAlert((j&&j.message)||'Could not update — try again.');return;}close_('mDetail');loadAll();});
 }
-function delDeal(id){if(!confirm('Delete this deal permanently?'))return;
+async function delDeal(id){if(!(await uiDialog({title:'Delete this deal?',body:'This permanently deletes the listing and its intro requests. It can’t be undone.',ok:'Delete permanently',danger:true})))return;
   api('/api/pm/listing/delete',{id:id}).then(function(){close_('mDetail');loadAll();});
 }
 function ago2(iso){try{var s=(new Date(iso)-Date.now())/1000;if(s<=0)return 'expired';if(s<86400)return 'in '+Math.max(1,Math.round(s/3600))+'h';return 'in '+Math.round(s/86400)+'d';}catch(e){return '';}}
 function renewDeal(id){
   api('/api/pm/renew',{id:id}).then(function(j){                // renewing a listing is always free
     if(j&&j.ok){loadAll();openDetail(id);}
-    else{alert((j&&j.message)||'Could not renew — try again.');}
+    else{uiAlert((j&&j.message)||'Could not renew — try again.');}
   });
 }
 // Returning from Stripe checkout (?paid=SESSION): verify + apply, then clean the URL.
@@ -2003,7 +2022,7 @@ function renewDeal(id){
 function fmtDay(iso){try{return new Date(iso).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});}catch(e){return '';}}
 function openBilling(){
   api('/api/pm/pay/status').then(function(j){
-    if(!j||!j.ok){alert('Couldn’t load your membership right now — try again in a moment.');return;}
+    if(!j||!j.ok){uiAlert('Couldn’t load your membership right now — try again in a moment.');return;}
     var rate=j.founder?('$'+j.prices.founding+'/month — founding rate, locked in for life'):('$'+j.prices.standard+'/month');
     var st,act='';
     if(j.paid&&j.cancelAt){st='<b>Cancellation scheduled.</b> Your membership ends on <b>'+esc(fmtDay(j.cancelAt))+'</b>, the end of your current paid period. You keep full access until then and won’t be charged again.';
@@ -2043,12 +2062,12 @@ function adminBillingLoad(){
       +'<button class="btn '+(j.billingOn?'ghost':'acc')+' sm" onclick="adminBillingSet('+(!j.billingOn)+','+(!j.billingStartedAt)+')"'+(!j.billingOn&&!j.ready?' disabled':'')+'>'+(j.billingOn?'Turn billing off':'Turn billing on')+'</button> <span id="billSetMsg" style="font-size:12.5px;color:var(--mut)"></span>';
   });
 }
-function adminTestPayment(){if(!confirm('Start a real $25 test payment with your own card? Members are not notified. Refund yourself in Stripe afterwards.'))return;
+async function adminTestPayment(){if(!(await uiDialog({title:'Run a test payment?',body:'This starts a real $25 payment with your own card. Members are not notified. Refund yourself in Stripe afterwards.',ok:'Start test payment'})))return;
   var m=$('billSetMsg');if(m)m.textContent='Opening secure checkout…';
   api('/api/pm/checkout',{kind:'membership'}).then(function(j){if(j&&j.ok&&j.url){location.href=j.url;return;}if(m)m.textContent=(j&&j.message)||'Could not start checkout.';});}
-function adminBillingSet(on,first){
-  if(on&&!confirm('Turn membership billing ON?'+(first?'\n\nThis emails every member now: their 14-day free trial starts today, then $25/mo (first 100) or $50/mo. Nobody is charged until their trial ends and they start their membership.':'')))return;
-  if(!on&&!confirm('Turn billing OFF? New checkouts stop. Existing Stripe subscriptions are not cancelled.'))return;
+async function adminBillingSet(on,first){
+  if(on&&!(await uiDialog({title:'Turn membership billing ON?',body:first?'This emails every member now: their 14-day free trial starts today, then $25/mo (first 100) or $50/mo. Nobody is charged until their trial ends and they start their membership.':'Members can start paid memberships again.',ok:'Turn billing on'})))return;
+  if(!on&&!(await uiDialog({title:'Turn billing OFF?',body:'New checkouts stop. Existing Stripe subscriptions are not cancelled.',ok:'Turn billing off'})))return;
   var m=$('billSetMsg');if(m)m.textContent='Saving…';
   api('/api/pm/admin/billing',{on:on}).then(function(j){if(j&&!j.ok){if(m)m.textContent=j.message||'Failed.';return;}if(m)m.textContent=on?('On ✓'+(j.notified?(' — '+j.notified+' members emailed'):'')):'Off ✓';adminBillingLoad();});
 }
@@ -2057,7 +2076,7 @@ function payReturn(){
   var sid=decodeURIComponent(m[1]);
   api('/api/pm/pay/confirm?session_id='+encodeURIComponent(sid)).then(function(j){
     try{ history.replaceState(null,'',location.pathname); }catch(e){}
-    if(j&&j.ok){ var msg='Membership active ✓'; setTimeout(function(){alert(msg);},200); loadAll(); }
+    if(j&&j.ok){ var msg='Membership active ✓'; setTimeout(function(){uiAlert(msg);},200); loadAll(); }
     else if(j&&j.error==='unpaid'){ /* payment not completed */ }
   });
 }
@@ -2102,10 +2121,10 @@ function pofSection(p){
 function requestPof(){
   var amount=($('pofAmount')&&$('pofAmount').value||'').trim();
   var doc=($('pofDoc')&&$('pofDoc').value||'').trim();
-  if(!amount){alert('Enter the amount you can show proof of funds for.');return;}
+  if(!amount){uiAlert('Enter the amount you can show proof of funds for.');return;}
   api('/api/pm/pof/request',{amount:amount,doc:doc}).then(function(j){
     if(j&&j.ok){if(PROFILE)PROFILE.pof=j.pof;close_('mProfile');setTimeout(openProfile,60);}
-    else{alert((j&&j.message)||'Could not submit — try again.');}});
+    else{uiAlert((j&&j.message)||'Could not submit — try again.');}});
 }
 function saveProfile(){
   var gv=function(id){var el=$(id);return el?(el.value||'').trim():'';};
@@ -2122,19 +2141,18 @@ function saveProfile(){
 
 /* ── self-serve: member cancels their own account (records kept, access ends) ── */
 function cancelAccount(){
-  if(ME.role==='owner'){alert('The owner account can\'t be cancelled here.');return;}
-  api('/api/pm/pay/status').then(function(ps){
+  if(ME.role==='owner'){uiAlert('The owner account can\'t be cancelled here.');return;}
+  api('/api/pm/pay/status').then(async function(ps){
   var paying=!!(ps&&ps.ok&&ps.paid);
   if(paying){
-    if(!confirm('Cancel your AXESS membership?\n\nIt ends at the end of your current paid month. You keep full access until then and won’t be charged again. You can undo this any time before then.'))return;
+    if(!(await uiDialog({title:'Cancel your AXESS membership?',body:'It ends at the end of your current paid month. You keep full access until then and won’t be charged again. You can undo this any time before then.',ok:'Cancel membership',cancel:'Keep membership',danger:true})))return;
   }else{
-    if(!confirm('Cancel your AXESS account?\n\nYou haven’t started a paid membership, so nothing is charged and your access ends right away. We keep your records, so you can rejoin anytime by creating an account again — if you still meet the published criteria.'))return;
-    if(!confirm('Just to confirm — this signs you out and ends your access now. Continue?'))return;
+    if(!(await uiDialog({title:'Cancel your AXESS account?',body:'You haven’t started a paid membership, so nothing is charged and your access ends right away — this signs you out now. We keep your records, so you can rejoin anytime by creating an account again, if you still meet the published criteria.',ok:'Cancel my account',cancel:'Keep my account',danger:true})))return;
   }
   var m=$('pMsg');if(m)m.textContent='Cancelling…';
   api('/api/pm/cancel',{}).then(function(j){
-    if(j&&j.ok&&j.immediate===false){alert('Cancellation scheduled. Your membership ends on '+fmtDay(j.endsAt)+' — you keep full access until then and won’t be charged again.');if(m)m.textContent='';return;}
-    if(j&&j.ok){alert('Your account has been cancelled. Thanks for being part of AXESS — you can rejoin anytime.');location.href='/';}
+    if(j&&j.ok&&j.immediate===false){uiAlert('Cancellation scheduled. Your membership ends on '+fmtDay(j.endsAt)+' — you keep full access until then and won’t be charged again.');if(m)m.textContent='';return;}
+    if(j&&j.ok){uiAlert('Your account has been cancelled. Thanks for being part of AXESS — you can rejoin anytime.').then(function(){location.href='/';});}
     else{if(m)m.textContent=(j&&j.message)||'Could not cancel — please try again.';}
   });
   });
@@ -2265,37 +2283,33 @@ function admTab(t){var aa=$('admAdmissions');if(aa)aa.style.display=t==='a'?'':'
 function resendInvite(email){api('/api/pm/admin/invite',{email:email}).then(function(j){openAdmin();});}
 var CAUSE_LBL={license_lapse:'License not active or not in good standing',non_payment:'Non-payment of the published subscription',material_breach:'Material breach of the Terms'};
 // Denials, revocations, and terminations require one of the stated causes.
-function askCause(verb,who){
-  var c=prompt(verb+' '+who+' — stated cause required. Type one of:\n  license_lapse   ('+CAUSE_LBL.license_lapse+')\n  non_payment     ('+CAUSE_LBL.non_payment+')\n  material_breach ('+CAUSE_LBL.material_breach+')','');
-  if(!c)return '';
-  c=String(c).trim();
-  if(!CAUSE_LBL[c]){alert('Cause must be license_lapse, non_payment, or material_breach.');return '';}
-  return c;
+async function askCause(verb,who){
+  var c=await uiDialog({title:verb+' — stated cause required',body:who,options:Object.keys(CAUSE_LBL).map(function(k){return [k,CAUSE_LBL[k]];}),ok:verb,required:'Choose a stated cause.',danger:true});
+  return (c&&CAUSE_LBL[c])?c:'';
 }
-function adminReq(id,decision){var cause='';if(decision==='denied'){cause=askCause('Deny','this application');if(!cause)return;}
-  api('/api/pm/admin/request/decide',{id:id,decision:decision,cause:cause}).then(function(j){if(j&&!j.ok){alert(j.message||'Could not update.');return;}openAdmin();loadAdminDot();});}
-function adminApprove(email,status){var cause='';if(status==='rejected'){cause=askCause('Deny / revoke',email);if(!cause)return;}
-  api('/api/pm/admin/approve',{email:email,status:status,cause:cause}).then(function(j){if(j&&!j.ok){alert(j.message||'Could not update.');return;}openAdmin();loadAdminDot();});}
+async function adminReq(id,decision){var cause='';if(decision==='denied'){cause=await askCause('Deny','this application');if(!cause)return;}
+  api('/api/pm/admin/request/decide',{id:id,decision:decision,cause:cause}).then(function(j){if(j&&!j.ok){uiAlert(j.message||'Could not update.');return;}openAdmin();loadAdminDot();});}
+async function adminApprove(email,status){var cause='';if(status==='rejected'){cause=await askCause('Deny / revoke',email);if(!cause)return;}
+  api('/api/pm/admin/approve',{email:email,status:status,cause:cause}).then(function(j){if(j&&!j.ok){uiAlert(j.message||'Could not update.');return;}openAdmin();loadAdminDot();});}
 function adminFeature(id,on){api('/api/pm/admin/feature',{id:id,featured:on}).then(function(){openAdmin();loadAll();});}
 function adminDigest(dry){var m=$('digMsg');if(m)m.textContent=dry?'Previewing…':'Sending…';
   api('/api/pm/digest/run',{dry:dry?'1':'0'}).then(function(j){if(!m)return;
     if(j&&j.ok){m.textContent=(dry?('Would reach '+j.recipients+' member'+(j.recipients===1?'':'s')):('Sent — '+j.emailsSent+' email'+(j.emailsSent===1?'':'s')+' to '+j.recipients+' member'+(j.recipients===1?'':'s')))+'.';}
     else{m.textContent='Failed — retry.';}});}
 function adminVerify(email,on){api('/api/pm/admin/verify',{email:email,verified:on}).then(function(){openAdmin();});}
-function adminDeactivate(email,on){
+async function adminDeactivate(email,on){
   var cause='';
   if(on){
-    cause=askCause('Deactivate',email);
+    cause=await askCause('Deactivate',email+' loses access immediately. Records are kept, and you can reactivate later.');
     if(!cause)return;
-    if(!confirm('Deactivate '+email+' for '+cause+'?\n\nThey lose access immediately. Records are kept. You can reactivate later.'))return;
   }
   api('/api/pm/admin/deactivate',{email:email,deactivated:on,cause:cause}).then(function(j){
-    if(j&&!j.ok){alert((j&&j.message)||'Could not update.');return;}
+    if(j&&!j.ok){uiAlert((j&&j.message)||'Could not update.');return;}
     openAdmin();loadAdminDot();
   });
 }
-function adminPof(email,decision,amount){
-  if(decision==='verified'){var a=prompt('Verified proof-of-funds amount (e.g. $2M, or leave blank):',amount||'');if(a===null)return;amount=a.trim();}
+async function adminPof(email,decision,amount){
+  if(decision==='verified'){var a=await uiDialog({title:'Verify proof of funds',body:'Verified amount (e.g. $2M), or leave blank.',input:true,value:amount||'',ok:'Verify'});if(a===null)return;amount=String(a).trim();}
   api('/api/pm/admin/pof',{email:email,decision:decision,amount:amount||''}).then(function(){openAdmin();});}
 function adminSeed(mode){
   var m=$('seedMsg'); if(m){m.style.color='var(--mut)';m.textContent=(mode==='clear'?'Clearing…':'Loading…');}
@@ -2311,7 +2325,7 @@ function adminSeed(mode){
 var DIRLIST=[];
 function openReferral(){
   api('/api/pm/referral').then(function(j){
-    if(!j||!j.ok){alert('Couldn’t load your referral link right now — try again in a moment.');return;}
+    if(!j||!j.ok){uiAlert('Couldn’t load your referral link right now — try again in a moment.');return;}
     var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');};
     var stat=function(v,l){return '<div style="flex:1;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:12px 10px;text-align:center"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;color:var(--tx)">'+(v||0)+'</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-top:3px">'+l+'</div></div>';};
     var refd=(j.referred||[]).map(function(e){return '<div style="font-size:12.5px;color:var(--mut);padding:5px 0;border-bottom:1px solid var(--line)">'+esc(e)+'</div>';}).join('');
@@ -2332,7 +2346,7 @@ function copyRef(){var i=$('refLink');if(!i)return;try{i.select();document.execC
 function openDirectory(){var _dr=$('mDirectory');if(_dr){_dr.innerHTML='<div class="modal wide"><div class="mhead"><h3>Member directory</h3><button class="x" onclick="close_(\'mDirectory\')">×</button></div><div class="mbody">'+skLines(6)+'</div></div>';open_('mDirectory');}
   apiT('/api/pm/directory').then(function(j){
     if(j&&j.timeout){var _b=_dr&&_dr.querySelector('.mbody');if(_b)_b.innerHTML='<div class="empty">Couldn’t load right now — please try again.</div>';return;}
-    if(j&&j.error==='not_approved'){alert('The member directory unlocks once your membership is approved.');return;}
+    if(j&&j.error==='not_approved'){uiAlert('The member directory unlocks once your membership is approved.');return;}
     DIRLIST=(j&&j.members)||[];
     var owner=ME.role==='owner';
     $('mDirectory').innerHTML='<div class="modal wide">'
@@ -2474,7 +2488,7 @@ function renderActivity(){
   } else {
     var x=BUYBOX;
     var bandLbl=x?(({under_500k:'Under $500K','500k_1m':'$500K – $1M','1m_2m':'$1M – $2M','2m_5m':'$2M – $5M','5m_plus':'$5M+'})[x.priceBand]||'Any price band'):'';
-    h=x?('<div class="reqrow"><div class="grow"><b>'+esc(x.propType||'Any type')+'</b> <span style="color:var(--mut)">· '+esc(bandLbl)+'</span><div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(x.markets||'')+(x.notes?(' · '+esc(x.notes)):'')+'</div></div><button class="btn ghost sm" onclick="close_(\'mActivity\');openBuyBox()">Edit</button></div>'):'<div class="empty">No client needs posted yet. <button class="btn link" onclick="close_(\'mActivity\');openBuyBox()">Post one →</button></div>';
+    h=x?('<div class="reqrow"><div class="grow"><b>'+esc(x.propType||'Any type')+'</b> <span style="color:var(--mut)">· '+esc(bandLbl)+'</span><div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(x.markets||'')+(x.notes?(' · '+esc(x.notes)):'')+'</div></div><button class="btn ghost sm" onclick="close_(\'mActivity\');openBuyBox()">Edit</button><button class="btn ghost sm" style="color:var(--bad)" onclick="deleteBuyBox()">Delete</button></div>'):'<div class="empty">No client needs posted yet. <button class="btn link" onclick="close_(\'mActivity\');openBuyBox()">Post one →</button></div>';
     if(x){
       h+='<div class="shead" style="margin:16px 0 6px"><h2 style="font-size:15px">Live deals matching your clients\' needs <span style="color:var(--gold)">'+BBMATCHES.length+'</span></h2></div>';
       h+=BBMATCHES.length?BBMATCHES.map(function(d){return '<div class="reqrow" style="cursor:pointer" onclick="close_(\'mActivity\');openDetail(\''+d.id+'\')"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+(num(d.cap)?(' · '+num(d.cap).toFixed(1)+'% cap'):'')+'</span></div><span style="color:var(--acc2);font-size:12px">View →</span></div>';}).join(''):'<div class="empty" style="padding:16px">No live deals match yet — you\'ll get an alert the moment one is posted.</div>';
@@ -2679,7 +2693,15 @@ function openEdit(id){
 }
 function checkedVals(wrapId){var w=$(wrapId);if(!w)return [];return Array.prototype.slice.call(w.querySelectorAll('input:checked')).map(function(i){return i.value;});}
 function buildChecks(wrapId,opts,preSel){var w=$(wrapId);if(!w)return;var pre=String(preSel||'').toLowerCase();w.innerHTML=opts.map(function(o){var on=pre&&pre.indexOf(o.toLowerCase())>=0?' checked':'';return '<label class="ck" style="font-size:12.5px"><input type="checkbox" value="'+esc(o)+'"'+on+'>'+esc(o)+'</label>';}).join('');}
+async function deleteBuyBox(){
+  if(!(await uiDialog({title:'Delete your client need?',body:'It comes off the needs board and stops matching new deals and sending alerts. You can post a new one anytime.',ok:'Delete need',danger:true})))return;
+  api('/api/pm/buybox/delete',{}).then(function(j){
+    if(j&&j.ok){BUYBOX=null;BBMATCHES=[];close_('mBuy');if($('mActivity')&&$('mActivity').classList.contains('on'))renderActivity();loadAll();}
+    else uiAlert((j&&j.message)||'Could not delete — try again.');
+  });
+}
 function openBuyBox(){
+  if($('bDelBtn'))$('bDelBtn').style.display=BUYBOX?'':'none';
   buildChecks('bTypeChecks',TYPES,BUYBOX?BUYBOX.propType:'');
   buildChecks('bSubChecks',MARKETS.MA.regions.filter(function(r){return r.k!=='all';}).map(function(r){return r.name;}),BUYBOX?BUYBOX.markets:'');
   if($('bBand'))$('bBand').value=(BUYBOX&&BUYBOX.priceBand)||'';
