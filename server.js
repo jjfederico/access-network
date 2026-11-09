@@ -139,7 +139,7 @@ const pmEmail = u => _lc((u && u.email) || '');
 function pmId(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 const PM_KEYS = { listings: 'pm_listings', intros: 'pm_intros', buyboxes: 'pm_buyboxes' };
 // How long a listing stays live before it must be renewed (posting or renewing).
-const LISTING_DAYS = parseInt(process.env.PM_LISTING_DAYS || '', 10) || 60;
+const LISTING_DAYS = parseInt(process.env.PM_LISTING_DAYS || '', 10) || 90;
 
 // Canonical licensure attestation — the exact text a member must accept at signup.
 // Stored verbatim on their profile with a timestamp + IP so acceptance is provable.
