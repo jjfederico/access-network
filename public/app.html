@@ -1172,8 +1172,8 @@ function renderGiveGet(){
   } else { el.style.display='none'; }
 }
 function ggLocked(){return ME.reciprocity&&ME.reciprocity.enforce&&!ME.reciprocity.active&&ME.role!=='owner';}
-// Feed gate: a member who has never contributed sees a blurred teaser + unlock card
-// (ignores the grace window — you post to see the board, from day one).
+// Feed gate: a member past the grace window who has never contributed sees a blurred teaser + unlock card
+// (new members browse the full feed for their first 21 days; the server decides).
 function setDist(v){var i=$('sDist');if(i)i.value=v;var w=$('distBtns');if(w){[].forEach.call(w.querySelectorAll('.distbtn'),function(b){b.classList.toggle('on',b.getAttribute('data-v')===v);});}}
 function setSoon(on){var c=$('sSoon');if(c)c.checked=!!on;var b=$('soonBtn');if(b)b.classList.toggle('on',!!on);}
 function toggleSoon(){var c=$('sSoon');setSoon(!(c&&c.checked));}

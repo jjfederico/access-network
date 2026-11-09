@@ -446,10 +446,10 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
       .filter(l => ((l.dist || 'broad') !== 'pocket' && (l.dist || 'broad') !== 'matched') || mine(l) || isOwner)
       .map(l => attachOwner(pmPublicView(l, entitled(l), gated && !mine(l)), l.owner))
       .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
-    // Server-side give-to-get: a member who has never contributed (ignoring the
-    // grace window) gets NO deal rows at all — only aggregate counts for the
-    // stat tiles. The board data never leaves the server for a lurker.
-    const mustPost = recip.enforce && !recip.exempt && !recip.hasDeal && !recip.hasNeed && !isOwner;
+    // Server-side give-to-get: a member past their first GG_GRACE days who has
+    // never contributed gets NO deal rows at all — only aggregate counts for the
+    // stat tiles. New members browse the full feed during the grace window.
+    const mustPost = recip.enforce && !recip.exempt && !recip.hasDeal && !recip.hasNeed && !recip.inGrace && !isOwner;
     if (mustPost) {
       const _n = v => { const x = Number(String(v == null ? '' : v).replace(/[^0-9.]/g, '')); return isNaN(x) ? 0 : x; };
       const subs = {}; rows.forEach(r => { if (r && r.submarket) subs[r.submarket] = 1; });
