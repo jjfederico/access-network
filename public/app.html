@@ -1676,7 +1676,7 @@ function openDetail(id){
   var addrBlock = seeAddr
     ? '<div class="reveal"><span style="color:var(--acc);vertical-align:-2px;margin-right:6px">'+addrIcon(true)+'</span><b>'+esc(d.addr||'(no address on file)')+'</b></div>'+(d.addr?mapEmbed(d.addr):(d.submarket?mapEmbed(d.submarket+', '+(d.state||'MA')):''))+streetEmbed(d)+mapsLink(d)
     : '<div class="reveal" style="background:var(--card);border-color:var(--line2)"><span style="color:var(--gold);vertical-align:-2px;margin-right:6px">'+addrIcon(false)+'</span><b style="color:var(--gold)">Address unlocks after an approved intro.</b> Request an introduction — the listing agent approves before the exact address and documents are shared.</div>'+(d.submarket?'<div style="font-size:11.5px;color:var(--mut);margin:8px 0 4px">Approximate area · '+esc(d.submarket)+'</div>'+mapEmbed(d.submarket+', '+(d.state||'MA')):'');
-  var renewLbl='↻ Renew '+(window.__LISTING_DAYS__||60)+' days';
+  var renewLbl='↻ Renew '+(window.__LISTING_DAYS__||90)+' days';
   var featBtn='';
   var _calcBtn='<button class="btn ghost" onclick="mcFromDeal('+num(d.price)+')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="4" y="2.5" width="16" height="19" rx="2.2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8.5" y1="12" x2="8.5" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/><line x1="15.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="8.5" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/></svg>Calc payment</button>';
   var _introS=intro&&intro.status;
