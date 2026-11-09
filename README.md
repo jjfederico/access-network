@@ -50,10 +50,12 @@ network, or email; `test/demo.test.js` covers demo gates, seed fixtures,
 partition isolation, public counters, and that demo sends no email and makes
 no Stripe call). Shared stubs live in `test/server-harness.js`.
 
-Published pricing (honored in code): every membership starts with a 14-day
-free trial; then $25/month for life for the first 100 members (founding rate)
-and $50/month after the 100th. The trial clock starts at join or when billing
-is first switched on (`billingStartedAt`), whichever is later.
+Public pricing copy: free while the network grows; membership will move to
+$25/month with advance email notice, and the first 100 members lock in $25 for
+life. Billing is off. In code, when billing is switched on, each member gets a
+14-day trial (from join or from `billingStartedAt`, whichever is later), then
+the founding rate (`PM_PRICE_FOUNDING`, $25) for the first 100 or the standard
+rate (`PM_PRICE_STANDARD`) after that.
 
 ## Demo mode (audit/testing workspace)
 

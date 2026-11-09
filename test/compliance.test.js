@@ -116,11 +116,19 @@ const terms = txt('terms.html'), privacy = txt('privacy.html'), membership = txt
 assert.ok(/be affiliated with a licensed Massachusetts brokerage/.test(terms), 'Terms eligibility list includes brokerage affiliation');
 assert.ok(!/immediate suspension or termination/i.test(terms), 'Terms §4 must not override the stated-cause notice-and-cure rule');
 assert.ok(/Stripe/.test(privacy) && /subscription billing/.test(terms), 'Terms vendor list matches Privacy');
-assert.ok(/\$0 during your 14-day free trial/.test(membership), 'membership page states the $0 trial period');
+assert.ok(/free while the network grows/i.test(membership) && /nothing is charged until paid billing begins/.test(membership), 'membership page states it is free until paid billing begins');
 for (const [n, t] of [['terms', terms], ['membership', membership], ['landing', landing]]) {
   assert.ok(/every applicant who meets/i.test(t) || /granted to every applicant who meets/i.test(t), n + ' states every qualified applicant is admitted');
 }
 { const idx = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8'); const j = idx.indexOf('<h3>Join AXESS</h3>'); assert.ok(j > 0 && /href="\/membership"/.test(idx.slice(j, j + 1500)), 'the sign-up form links the criteria page'); }
-for (const t of [terms, membership, landing]) assert.ok(/\$25/.test(t) && /\$50/.test(t) && /14-day/.test(t), 'pricing unchanged and consistent');
+// Billing is off: public pages say "free while the network grows" and $25 (first
+// 100 lock it in for life); no $50 price is shown. Terms §8 is legal text and
+// is reviewed separately.
+for (const [n, t] of [['membership', membership], ['landing', landing]]) {
+  assert.ok(/free while the network grows/i.test(t) && /\$25/.test(t), n + ' states free-while-growing and $25');
+  assert.ok(!/\$50(?!\d)/.test(t), n + ' shows no $50 price');
+  assert.ok(!/14-day free trial/i.test(t) || /when paid billing begins/i.test(t), n + ' does not present the trial as running now');
+}
+assert.ok(/\$25/.test(terms), 'Terms still state the founding rate');
 
 console.log('compliance tests ok');
