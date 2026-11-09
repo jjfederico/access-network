@@ -1589,7 +1589,7 @@ app.post('/api/pm/admin/invite', ensureAuth, pmGate, async (req, res) => {
       '<p style="margin:0 0 4px;font-size:16px"><b>AXESS</b> is agent-to-agent software where licensed Massachusetts agents share pre-market and seller-directed property.</p>'
       + '<p style="margin:10px 0 0;font-size:14px;color:#5B6472">Membership is open to any Massachusetts licensed agent in good standing who meets the <a href="' + base + '/membership" style="color:#0A3D8F">published criteria</a>. This link just pre-fills your email on the sign-up form — it doesn\'t change the criteria or the price.</p>'
       + authMod.emailBtn('Create your account →', link)
-      + '<p style="color:#5B6472;font-size:13px;margin:16px 0 0">Every membership starts with a 14-day free trial. You\'ll just confirm your license — takes about a minute. If the button doesn\'t work, paste this link:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>');
+      + '<p style="color:#5B6472;font-size:13px;margin:16px 0 0">Membership is free while the network grows — you\'ll get advance notice by email before any charge. You\'ll just confirm your license — takes about a minute. If the button doesn\'t work, paste this link:<br><a href="' + link + '" style="color:#0A3D8F;word-break:break-all">' + link + '</a></p>');
     const sent = await authMod.sendEmail(email, 'Your AXESS sign-up link', html);
     if (sent === false) return res.status(502).json({ ok: false, error: 'send_failed', message: 'Could not send the email — check email settings.' });
     res.json({ ok: true });
@@ -1678,7 +1678,7 @@ app.post('/api/pm/admin/request/decide', ensureAuth, pmGate, async (req, res) =>
         heading: 'Welcome to AXESS',
         paras: [
           'You meet the published membership criteria, so your AXESS membership is active.',
-          'Every membership starts with a 14-day free trial; after it, the published subscription rate in our Terms applies to you, the same as every member. We’ll always email you before anything is ever charged.'
+          'Free while the network grows. Membership will move to $25/month — you’ll get advance notice by email before any charge, and the first 100 members lock in $25 for life.'
         ],
         cta: { label: 'Sign in to AXESS', url: PM_BASE + '/app.html' }
       }); } catch (e) {}
