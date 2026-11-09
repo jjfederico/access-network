@@ -52,10 +52,12 @@ no Stripe call). Shared stubs live in `test/server-harness.js`.
 
 Public pricing copy: free while the network grows; membership will move to
 $25/month with advance email notice, and the first 100 members lock in $25 for
-life. Billing is off. In code, when billing is switched on, each member gets a
-14-day trial (from join or from `billingStartedAt`, whichever is later), then
-the founding rate (`PM_PRICE_FOUNDING`, $25) for the first 100 or the standard
-rate (`PM_PRICE_STANDARD`) after that.
+life. Billing is off. Pricing is flat $25/month: when billing is switched on,
+each member gets a 14-day trial (from join or from `billingStartedAt`,
+whichever is later), then $25/month. Founding members (first 100 by join
+order) are charged `STRIPE_PRICE_FOUNDING` and keep it for life; everyone else
+`STRIPE_PRICE_STANDARD` (also $25). Defaults: `PM_PRICE_FOUNDING` /
+`PM_PRICE_STANDARD` = 25.
 
 ## Demo mode (audit/testing workspace)
 

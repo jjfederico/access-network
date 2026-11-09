@@ -42,7 +42,7 @@ const lastFounder = c.foundingForJoinOrder(99);
 assert.strictEqual(lastFounder.founder, true);
 const after = c.foundingForJoinOrder(100);
 assert.strictEqual(after.founder, false);
-assert.strictEqual(after.monthly, 50);
+assert.strictEqual(after.monthly, 25, 'flat $25 after the first 100 too');
 assert.strictEqual(after.memberNo, 101);
 
 assert.ok(c.validTerminationCause('license_lapse'));
@@ -122,13 +122,13 @@ for (const [n, t] of [['terms', terms], ['membership', membership], ['landing', 
 }
 { const idx = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8'); const j = idx.indexOf('<h3>Join AXESS</h3>'); assert.ok(j > 0 && /href="\/membership"/.test(idx.slice(j, j + 1500)), 'the sign-up form links the criteria page'); }
 // Billing is off: public pages say "free while the network grows" and $25 (first
-// 100 lock it in for life); no $50 price is shown. Terms §8 is legal text and
-// is reviewed separately.
+// 100 lock it in for life); pricing is flat $25 — no $50 anywhere, Terms included.
 for (const [n, t] of [['membership', membership], ['landing', landing]]) {
   assert.ok(/free while the network grows/i.test(t) && /\$25/.test(t), n + ' states free-while-growing and $25');
   assert.ok(!/\$50(?!\d)/.test(t), n + ' shows no $50 price');
   assert.ok(!/14-day free trial/i.test(t) || /when paid billing begins/i.test(t), n + ' does not present the trial as running now');
 }
-assert.ok(/\$25/.test(terms), 'Terms still state the founding rate');
+assert.ok(/\$25/.test(terms) && !/\$50(?!\d)/.test(terms), 'Terms state flat $25 pricing, no $50');
+assert.ok(/consent only to emails/.test(terms) && /only to members who check the opt-in box/.test(terms), 'Terms §9 consent matches the unchecked opt-in box');
 
 console.log('compliance tests ok');
