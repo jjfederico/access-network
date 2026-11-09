@@ -13,6 +13,9 @@
 const { Pool } = require('pg');
 // Demo mode partitions every list under `demo:` while a demo request is active.
 const { scopedKey } = require('./lib/demo');
+// Merges each save with the stored list so concurrent requests can't erase
+// each other's records (see lib/store-merge.js).
+const storeMerge = require('./lib/store-merge');
 
 const URL = process.env.DATABASE_URL || '';
 // Render's managed Postgres needs SSL; local dev usually doesn't. Enable SSL
@@ -40,10 +43,11 @@ async function ensureSchema() {
 async function pmLoad(key) {
   if (!pool) return [];
   try {
-    const r = await pool.query('SELECT v FROM pm_store WHERE k=$1', [scopedKey(key)]);
-    if (!r.rows.length) return [];
+    const k = scopedKey(key);
+    const r = await pool.query('SELECT v FROM pm_store WHERE k=$1', [k]);
+    if (!r.rows.length) return storeMerge.track(k, []);
     const v = r.rows[0].v;
-    return Array.isArray(v) ? v : [];
+    return storeMerge.track(k, Array.isArray(v) ? v : []);
   } catch (e) { throw e; } // never swallow a read error as [] — the caller would then overwrite the whole table with a truncated array
 }
 
@@ -52,13 +56,26 @@ async function pmLoad(key) {
 // await this; unhandled rejection => the route's try/catch returns 5xx.
 async function pmSave(key, arr) {
   if (!pool) throw new Error('no_database');
-  const v = JSON.stringify(Array.isArray(arr) ? arr : []);
-  await pool.query(
-    `INSERT INTO pm_store (k, v, updated_at) VALUES ($1, $2::jsonb, now())
-     ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v, updated_at = now()`,
-    [scopedKey(key), v]
-  );
-  return { ok: true };
+  const k = scopedKey(key);
+  const saving = Array.isArray(arr) ? arr : [];
+  const client = await pool.connect();
+  try {
+    // Lock the row, merge with what's stored now, then write — so a save can
+    // never erase records another request added or changed meanwhile.
+    await client.query('BEGIN');
+    await client.query(`INSERT INTO pm_store (k, v) VALUES ($1, '[]'::jsonb) ON CONFLICT (k) DO NOTHING`, [k]);
+    const r = await client.query('SELECT v FROM pm_store WHERE k=$1 FOR UPDATE', [k]);
+    const current = Array.isArray(r.rows[0] && r.rows[0].v) ? r.rows[0].v : [];
+    const merged = storeMerge.merge(k, saving, current);
+    await client.query('UPDATE pm_store SET v=$2::jsonb, updated_at=now() WHERE k=$1', [k, JSON.stringify(merged)]);
+    await client.query('COMMIT');
+    return { ok: true };
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch (_) {}
+    throw e;
+  } finally {
+    client.release();
+  }
 }
 
 // Atomic read-modify-write on one named list. Serializes concurrent writers to the

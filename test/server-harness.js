@@ -6,6 +6,7 @@
 // isolation is exercised for real.
 const assert = require('assert');
 const demo = require('../lib/demo');
+const storeMerge = require('../lib/store-merge');
 const path = require('path');
 const Module = require('module');
 
@@ -34,8 +35,8 @@ const clone = v => JSON.parse(JSON.stringify(v));
 const dbStub = {
   pool: null, hasDb: true,
   ensureSchema: async () => true,
-  pmLoad: async k => clone(store[demo.scopedKey(k)] || []),
-  pmSave: async (k, v) => { store[demo.scopedKey(k)] = clone(v); return true; },
+  pmLoad: async k => { k = demo.scopedKey(k); return storeMerge.track(k, clone(store[k] || [])); },
+  pmSave: async (k, v) => { k = demo.scopedKey(k); store[k] = clone(storeMerge.merge(k, v, store[k] || [])); return true; },
   pmMutate: async (k, fn) => { k = demo.scopedKey(k); const cur = clone(store[k] || []); const out = (await fn(cur)) || {}; store[k] = clone(out.save !== undefined ? out.save : cur); return out.result; },
   importAll: async () => { throw new Error('import must not run in tests'); },
   health: async () => ({ ok: true })
