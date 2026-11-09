@@ -2066,7 +2066,7 @@ async function adminTestPayment(){if(!(await uiDialog({title:'Run a test payment
   var m=$('billSetMsg');if(m)m.textContent='Opening secure checkout…';
   api('/api/pm/checkout',{kind:'membership'}).then(function(j){if(j&&j.ok&&j.url){location.href=j.url;return;}if(m)m.textContent=(j&&j.message)||'Could not start checkout.';});}
 async function adminBillingSet(on,first){
-  if(on&&!(await uiDialog({title:'Turn membership billing ON?',body:first?'This emails every member now: their 14-day free trial starts today, then their published rate ($25/mo for the first 100 members). Nobody is charged until their trial ends and they start their membership.':'Members can start paid memberships again.',ok:'Turn billing on'})))return;
+  if(on&&!(await uiDialog({title:'Turn membership billing ON?',body:first?'This emails every member now: their 14-day free trial starts today, then $25/month (locked for life for the first 100 members). Nobody is charged until their trial ends and they start their membership.':'Members can start paid memberships again.',ok:'Turn billing on'})))return;
   if(!on&&!(await uiDialog({title:'Turn billing OFF?',body:'New checkouts stop. Existing Stripe subscriptions are not cancelled.',ok:'Turn billing off'})))return;
   var m=$('billSetMsg');if(m)m.textContent='Saving…';
   api('/api/pm/admin/billing',{on:on}).then(function(j){if(j&&!j.ok){if(m)m.textContent=j.message||'Failed.';return;}if(m)m.textContent=on?('On ✓'+(j.notified?(' — '+j.notified+' members emailed'):'')):'Off ✓';adminBillingLoad();});

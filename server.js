@@ -1971,7 +1971,7 @@ const STRIPE_PRICE_MEMBERSHIP = process.env.STRIPE_PRICE_MEMBERSHIP || '';
 const STRIPE_PRICE_FOUNDING = process.env.STRIPE_PRICE_FOUNDING || '';
 const STRIPE_PRICE_STANDARD = process.env.STRIPE_PRICE_STANDARD || '';
 const MEMBERSHIP_FOUNDING = Number(process.env.PM_PRICE_FOUNDING || 25); // dollars/mo
-const MEMBERSHIP_STANDARD = Number(process.env.PM_PRICE_STANDARD || 50); // dollars/mo
+const MEMBERSHIP_STANDARD = Number(process.env.PM_PRICE_STANDARD || 25); // dollars/mo — flat; founding members' rate is locked for life
 // Billing is OFF until the owner switches it on — nobody is charged before
 // then. The flag lives in pm_settings so the owner can toggle it
 // from the admin panel without a redeploy.
