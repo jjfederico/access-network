@@ -376,6 +376,12 @@ function pmThreadKey(a, b, listingId) {
   return p[0] + '|' + p[1] + (listingId ? ('|' + listingId) : '');
 }
 function pmIsAdmin(req) { return req.user && req.user.role === 'owner'; }
+// Server errors: log the details privately, show the browser a plain message.
+// (Internal error text used to be returned to the client.)
+function pmFail(res, e, status) {
+  console.error('[AXESS error]', (res.req && res.req.method) || '', (res.req && res.req.originalUrl) || '', (e && e.stack) || e);
+  return res.status(status || 502).json({ ok: false, error: 'server_error', message: 'Something went wrong — please try again. If it keeps happening, contact us.' });
+}
 // Seller authorization: no listing is shown to other members, matched, alerted,
 // teased, or contacted unless the seller-signed form is on file.
 const pmAuthorized = l => compliance.listingAuthorized(l);
@@ -419,7 +425,7 @@ app.get('/api/health', async (req, res) => res.json(await db.health()));
 app.post('/api/pm/import', ensureAuth, async (req, res) => {
   if (req.user.role !== 'owner') return res.status(403).json({ ok: false, error: 'forbidden' });
   try { res.json(await db.importAll(req.body || {})); }
-  catch (e) { res.status(500).json({ ok: false, error: String(e && e.message || e) }); }
+  catch (e) { pmFail(res, e, 500); }
 });
 
 // ── feed / listings ─────────────────────────────────────────────────────────
@@ -462,7 +468,7 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
       });
     }
     res.json({ ok: true, listings: rows, me: { email: req.user.email, name: meProf.name || req.user.name || '', role: req.user.role, focus: meProf.focus || '', reciprocity: recip } });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 app.get('/api/pm/listing/:id', ensureAuth, pmGate, async (req, res) => {
@@ -479,7 +485,7 @@ app.get('/api/pm/listing/:id', ensureAuth, pmGate, async (req, res) => {
     view.ownerVerified = !!oProf.verified;
     const oPof = pmPofPublic(oProf); view.ownerPof = oPof.status === 'verified' ? { amount: oPof.amount } : null;
     res.json({ ok: true, listing: view, reciprocity: recip });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
@@ -510,6 +516,8 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
     };
     if (b.state && !compliance.isMassachusettsState(b.state))
       return res.status(400).json({ ok: false, error: 'ma_only', message: 'AXESS listings must be in Massachusetts.' });
+    const fh = compliance.fairHousingHit(fields.notes);
+    if (fh) return res.status(400).json({ ok: false, error: 'fair_housing_language', message: compliance.FAIR_HOUSING_MSG + ' “' + fh + '” and try again.' });
     const hit = compliance.compensationHit(fields.notes);
     if (hit) return res.status(400).json({ ok: false, error: 'compensation_language', message: 'Listing descriptions cannot mention commissions, buyer-broker compensation, referral fees, or finder’s fees. Remove that language and try again.' });
     const profsForStamp = await pmLoad('pm_profiles');
@@ -592,7 +600,7 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
       } catch (e) { /* best-effort */ }
     }
     res.json({ ok: true, listing: pmPublicView(rec, req.user.role === 'owner' || _lc(rec.owner) === pmEmail(req.user)), id: rec.id });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 app.post('/api/pm/listing/delete', ensureAuth, pmGate, async (req, res) => {
@@ -607,7 +615,7 @@ app.post('/api/pm/listing/delete', ensureAuth, pmGate, async (req, res) => {
     const intros = await pmLoad(PM_KEYS.intros);
     if (intros.some(i => i && i.listingId === id)) await pmSave(PM_KEYS.intros, intros.filter(i => i && i.listingId !== id));
     res.json({ ok: true });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 app.post('/api/pm/listing/mls', ensureAuth, pmGate, async (req, res) => {
@@ -623,7 +631,7 @@ app.post('/api/pm/listing/mls', ensureAuth, pmGate, async (req, res) => {
     if (on) { l.status = 'mls'; l.mlsAt = new Date().toISOString(); } else { l.status = 'active'; delete l.mlsAt; }
     await pmSave(PM_KEYS.listings, listings);
     res.json({ ok: true, status: l.status });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // Mark a deal closed through AXESS (social proof). Owner of the deal or admin.
@@ -647,7 +655,7 @@ app.post('/api/pm/listing/close', ensureAuth, pmGate, async (req, res) => {
     }
     await pmSave(PM_KEYS.listings, listings);
     res.json({ ok: true, status: l.status });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // Closed-deal proof: aggregate totals, recent public closings, and a leaderboard.
 app.get('/api/pm/closings', ensureAuth, pmGate, async (req, res) => {
@@ -665,7 +673,7 @@ app.get('/api/pm/closings', ensureAuth, pmGate, async (req, res) => {
     const board = {}; closed.forEach(l => { const k = _lc(l.owner); if (!board[k]) board[k] = { ownerName: l.ownerName || nameBy[k] || l.owner, count: 0, volume: 0 }; board[k].count++; board[k].volume += pmNum(l.closePrice || l.price); });
     const leaderboard = Object.values(board).sort((a, b) => (b.count - a.count) || (b.volume - a.volume)).slice(0, 15);
     res.json({ ok: true, totalCount, totalVolume, recent, leaderboard });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── intros ──────────────────────────────────────────────────────────────────
@@ -721,7 +729,7 @@ app.post('/api/pm/intro', rateLimit('intro', 30, 60 * 1000), ensureAuth, pmGate,
       if (pmWantsEmail(sProf, 'intros')) await pmSendEmail(l.owner, 'AXESS · new intro request', (rec.buyerName || rec.buyer) + ' requested an intro on your ' + (l.area || l.city || 'deal') + ' listing.' + (cred ? ('\n\n' + cred) : '') + '\n\nOpen AXESS to approve or decline.');
     } catch (e) {}
     res.json({ ok: true, intro: rec });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 app.get('/api/pm/intros', ensureAuth, pmGate, async (req, res) => {
@@ -738,7 +746,7 @@ app.get('/api/pm/intros', ensureAuth, pmGate, async (req, res) => {
       if (_lc(i.seller) === email || req.user.role === 'owner') asSeller.push({ id: i.id, listingId: i.listingId, status: i.status, message: i.message, createdAt: i.createdAt, decidedAt: i.decidedAt, buyer: i.buyer, buyerName: i.buyerName, buyerVerified: !!i.buyerVerified, buyerPof: i.buyerPof || { status: 'none', amount: '' }, listing: summary });
     });
     res.json({ ok: true, asBuyer, asSeller });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 app.post('/api/pm/intro/decide', ensureAuth, pmGate, async (req, res) => {
@@ -766,7 +774,7 @@ app.post('/api/pm/intro/decide', ensureAuth, pmGate, async (req, res) => {
     } catch (e) {}
     try { await pmSendEmail(it.buyer, 'AXESS · your intro was ' + decision, decision === 'approved' ? 'The listing agent approved your intro. Open AXESS to see the address and message them.' : 'The listing agent declined your intro this time.'); } catch (e) {}
     res.json({ ok: true, intro: it });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 app.get('/api/pm/reveal/:id', ensureAuth, pmGate, async (req, res) => {
@@ -776,7 +784,7 @@ app.get('/api/pm/reveal/:id', ensureAuth, pmGate, async (req, res) => {
     if (!l) return res.status(404).json({ ok: false, error: 'not_found' });
     if (!pmEntitled(l, req.user, intros)) return res.status(403).json({ ok: false, error: 'not_approved' });
     res.json({ ok: true, id: l.id, address: l.address || '', city: l.city || '', state: l.state || '', zip: l.zip || '' });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── buy boxes ─────────────────────────────────────────────────────────────
@@ -793,7 +801,7 @@ app.get('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
         .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
     }
     res.json({ ok: true, buybox: mine, matches });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // A member retracts their client need: it leaves the needs board, matching,
@@ -806,7 +814,7 @@ app.post('/api/pm/buybox/delete', ensureAuth, pmGate, async (req, res) => {
       return { save: keep, result: arr.length - keep.length };
     });
     res.json({ ok: true, removed });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
@@ -816,6 +824,8 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
     const boxes = await pmLoad(PM_KEYS.buyboxes);
     const email = pmEmail(req.user);
     const now = new Date().toISOString();
+    const fhNeed = compliance.fairHousingHit([b.notes, b.markets, b.propType].join(' '));
+    if (fhNeed) return res.status(400).json({ ok: false, error: 'fair_housing_language', message: compliance.FAIR_HOUSING_MSG + ' “' + fhNeed + '” and try again.' });
     if (compliance.motivatedHit(b.notes))
       return res.status(400).json({ ok: false, error: 'no_motivated', message: 'Client-need notes cannot use the word “motivated.” Describe the search without that language.' });
     const priceBand = compliance.normalizePriceBand(b.priceBand);
@@ -857,7 +867,7 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
       } catch (e) { /* best-effort */ }
     }
     res.json({ ok: true, buybox: rec });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── Client-needs board: every member's live client need, visible to the network ─
@@ -882,7 +892,7 @@ app.get('/api/pm/needs', ensureAuth, pmGate, async (req, res) => {
       .filter(n => n.markets || n.propType || n.priceBand || n.beds || n.timeline || (n.notes || '').trim())
       .sort((a, b) => String(b.at).localeCompare(String(a.at)));
     res.json({ ok: true, needs });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // Message a client-need poster by their opaque token (email never exposed).
 app.post('/api/pm/needs/message', rateLimit('message', 40, 60 * 1000), ensureAuth, pmGate, async (req, res) => {
@@ -899,7 +909,7 @@ app.post('/api/pm/needs/message', rateLimit('message', 40, 60 * 1000), ensureAut
     await pmMutate('pm_messages', arr => { arr.push(rec); return { save: arr }; });
     try { await pmSendEmail(to, 'AXESS · an agent has a deal for your client need', (req.user.name || 'An agent') + ' saw your client need on AXESS and sent you a message. Sign in to read and reply.'); } catch (e) {}
     res.json({ ok: true });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 app.get('/api/pm/activity', ensureAuth, pmGate, async (req, res) => {
@@ -915,7 +925,7 @@ app.get('/api/pm/activity', ensureAuth, pmGate, async (req, res) => {
       sentApproved: intros.filter(i => i && _lc(i.buyer) === email && i.status === 'approved').length,
       inboundPending: intros.filter(i => i && myListingIds.has(i.listingId) && i.status === 'pending').length
     } });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── messaging ────────────────────────────────────────────────────────────
@@ -931,7 +941,7 @@ app.post('/api/pm/message', rateLimit('message', 40, 60 * 1000), ensureAuth, pmG
     const rec = { id: pmId('M'), key: pmThreadKey(req.user.email, to, listingId), from: req.user.email, fromName: String(req.user.name || '').slice(0, 80), to, listingId, body, att, at: new Date().toISOString(), readBy: [pmEmail(req.user)] };
     await pmMutate('pm_messages', arr => { arr.push(rec); return { save: arr }; });
     res.json({ ok: true, message: rec });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 app.get('/api/pm/threads', ensureAuth, pmGate, async (req, res) => {
@@ -949,7 +959,7 @@ app.get('/api/pm/threads', ensureAuth, pmGate, async (req, res) => {
     });
     const list = Object.values(threads).map(t => { const l = t.listingId ? byId[t.listingId] : null; t.listing = l ? { id: l.id, area: l.area || l.city || '', price: l.price || '' } : null; return t; }).sort((a, b) => String(b.at).localeCompare(String(a.at)));
     res.json({ ok: true, threads: list, me: { email: req.user.email, name: req.user.name } });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 app.get('/api/pm/thread', ensureAuth, pmGate, async (req, res) => {
@@ -965,7 +975,7 @@ app.get('/api/pm/thread', ensureAuth, pmGate, async (req, res) => {
     const l = listingId ? listings.find(x => x && x.id === listingId) : null;
     const listing = l ? { id: l.id, area: l.area || l.city || '', price: l.price || '', propType: l.propType || '' } : null;
     res.json({ ok: true, messages: thread.map(m => ({ id: m.id, from: m.from, fromName: m.fromName, mine: _lc(m.from) === email, body: m.body, att: m.att || null, at: m.at })), listing, me: { email: req.user.email } });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── notifs / matches / market / broadcasts ──────────────────────────────────
@@ -974,14 +984,14 @@ app.get('/api/pm/notifs', ensureAuth, pmGate, async (req, res) => {
     const ns = await pmLoad('pm_notifs'), email = pmEmail(req.user);
     const mine = ns.filter(n => n && _lc(n.to) === email).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 50);
     res.json({ ok: true, notifs: mine, unread: mine.filter(n => !n.read).length });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.post('/api/pm/notifs/read', ensureAuth, pmGate, async (req, res) => {
   try {
     const email = pmEmail(req.user);
     await pmMutate('pm_notifs', arr => { arr.forEach(n => { if (n && _lc(n.to) === email && !n.read) n.read = true; }); return { save: arr }; });
     res.json({ ok: true });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.get('/api/pm/matches/:listingId', ensureAuth, pmGate, async (req, res) => {
   try {
@@ -991,7 +1001,7 @@ app.get('/api/pm/matches/:listingId', ensureAuth, pmGate, async (req, res) => {
     const owner = _lc(l.owner) === pmEmail(req.user) || req.user.role === 'owner';
     const matches = boxes.filter(b => b && pmMatch(l, b));
     res.json({ ok: true, count: matches.length, buyers: owner ? matches.map(b => ({ owner: b.owner, ownerName: b.ownerName || '', markets: b.markets || '', propType: b.propType || '', contact: b.contact || b.owner })) : [] });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.get('/api/pm/market', ensureAuth, pmGate, async (req, res) => {
   try {
@@ -1005,11 +1015,11 @@ app.get('/api/pm/market', ensureAuth, pmGate, async (req, res) => {
     const areas = {}; live.forEach(l => { const a = l.area || l.city || '—'; areas[a] = (areas[a] || 0) + 1; });
     const recent = live.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 6).map(l => ({ id: l.id, area: l.area || l.city || '', propType: l.propType || '', price: l.price || '', createdAt: l.createdAt || '' }));
     res.json({ ok: true, market: { liveDeals: live.length, withdrawn: off.length, totalValue: val, buyboxes: boxes.length, avgCap: caps.length ? (caps.reduce((a, b) => a + b, 0) / caps.length) : 0, byArea: areas, recent } });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.get('/api/pm/broadcasts', ensureAuth, pmGate, async (req, res) => {
   try { let bs = await pmLoad('pm_broadcasts'); bs = bs.filter(Boolean).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 60); res.json({ ok: true, broadcasts: bs }); }
-  catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  catch (e) { pmFail(res, e); }
 });
 app.post('/api/pm/broadcast', rateLimit('broadcast', 12, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
@@ -1021,7 +1031,7 @@ app.post('/api/pm/broadcast', rateLimit('broadcast', 12, 10 * 60 * 1000), ensure
     const rec = { id: pmId('B'), from: req.user.email, fromName: String(req.user.name || '').slice(0, 80), category, title, body, at: new Date().toISOString() };
     bs.push(rec); await pmSave('pm_broadcasts', bs);
     res.json({ ok: true, broadcast: rec });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── views / analytics / renew ───────────────────────────────────────────────
@@ -1040,7 +1050,7 @@ app.post('/api/pm/view/:id', ensureAuth, pmGate, async (req, res) => {
     });
     if (views === null) return res.status(404).json({ ok: false, error: 'not_found' });
     res.json({ ok: true, views: views });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.get('/api/pm/analytics/:id', ensureAuth, pmGate, async (req, res) => {
   try {
@@ -1052,7 +1062,7 @@ app.get('/api/pm/analytics/:id', ensureAuth, pmGate, async (req, res) => {
     const threadKeys = new Set(msgs.filter(m => m && m.listingId === l.id).map(m => m.key));
     const daysLeft = l.expiresAt ? Math.max(0, Math.ceil((new Date(l.expiresAt) - new Date()) / 864e5)) : null;
     res.json({ ok: true, analytics: { id: l.id, views: Number(l.views) || 0, uniqueViewers: Array.isArray(l.viewers) ? l.viewers.length : 0, matches: matches.length, messageThreads: threadKeys.size, messages: msgs.filter(m => m && m.listingId === l.id).length, expiresAt: l.expiresAt || '', daysLeft, featured: !!l.featured, expired: l.expiresAt ? (new Date(l.expiresAt) < new Date()) : false } });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.post('/api/pm/renew', ensureAuth, pmGate, async (req, res) => {
   const id = String((req.body || {}).id || '');
@@ -1070,7 +1080,7 @@ app.post('/api/pm/renew', ensureAuth, pmGate, async (req, res) => {
     if ((l.status || 'active') === 'off') l.status = 'active';
     await pmSave(PM_KEYS.listings, listings);
     res.json({ ok: true, expiresAt: l.expiresAt });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── profiles / directory ────────────────────────────────────────────────────
@@ -1079,7 +1089,7 @@ app.get('/api/pm/profile', ensureAuth, pmGate, async (req, res) => {
     const profs = await pmLoad('pm_profiles');
     const me = profs.find(p => p && _lc(p.email) === pmEmail(req.user)) || null;
     res.json({ ok: true, profile: me, approved: await pmApproved(req.user), role: req.user.role });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.post('/api/pm/profile', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
@@ -1113,7 +1123,7 @@ app.post('/api/pm/profile', ensureAuth, pmGate, async (req, res) => {
     }
     await pmSave('pm_profiles', profs);
     res.json({ ok: true, profile: rec, approved: await pmApproved(req.user) });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.post('/api/pm/notifprefs', ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
@@ -1128,7 +1138,7 @@ app.post('/api/pm/notifprefs', ensureAuth, pmGate, async (req, res) => {
     profs[idx].notifPrefs = { deals, dealTypes, dealMarkets, email: b.email !== false, intros: b.intros !== false };
     await pmSave('pm_profiles', profs);
     res.json({ ok: true, notifPrefs: profs[idx].notifPrefs });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // ── smart-match digest ───────────────────────────────────────────────────────
 // The anti-noise engine. Instead of blasting every deal to everyone, we email
@@ -1198,7 +1208,7 @@ app.post('/api/pm/digest/run', async (req, res) => {
   const DKEY = process.env.DIGEST_KEY || '';
   if (!admin && !(DKEY && key === DKEY)) return res.status(403).json({ ok: false, error: 'forbidden' });
   try { res.json(Object.assign({ ok: true }, await pmRunDigest(q.days || b.days, String(q.dry || b.dry || '') === '1'))); }
-  catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  catch (e) { pmFail(res, e); }
 });
 // Member requests a Proof-of-Funds badge (buy-side credibility). Stores amount +
 // optional doc; goes to 'pending' for admin review. Doc is never exposed publicly.
@@ -1216,7 +1226,7 @@ app.post('/api/pm/pof/request', rateLimit('pof', 8, 10 * 60 * 1000), ensureAuth,
     await pmSave('pm_profiles', profs);
     if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · proof-of-funds review', (profs[idx].name || email) + ' requested a Proof-of-Funds badge' + (amount ? (' (' + amount + ')') : '') + '.\n\nReview it in the AXESS admin panel.'); } catch (e) {} }
     res.json({ ok: true, pof: pmPofPublic(profs[idx]) });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // Admin decides a POF request.
 app.post('/api/pm/admin/pof', ensureAuth, pmGate, async (req, res) => {
@@ -1235,7 +1245,7 @@ app.post('/api/pm/admin/pof', ensureAuth, pmGate, async (req, res) => {
     await pmSave('pm_profiles', profs);
     try { await pmSendEmail(email, 'AXESS · proof-of-funds ' + decision, decision === 'verified' ? ('Your Proof-of-Funds badge is verified' + (profs[idx].pof.amount ? (' (up to ' + profs[idx].pof.amount + ')') : '') + '. Sellers will now see you as a credible buyer.') : 'Your Proof-of-Funds request was not approved this time.'); } catch (e) {}
     res.json({ ok: true, email, pof: pmPofPublic(profs[idx]) });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // Reputation stats for a member, computed from REAL activity — never self-reported,
 // so it can't be gamed by editing a profile. This is the trust layer that sets AXESS
@@ -1266,7 +1276,7 @@ app.get('/api/pm/profile/:email', ensureAuth, pmGate, async (req, res) => {
     const canContact = req.user.role === 'owner' || req.user.status === 'approved';
     const rep = pmMemberRep(p.email, listings, intros, p);
     res.json({ ok: true, profile: { email: canContact ? p.email : '', name: p.name || '', brokerage: p.brokerage || '', license: canContact ? (p.license || '') : '', markets: p.markets || '', bio: p.bio || '', phone: canContact ? (p.phone || '') : '', linkedin: canContact ? (p.linkedin || '') : '', instagram: canContact ? (p.instagram || '') : '', facebook: canContact ? (p.facebook || '') : '', x: canContact ? (p.x || '') : '', website: canContact ? (p.website || '') : '', verified: !!p.verified, pof: pmPofPublic(p), status: p.status || 'pending', rep: rep } });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.get('/api/pm/directory', ensureAuth, pmGate, async (req, res) => {
   try {
@@ -1278,7 +1288,7 @@ app.get('/api/pm/directory', ensureAuth, pmGate, async (req, res) => {
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
     const members = profs.filter(p => p && p.status === 'approved').map(p => ({ email: p.email, name: p.name || '', brokerage: p.brokerage || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', license: isOwner ? (p.license || '') : '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, pof: pmPofPublic(p), deals: counts[_lc(p.email)] || 0, joined: p.createdAt || '' })).sort((a, b) => (b.deals - a.deals) || String(a.name || a.email).localeCompare(String(b.name || b.email)));
     res.json({ ok: true, members, count: members.length, me: { email: req.user.email, role: req.user.role } });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── admin: members / approvals / featuring ──────────────────────────────────
@@ -1289,7 +1299,7 @@ app.get('/api/pm/admin/members', ensureAuth, pmGate, async (req, res) => {
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
     const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', state: p.state || 'MA', status: p.status || 'pending', denialCause: p.denialCause || '', verified: !!p.verified, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', attested: !!(p.attestation && p.attestation.accepted), attestedAt: (p.attestation && p.attestation.at) || '', deactivated: !!p.deactivated, deactivatedAt: p.deactivatedAt || '', marketingOptIn: p.marketingOptIn !== false, marketingConsentAt: p.marketingConsentAt || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.deactivated ? 1 : 0) - (b.deactivated ? 1 : 0) || (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
     res.json({ ok: true, members, pending: members.filter(m => m.status === 'pending').length, pofPending: members.filter(m => m.pof === 'pending').length });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // Owner-only marketing/CRM export — the full member list as a downloadable CSV,
 // with a clear Opted-in column so blasts can be filtered to consenting agents only.
@@ -1346,7 +1356,7 @@ app.post('/api/pm/admin/approve', ensureAuth, pmGate, async (req, res) => {
       });
     } catch (e) {}
     res.json({ ok: true, email, status: decision, cause: decision === 'rejected' ? b.cause : '' });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // Deactivate / reactivate a member. Soft-only: flips a flag, never touches the
 // member's records (profile, listings, history all preserved). Requires a stated
@@ -1376,7 +1386,7 @@ app.post('/api/pm/admin/deactivate', ensureAuth, pmGate, async (req, res) => {
     profs[idx].deactivatedAt = on ? new Date().toISOString() : '';
     await pmSave('pm_profiles', profs);
     res.json({ ok: true, email, deactivated: on, cause: on ? b.cause : '' });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // ── Self-serve: a member cancels their own account. Access ends immediately,
 //    but every record is kept (profile, past deals). The owner
@@ -1417,7 +1427,7 @@ app.post('/api/pm/cancel', ensureAuth, pmGate, async (req, res) => {
     if (demo.active()) demo.writeCookie(res, { admin: !!req.demo.admin, as: '' }, IS_DEPLOYED);
     else req.session = null;
     res.json({ ok: true, immediate: true });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.post('/api/pm/admin/verify', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
@@ -1433,7 +1443,7 @@ app.post('/api/pm/admin/verify', ensureAuth, pmGate, async (req, res) => {
     profs[idx].verifiedAt = b.verified ? new Date().toISOString() : '';
     await pmSave('pm_profiles', profs);
     res.json({ ok: true, email, verified: profs[idx].verified });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.post('/api/pm/admin/feature', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
@@ -1447,7 +1457,7 @@ app.post('/api/pm/admin/feature', ensureAuth, pmGate, async (req, res) => {
     listings[idx].featured = !!b.featured;
     await pmSave(PM_KEYS.listings, listings);
     res.json({ ok: true, id, featured: listings[idx].featured });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── public join requests (no auth) ──────────────────────────────────────────
@@ -1552,7 +1562,7 @@ app.post('/api/pm/request', rateLimit('signup', 6, 10 * 60 * 1000), async (req, 
     }
     if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · new member joined', name + ' joined AXESS.\n\nEmail: ' + email + '\nLicense: ' + (license || '—') + '\nBrokerage: ' + (brokerage || '—') + '\nPhone: ' + (phone || '—') + '\n\nAdmitted automatically under the published criteria and recorded in the admissions log. Re-check the license on the state registry and record the result (Verify license) in the Members tab.'); } catch (e) {} }
     res.json({ ok: true, linkSent });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // ── Contact / support: anyone (member or not) can send a question or issue. ──
 app.post('/api/pm/contact', rateLimit('contact', 6, 10 * 60 * 1000), async (req, res) => {
@@ -1571,7 +1581,7 @@ app.post('/api/pm/contact', rateLimit('contact', 6, 10 * 60 * 1000), async (req,
     await pmSave('pm_contacts', list.length > 3000 ? list.slice(-3000) : list);
     if (ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · contact form: ' + subject, 'New message from the AXESS contact form.\n\nName: ' + name + '\nEmail: ' + email + '\nSubject: ' + subject + '\n\n' + message + '\n\nReply directly to ' + email + '.'); } catch (e) {} }
     res.json({ ok: true });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // ── Owner: email someone a sign-up link. It only pre-fills their email on the
 //    public sign-up form — same criteria, same price, no special access. ──
@@ -1593,7 +1603,7 @@ app.post('/api/pm/admin/invite', ensureAuth, pmGate, async (req, res) => {
     const sent = await authMod.sendEmail(email, 'Your AXESS sign-up link', html);
     if (sent === false) return res.status(502).json({ ok: false, error: 'send_failed', message: 'Could not send the email — check email settings.' });
     res.json({ ok: true });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // One-click unsubscribe from marketing emails (CAN-SPAM). Token = HMAC of the
 // email, matching auth.js's emailFooter — no login required so it works straight
@@ -1630,14 +1640,14 @@ app.get('/api/pm/admin/invites', ensureAuth, pmGate, async (req, res) => {
       return { email: v.email, at: v.at, by: v.by || '', status, name: (p && p.name) || '' };
     }).sort((a, b) => String(b.at).localeCompare(String(a.at)));
     res.json({ ok: true, invites: list, pending: list.filter(i => i.status === 'invited').length });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.get('/api/pm/admin/requests', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const reqs = await pmLoad('pm_requests');
     res.json({ ok: true, requests: reqs.filter(Boolean).sort((a, b) => (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || String(b.at).localeCompare(String(a.at))), pending: reqs.filter(r => r && r.status === 'pending').length });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.post('/api/pm/admin/request/decide', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
@@ -1694,7 +1704,7 @@ app.post('/api/pm/admin/request/decide', ensureAuth, pmGate, async (req, res) =>
       }); } catch (e) {}
     }
     res.json({ ok: true, id, status: decision, cause: decision === 'denied' ? b.cause : '' });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // Owner: the admission decision log, newest first. Admin-visible only.
@@ -1703,7 +1713,7 @@ app.get('/api/pm/admin/admissions', ensureAuth, pmGate, async (req, res) => {
   try {
     const log = (await pmLoad(PM_ADMISSIONS)).filter(Boolean).sort((a, b) => String(b.at).localeCompare(String(a.at)));
     res.json({ ok: true, entries: log, counts: { admit: log.filter(e => e.decision === 'admit').length, deny: log.filter(e => e.decision === 'deny').length, revoke: log.filter(e => e.decision === 'revoke').length, terminate: log.filter(e => e.decision === 'terminate').length, reinstate: log.filter(e => e.decision === 'reinstate').length } });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── referral link ───────────────────────────────────────────────────────────
@@ -1717,7 +1727,7 @@ app.get('/api/pm/referral', ensureAuth, pmGate, async (req, res) => {
     const referred = Array.isArray(me.referredEmails) ? me.referredEmails : [];
     const pending = reqs.filter(r => r && r.referredBy === code && r.status === 'pending').length;
     res.json({ ok: true, code, link, approved: referred.length, pending, referred });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── public marketing stats + teaser (no auth) ─────────────────────────────────
@@ -1800,7 +1810,7 @@ app.post('/api/pm/upload', rateLimit('upload', 60, 60 * 1000), ensureAuth, pmGat
     }
     const url = 'data:' + mime + ';base64,' + data; // fallback until R2 is configured
     res.json({ ok: true, url, name });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // Serve a stored file to an ENTITLED viewer via a fresh signed URL (302). Permission
@@ -1897,7 +1907,7 @@ app.post('/api/pm/extract', rateLimit('extract', 20, 10 * 60 * 1000), ensureAuth
     const numOnly = v => { const s = String(v == null ? '' : v).replace(/[^0-9.]/g, ''); return s || ''; };
     const fields = { units: numOnly(parsed.units), grossIncome: numOnly(parsed.grossIncome), expenses: numOnly(parsed.expenses), noi: numOnly(parsed.noi), sqft: numOnly(parsed.sqft), price: numOnly(parsed.price), summary: String(parsed.summary || '').slice(0, 200), description: String(parsed.description || '').slice(0, 1200) };
     res.json({ ok: true, fields });
-  } catch (e) { if (consumed) { try { await extractQuotaRefund(pmEmail(req.user)); } catch (_) {} } res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { if (consumed) { try { await extractQuotaRefund(pmEmail(req.user)); } catch (_) {} } pmFail(res, e); }
 });
 
 // ── Light AI helpers (Haiku by default — cheap): polish a deal description and
@@ -1937,7 +1947,7 @@ app.post('/api/pm/ai/describe', rateLimit('ai', 20, 10 * 60 * 1000), ensureAuth,
     const out = await pmAIText(sys, 'Write the description from these facts:\n\n' + facts, 300);
     if (!out.ok) { await extractQuotaRefund(me); return res.status(out.error === 'not_configured' ? 200 : 502).json({ ok: false, error: out.error, message: out.error === 'not_configured' ? 'AI isn’t switched on yet.' : 'AI is busy — try again in a moment.' }); }
     res.json({ ok: true, text: out.text.slice(0, 1200) });
-  } catch (e) { try { await extractQuotaRefund(me); } catch (_) {} res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { try { await extractQuotaRefund(me); } catch (_) {} pmFail(res, e); }
 });
 app.post('/api/pm/ai/intro', rateLimit('ai', 20, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   if (!costguard.aiEnabled()) return res.status(503).json({ ok: false, error: 'ai_paused', message: costguard.AI_PAUSED_MESSAGE });
@@ -1953,7 +1963,7 @@ app.post('/api/pm/ai/intro', rateLimit('ai', 20, 10 * 60 * 1000), ensureAuth, pm
     const out = await pmAIText(sys, 'I am ' + who + '. Draft my intro request for this deal: ' + ctx + (b.hint ? ('. My buyer context: ' + String(b.hint).slice(0, 300)) : ''), 220);
     if (!out.ok) { await extractQuotaRefund(me); return res.status(out.error === 'not_configured' ? 200 : 502).json({ ok: false, error: out.error, message: out.error === 'not_configured' ? 'AI isn’t switched on yet.' : 'AI is busy — try again in a moment.' }); }
     res.json({ ok: true, text: out.text.slice(0, 800) });
-  } catch (e) { try { await extractQuotaRefund(me); } catch (_) {} res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { try { await extractQuotaRefund(me); } catch (_) {} pmFail(res, e); }
 });
 // ── Stripe: membership subscription (the only charge) ───────────────────────
 let stripe = null;
@@ -1989,7 +1999,7 @@ app.get('/api/pm/pay/status', ensureAuth, pmGate, async (req, res) => {
     const trialEndsAt = compliance.trialEndsAt(me.approvedAt || me.createdAt, settings.billingStartedAt);
     const trialDaysLeft = trialEndsAt ? Math.max(0, Math.ceil((new Date(trialEndsAt) - Date.now()) / 864e5)) : null;
     res.json({ ok: true, enabled: !!stripe, membership: membershipConfigured, billingOn: !!settings.billingOn, trialDays: compliance.TRIAL_DAYS, trialEndsAt, trialDaysLeft, subStatus: me.subStatus || '', cancelAt: me.cancelAt || '', canManage: !!(stripe && me.stripeCustomer), founder, monthly, memberNo: me.memberNo || null, paid: !!me.paid, prices: { founding: MEMBERSHIP_FOUNDING, standard: MEMBERSHIP_STANDARD } });
-  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // Owner: switch membership billing on/off. Off = nobody charged. The first time
 // it goes on, billingStartedAt starts the 14-day trial clock for existing members.
@@ -2010,7 +2020,7 @@ app.get('/api/pm/admin/billing', ensureAuth, pmGate, async (req, res) => {
     const r = pmBillingReady();
     res.json({ ok: true, billingOn: !!s.billingOn, billingStartedAt: s.billingStartedAt || '', ready: r.ready, missing: r.missing,
       counts: { members: members.length, paying: members.filter(p => p.paid).length, inTrial: members.filter(p => !p.paid).length } });
-  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.post('/api/pm/admin/billing', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
@@ -2046,7 +2056,7 @@ app.post('/api/pm/admin/billing', ensureAuth, pmGate, async (req, res) => {
       }
     }
     res.json({ ok: true, billingOn: on, billingStartedAt: s.billingStartedAt || '', notified });
-  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // Members: undo a scheduled cancellation before the period ends.
 app.post('/api/pm/billing/resume', ensureAuth, pmGate, async (req, res) => {
@@ -2060,7 +2070,7 @@ app.post('/api/pm/billing/resume', ensureAuth, pmGate, async (req, res) => {
     me.cancelAt = ''; me.cancelRequestedAt = '';
     await pmSave('pm_profiles', profs);
     res.json({ ok: true });
-  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // Members: open the Stripe customer portal to update a card or cancel.
 app.post('/api/pm/billing/portal', ensureAuth, pmGate, async (req, res) => {
@@ -2072,7 +2082,7 @@ app.post('/api/pm/billing/portal', ensureAuth, pmGate, async (req, res) => {
     if (!me.stripeCustomer) return res.status(400).json({ ok: false, error: 'no_subscription', message: 'You don’t have an active subscription yet.' });
     const ps = await stripe.billingPortal.sessions.create({ customer: me.stripeCustomer, return_url: PM_BASE + '/app.html?billing=1' });
     res.json({ ok: true, url: ps.url });
-  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 // Stripe → AXESS: keep each member's subscription status current (renewals,
 // failed payments, cancellations). Signature-checked with STRIPE_WEBHOOK_SECRET.
@@ -2109,7 +2119,7 @@ async function pmStripeWebhook(req, res) {
       }
     }
     res.json({ ok: true, received: true });
-  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 }
 // Daily-ish: remind members 3 days before their trial ends (only while billing
 // is on and they haven't started their membership).
@@ -2163,7 +2173,7 @@ app.post('/api/pm/checkout', ensureAuth, pmGate, async (req, res) => {
       return res.json({ ok: true, url: session.url });
     }
     res.status(400).json({ ok: false, error: 'bad_kind' });
-  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 app.get('/api/pm/pay/confirm', ensureAuth, pmGate, async (req, res) => {
   // Demo never talks to Stripe and never marks anything paid.
@@ -2190,7 +2200,7 @@ app.get('/api/pm/pay/confirm', ensureAuth, pmGate, async (req, res) => {
     pays.push({ sid, kind, email: m.email || pmEmail(req.user), at: new Date().toISOString() });
     await pmSave('pm_pays', pays.length > 5000 ? pays.slice(-5000) : pays);
     res.json({ ok: true, kind });
-  } catch (e) { res.status(502).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── sample data (admin) ──────────────────────────────────────────────────────
@@ -2244,7 +2254,7 @@ app.all('/api/pm/seed', ensureAuth, pmGate, async (req, res) => {
     BOXES.forEach((bx, i) => { const p = PEOPLE[bx.o]; boxes.push(Object.assign({ owner: p.email, ownerName: p.name, contact: p.email, createdAt: iso(now - (i + 3) * D), updatedAt: iso(now), sample: true }, bx.B)); });
     await Promise.all([pmSave(PM_KEYS.listings, listings), pmSave(PM_KEYS.buyboxes, boxes), pmSave('pm_profiles', profs)]);
     res.json({ ok: true, loaded: { listings: DEALS.length, members: PEOPLE.length, clientNeeds: BOXES.length } });
-  } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  } catch (e) { pmFail(res, e); }
 });
 
 // ── renewal reminder sweep (self-scheduled) ──────────────────────────────────
@@ -2269,7 +2279,7 @@ app.all('/api/pm/cron', async (req, res) => {
   const authed = (PM_CRON_TOKEN && tok === PM_CRON_TOKEN) || (req.user && req.user.role === 'owner');
   if (!authed) return res.status(403).json({ ok: false, error: 'forbidden' });
   try { res.json({ ok: true, sent: await pmRunRenewals(), trialReminders: await pmTrialReminders() }); }
-  catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 200) }); }
+  catch (e) { pmFail(res, e); }
 });
 setTimeout(() => { pmRunRenewals().catch(() => {}); }, 30000);
 setInterval(() => { pmRunRenewals().catch(() => {}); }, 12 * 3600 * 1000);
@@ -2438,7 +2448,7 @@ app.get('/demo-mode', async (req, res, next) => {
   res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   res.setHeader('Cache-Control', 'no-store');
   if (!req.demo) { demo.writeCookie(res, { admin: gate.admin, as: '' }, IS_DEPLOYED); if (req.query.code) return res.redirect('/demo-mode'); }
-  try { await demo.run(() => demoEnsureSeeded()); } catch (e) { return res.status(502).send('Demo data unavailable: ' + String(e).slice(0, 120)); }
+  try { await demo.run(() => demoEnsureSeeded()); } catch (e) { console.error('[AXESS error] demo seed', e); return res.status(502).send('Demo data is unavailable right now — please try again.'); }
   res.type('html').send(demoPage(gate, (req.demo && req.demo.as) || ''));
 });
 // All /api/demo/* run inside the demo partition and require a demo session.
@@ -2449,7 +2459,7 @@ app.get('/api/demo/state', (req, res) => res.json({ ok: true, admin: !!req.demo.
 app.post('/api/demo/signin', async (req, res) => {
   const a = demo.accountByN((req.body || {}).n);
   if (!a) return res.status(400).json({ ok: false, error: 'bad_account' });
-  try { await demoEnsureSeeded(); } catch (e) { return res.status(502).json({ ok: false, error: String(e).slice(0, 120) }); }
+  try { await demoEnsureSeeded(); } catch (e) { return pmFail(res, e); }
   demo.writeCookie(res, { admin: !!req.demo.admin, as: a.email }, IS_DEPLOYED);
   res.json({ ok: true, as: a.email });
 });
@@ -2457,7 +2467,7 @@ app.post('/api/demo/signout', (req, res) => { demo.writeCookie(res, { admin: !!r
 app.post('/api/demo/exit', (req, res) => { demo.clearCookie(res, IS_DEPLOYED); res.json({ ok: true }); });
 app.post('/api/demo/reset', async (req, res) => {
   if (!req.demo.admin) return res.status(403).json({ ok: false, error: 'admin_only' });
-  try { await demoSeed(); res.json({ ok: true }); } catch (e) { res.status(502).json({ ok: false, error: String(e).slice(0, 120) }); }
+  try { await demoSeed(); res.json({ ok: true }); } catch (e) { pmFail(res, e); }
 });
 
 // Google Sign-In: the client sends the Google ID token (JWT). We verify it with
@@ -2480,6 +2490,24 @@ app.post('/auth/google', async (req, res) => {
 });
 
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
+
+// ── not found / server error pages ───────────────────────────────────────────
+function pmErrorPage(title, msg) {
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>' + title + ' — AXESS</title>'
+    + '<style>body{margin:0;font:16px/1.6 -apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#F7F6F3;color:#0E1013}.w{max-width:480px;margin:14vh auto;padding:0 22px;text-align:center}.m{font-weight:800;letter-spacing:.16em;margin-bottom:22px}h1{font-size:24px;margin:0 0 10px}p{color:#6B6A63;margin:0 0 22px}a{display:inline-block;background:#0E1013;color:#F7F6F3;text-decoration:none;font-weight:600;border-radius:10px;padding:11px 20px}</style></head>'
+    + '<body><div class="w"><div class="m">AXESS</div><h1>' + title + '</h1><p>' + msg + '</p><a href="/">Back to AXESS</a></div></body></html>';
+}
+app.use((req, res) => {
+  if (req.path.indexOf('/api/') === 0 || !req.accepts('html')) return res.status(404).json({ ok: false, error: 'not_found' });
+  res.status(404).type('html').send(pmErrorPage('Page not found', 'That page doesn’t exist or has moved.'));
+});
+// Malformed requests (e.g. bad JSON) and anything unexpected.
+app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
+  const status = err && (err.status || err.statusCode) && err.status < 500 ? err.status : 500;
+  if (status >= 500) console.error('[AXESS error]', req.method, req.originalUrl, (err && err.stack) || err);
+  if (req.path.indexOf('/api/') === 0 || !req.accepts('html')) return res.status(status).json({ ok: false, error: status >= 500 ? 'server_error' : 'bad_request', message: status >= 500 ? 'Something went wrong — please try again.' : 'That request couldn’t be read.' });
+  res.status(status).type('html').send(pmErrorPage(status >= 500 ? 'Something went wrong' : 'Bad request', status >= 500 ? 'Please try again in a moment. If it keeps happening, contact us.' : 'That request couldn’t be read.'));
+});
 
 const PORT = process.env.PORT || 3000;
 db.ensureSchema()
