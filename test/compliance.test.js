@@ -10,6 +10,12 @@ assert.ok(c.compensationHit('3% commission to buyer broker'));
 assert.strictEqual(c.compensationHit('Six-unit brick, all 2-beds, below-market rents.'), null);
 assert.strictEqual(c.compensationHit(''), null);
 
+// Fair housing: preference/limitation language is blocked; ordinary
+// property descriptions are not.
+for (const t of ['No kids please', 'Adults only building', 'Perfect for a young couple', 'No Section 8', 'section 8 not accepted', 'ideal for retirees', 'Christian family neighborhood', 'mature couple preferred', 'no wheelchairs', 'English speaking only', 'great for young professionals', 'no vouchers'])
+  assert.ok(c.fairHousingHit(t), 'blocks: ' + t);
+for (const t of ['3 bed near schools', 'close to Red Line', 'Kids room on 2nd floor', 'walk to church and park', 'section 8 tenant in place, lease through 2027', 'adult day care center nearby', 'Great for investors', 'perfect for a contractor', ''])
+  assert.strictEqual(c.fairHousingHit(t), null, 'allows: ' + t);
 assert.ok(c.motivatedHit('Highly motivated seller'));
 assert.strictEqual(c.motivatedHit('Buyer looking in Worcester'), null);
 

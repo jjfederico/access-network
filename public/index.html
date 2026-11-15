@@ -476,13 +476,13 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
     <div class="rhead"><h3>Join AXESS</h3><p>Free while the network grows. Membership will move to $25/month — you’ll get advance notice by email before any charge, and the first 100 members lock in $25 for life. Membership is open to any Massachusetts licensed agent in good standing — every applicant who meets the <a href="/membership" target="_blank" style="color:inherit;font-weight:600;text-decoration:underline">published criteria</a> is admitted. Create your account now — you can browse, post, and message right away once you certify your license.</p><div id="refNote" style="display:none;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)">◆ Referred by a member</div></div>
     <div class="rbody" id="reqBody">
       <div class="rgrid">
-        <div class="rf"><label>Full legal name <span class="req">*</span> <span style="color:var(--mut2);font-weight:400">(as on license)</span></label><input id="qName" autocomplete="name"></div>
-        <div class="rf"><label>Email <span class="req">*</span></label><input id="qEmail" type="email" autocomplete="email"></div>
-        <div class="rf"><label>Phone <span class="req">*</span></label><input id="qPhone" type="tel" autocomplete="tel"></div>
-        <div class="rf"><label>MA license # <span class="req">*</span></label><input id="qLicense"></div>
-        <div class="rf"><label>Brokerage <span class="req">*</span></label><input id="qBrokerage"></div>
-        <div class="rf"><label>Markets you cover</label><input id="qMarkets" placeholder="e.g. South Boston, Quincy"></div>
-        <div class="rf"><label>What do you mostly do?</label><select id="qFocus"><option value="">— choose —</option><option value="residential">Residential</option><option value="commercial">Commercial &amp; investment</option><option value="both">Both</option></select></div>
+        <div class="rf"><label for="qName">Full legal name <span class="req">*</span> <span style="color:var(--mut2);font-weight:400">(as on license)</span></label><input id="qName" autocomplete="name"></div>
+        <div class="rf"><label for="qEmail">Email <span class="req">*</span></label><input id="qEmail" type="email" autocomplete="email"></div>
+        <div class="rf"><label for="qPhone">Phone <span class="req">*</span></label><input id="qPhone" type="tel" autocomplete="tel"></div>
+        <div class="rf"><label for="qLicense">MA license # <span class="req">*</span></label><input id="qLicense"></div>
+        <div class="rf"><label for="qBrokerage">Brokerage <span class="req">*</span></label><input id="qBrokerage"></div>
+        <div class="rf"><label for="qMarkets">Markets you cover</label><input id="qMarkets" placeholder="e.g. South Boston, Quincy"></div>
+        <div class="rf"><label for="qFocus">What do you mostly do?</label><select id="qFocus"><option value="">— choose —</option><option value="residential">Residential</option><option value="commercial">Commercial &amp; investment</option><option value="both">Both</option></select></div>
       </div>
       <div class="rmsg" id="qMsg"></div>
       <div id="cfBox" style="margin:4px 0 10px;display:none"></div>
@@ -502,13 +502,13 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
     <div class="rhead"><h3>Contact us</h3><p>Questions, issues, or just want to learn more? Send us a note and we'll get back to you by email.</p></div>
     <div class="rbody" id="contactBody">
       <div class="rgrid">
-        <div class="rf"><label>Your name <span class="req">*</span></label><input id="cName" autocomplete="name"></div>
-        <div class="rf"><label>Email <span class="req">*</span></label><input id="cEmail" type="email" autocomplete="email"></div>
+        <div class="rf"><label for="cName">Your name <span class="req">*</span></label><input id="cName" autocomplete="name"></div>
+        <div class="rf"><label for="cEmail">Email <span class="req">*</span></label><input id="cEmail" type="email" autocomplete="email"></div>
       </div>
-      <div class="rf full"><label>Subject</label>
+      <div class="rf full"><label for="cSubject">Subject</label>
         <select id="cSubject"><option>General question</option><option>Trouble signing in</option><option>Membership &amp; billing</option><option>Report a bug or issue</option><option>Partnership / press</option><option>Something else</option></select>
       </div>
-      <div class="rf full"><label>Message <span class="req">*</span></label><textarea id="cMessage" rows="5" placeholder="How can we help?"></textarea></div>
+      <div class="rf full"><label for="cMessage">Message <span class="req">*</span></label><textarea id="cMessage" rows="5" placeholder="How can we help?"></textarea></div>
       <div class="rmsg" id="cMsg"></div>
       <button class="btn p big" id="cBtn" style="width:100%;justify-content:center" onclick="sendContact()">Send message</button>
     </div>
@@ -673,7 +673,7 @@ function sendReq(){
         <div id="gsiBtn" style="display:flex;justify-content:center;min-height:40px"></div>
         <div style="display:flex;align-items:center;gap:10px;margin:16px 0 4px;color:var(--mut2);font-size:12px;font-weight:600"><span style="flex:1;height:1px;background:var(--line)"></span>OR<span style="flex:1;height:1px;background:var(--line)"></span></div>
       </div>
-      <div class="rf full"><label>Email</label><input id="siEmail" type="email" autocomplete="email" placeholder="you@brokerage.com"></div>
+      <div class="rf full"><label for="siEmail">Email</label><input id="siEmail" type="email" autocomplete="email" placeholder="you@brokerage.com"></div>
       <div class="rmsg" id="siMsg"></div>
       <button class="btn p big" id="siBtn" style="width:100%;justify-content:center" onclick="sendSignin()">Send sign-in link</button>
       <p style="margin-top:12px;font-size:13px;color:var(--mut);text-align:center">Not a member yet? <a href="#" onclick="closeSignin();openReq();return false" style="color:var(--gold);text-decoration:none">Create an account</a></p>
