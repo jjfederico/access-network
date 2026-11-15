@@ -132,10 +132,17 @@ async function importAll(map) {
   }
 }
 
+// Every stored list, for the nightly backup.
+async function dumpAll() {
+  if (!pool) throw new Error('no_database');
+  const r = await pool.query('SELECT k, v, updated_at FROM pm_store ORDER BY k');
+  return r.rows;
+}
+
 async function health() {
   if (!pool) return { ok: false, error: 'no DATABASE_URL' };
   try { await pool.query('SELECT 1'); return { ok: true, ready }; }
   catch (e) { return { ok: false, error: String(e && e.message || e) }; }
 }
 
-module.exports = { pool, ensureSchema, pmLoad, pmSave, pmMutate, importAll, health, hasDb: !!pool };
+module.exports = { pool, ensureSchema, pmLoad, pmSave, pmMutate, importAll, dumpAll, health, hasDb: !!pool };

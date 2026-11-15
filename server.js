@@ -2491,6 +2491,57 @@ app.post('/auth/google', async (req, res) => {
 
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
+// ── nightly backups to object storage ──────────────────────────────────────
+// Once a day (checked hourly), every stored list is written as one gzipped JSON
+// file to R2 (backups/axess-YYYY-MM-DD.json.gz) and the file from 30 days ago is
+// removed. Render alone only offers a 3-day point-in-time window. The owner is
+// emailed if a backup fails. Restore: scripts/restore-backup.js.
+const backupLib = require('./lib/backup');
+async function pmRunBackup(force) {
+  const s = await pmSettings();
+  if (!force && !backupLib.isDue(s.lastBackupAt)) return { ok: true, skipped: true };
+  if (!R2_ENABLED) return { ok: false, error: 'no_storage', message: 'File storage (R2) is not configured.' };
+  try {
+    const b = backupLib.build(await db.dumpAll());
+    await r2Put(b.key, b.buffer, 'application/gzip');
+    try { const { DeleteObjectCommand } = require('@aws-sdk/client-s3'); await s3client().send(new DeleteObjectCommand({ Bucket: R2.bucket, Key: backupLib.expiredKey() })); } catch (e) {}
+    const s2 = await pmSettings();
+    Object.assign(s2, { lastBackupAt: new Date().toISOString(), lastBackupKey: b.key, lastBackupBytes: b.buffer.length, lastBackupLists: Object.keys(b.counts).length, lastBackupError: '' });
+    await pmSaveSettings(s2);
+    return { ok: true, key: b.key, bytes: b.buffer.length, counts: b.counts };
+  } catch (e) {
+    console.error('[AXESS backup] failed', e);
+    try {
+      const s3 = await pmSettings(); const today = new Date().toISOString().slice(0, 10);
+      if (s3.lastBackupErrorDay !== today && ADMIN) await pmSendEmail(ADMIN, 'AXESS · nightly backup failed', 'The nightly AXESS backup failed: ' + String((e && e.message) || e).slice(0, 300) + '\n\nOpen Admin → Backups and click "Back up now" to retry. If it keeps failing, check the R2 settings in Render.');
+      s3.lastBackupError = String((e && e.message) || e).slice(0, 300); s3.lastBackupErrorDay = today; await pmSaveSettings(s3);
+    } catch (_) {}
+    return { ok: false, error: 'backup_failed' };
+  }
+}
+setTimeout(() => { pmRunBackup(false).catch(() => {}); }, 120000);
+setInterval(() => { pmRunBackup(false).catch(() => {}); }, 3600 * 1000);
+app.get('/api/pm/admin/backup', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try { const s = await pmSettings(); res.json({ ok: true, enabled: R2_ENABLED, lastBackupAt: s.lastBackupAt || '', lastBackupKey: s.lastBackupKey || '', lastBackupBytes: s.lastBackupBytes || 0, lastBackupLists: s.lastBackupLists || 0, lastBackupError: s.lastBackupError || '', retainDays: backupLib.RETAIN_DAYS }); }
+  catch (e) { pmFail(res, e); }
+});
+app.post('/api/pm/admin/backup/run', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try { const r = await pmRunBackup(true); res.status(r.ok ? 200 : 502).json(r); } catch (e) { pmFail(res, e); }
+});
+// Owner downloads a backup file (short-lived signed link). ?date=YYYY-MM-DD, default latest.
+app.get('/api/pm/admin/backup/download', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  if (!R2_ENABLED) return res.status(404).json({ ok: false, error: 'no_storage' });
+  try {
+    const d = String(req.query.date || '');
+    const key = /^\d{4}-\d{2}-\d{2}$/.test(d) ? backupLib.keyFor(d + 'T12:00:00Z') : (await pmSettings()).lastBackupKey;
+    if (!key) return res.status(404).json({ ok: false, error: 'no_backup' });
+    res.redirect(await r2SignedGet(key, 300));
+  } catch (e) { pmFail(res, e); }
+});
+
 // ── not found / server error pages ───────────────────────────────────────────
 function pmErrorPage(title, msg) {
   return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>' + title + ' — AXESS</title>'
