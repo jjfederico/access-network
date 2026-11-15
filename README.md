@@ -100,6 +100,20 @@ AXESS isn't charging members yet, so anything metered is off or capped:
 - Not app-capped: Google Maps JS / Places (set quotas in Google Cloud) and
   Stripe (fees only on real charges; billing is off until switched on).
 
+## Backups
+
+Render only keeps a 3-day point-in-time window, so AXESS writes its own
+nightly backup: every stored list as one gzipped JSON file in R2 at
+`backups/axess-YYYY-MM-DD.json.gz`, kept 30 days (`BACKUP_RETAIN_DAYS`).
+Sign-in tokens and demo data are left out. The owner is emailed if a backup
+fails. Admin → Backups shows the last run and has **Back up now** and
+**Download latest**.
+
+Restore (replaces only the lists you name; take a fresh backup first):
+
+    node scripts/restore-backup.js axess-2026-11-15.json.gz                       # dry run: what's inside
+    DATABASE_URL=... node scripts/restore-backup.js FILE --keys pm_listings --confirm
+
 ## What you provision
 
 1. GitHub repo → Render web service (`npm install` / `npm start`).
