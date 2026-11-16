@@ -109,6 +109,8 @@ function emailFooter(to) {
 async function sendEmail(to, subject, html, opts) {
   // Demo mode never sends real email.
   if (demo.active()) { console.log('[AXESS demo — email suppressed]', to, '·', subject); return true; }
+  // A staging copy never emails real people.
+  if (process.env.STAGING || process.env.EMAIL_OFF) { console.log('[AXESS staging — email suppressed]', to, '·', subject); return true; }
   if (!(opts && opts.essential) && !costguard.emailTake()) {
     console.error('[cost] email NOT sent — daily cap (' + costguard.emailDailyCap() + ') reached:', to, '·', subject);
     return false;

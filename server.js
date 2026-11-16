@@ -28,19 +28,38 @@ app.set('trust proxy', 1);
 // Stripe webhook needs the raw body for signature checks, so it is mounted
 // before the JSON parser. Handler is defined with the rest of billing below.
 app.post('/api/pm/stripe/webhook', express.raw({ type: 'application/json', limit: '1mb' }), (req, res) => pmStripeWebhook(req, res));
-app.use(express.json({ limit: '25mb' }));
+// Browsers POST policy violations here. Kept in memory (last 100) and logged;
+// the owner sees them in Admin → Security. Rate-limited.
+const _cspReports = [];
+app.post('/api/csp-report', rateLimit('csp', 30, 60 * 1000), express.json({ type: ['application/csp-report', 'application/reports+json', 'application/json'], limit: '20kb' }), (req, res) => {
+  try {
+    const list = Array.isArray(req.body) ? req.body.map(x => x && x.body) : [req.body && (req.body['csp-report'] || req.body)];
+    for (const r of list.filter(Boolean)) {
+      const e = { at: new Date().toISOString(), page: String(r['document-uri'] || r.documentURL || '').slice(0, 200), blocked: String(r['blocked-uri'] || r.blockedURL || '').slice(0, 200), directive: String(r['violated-directive'] || r.effectiveDirective || r['effective-directive'] || '').slice(0, 80) };
+      _cspReports.push(e); if (_cspReports.length > 100) _cspReports.shift();
+      console.warn('[AXESS csp]', e.directive, e.blocked, 'on', e.page);
+    }
+  } catch (e) {}
+  res.status(204).end();
+});
+// Large bodies only where files travel (base64 uploads, inline files in demo /
+// no-R2 mode, admin import); everything else is capped small so anonymous
+// requests can't tie up the server with huge payloads.
+app.use(['/api/pm/upload', '/api/pm/extract', '/api/pm/listing', '/api/pm/message', '/api/pm/import'], express.json({ limit: '25mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // ── Basic security headers on every response ────────────────────────────────
 // Hardening CSP. 'unsafe-inline' stays (the app's UI is built on inline scripts +
 // handlers), so this doesn't stop inline execution — but it locks down where data
 // can be sent (connect-src), blocks <object>/base-tag/framing, and allowlists only
-// the real third parties, shrinking the blast radius of any XSS. Report-Only for
-// now (CSP_ENFORCE=1 flips it to enforcing) so it can never break a live flow.
+// the real third parties, shrinking the blast radius of any XSS. Enforced; any
+// violation is reported to /api/csp-report (Admin → Security). CSP_REPORT_ONLY=1
+// switches back to report-only without a code change if a live flow breaks.
 const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com https://js.stripe.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
   "connect-src 'self' https://accounts.google.com https://apis.google.com https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com https://api.stripe.com",
@@ -48,15 +67,21 @@ const CSP = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  "frame-ancestors 'self'"
+  "frame-ancestors 'self'",
+  "report-uri /api/csp-report"
 ].join('; ');
+// STAGING=1 marks a test copy of the site: never indexed by search engines,
+// a visible banner on every app/landing page, and no outgoing email (auth.js).
+const STAGING = !!process.env.STAGING;
+const STAGING_BANNER = STAGING ? '<div style="position:sticky;top:0;z-index:99999;background:#7c3aed;color:#fff;font:600 12px/1 -apple-system,Segoe UI,Roboto,Arial,sans-serif;letter-spacing:.08em;text-align:center;padding:8px">STAGING — test copy of AXESS, not the live site · no emails are sent</div>' : '';
 app.use((req, res, next) => {
+  if (STAGING) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
   if (IS_DEPLOYED) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  res.setHeader(process.env.CSP_ENFORCE ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only', CSP);
+  res.setHeader(process.env.CSP_REPORT_ONLY ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy', CSP);
   next();
 });
 
@@ -376,6 +401,14 @@ function pmThreadKey(a, b, listingId) {
   return p[0] + '|' + p[1] + (listingId ? ('|' + listingId) : '');
 }
 function pmIsAdmin(req) { return req.user && req.user.role === 'owner'; }
+// Notifications are capped per member (newest NOTIF_KEEP each), not site-wide,
+// so one busy period can't push everyone else's alerts out.
+const NOTIF_KEEP = parseInt(process.env.PM_NOTIF_KEEP || '', 10) || 100;
+function pmCapNotifs(ns) {
+  const seen = {}; const keep = new Array(ns.length);
+  for (let i = ns.length - 1; i >= 0; i--) { const n = ns[i]; const to = _lc(n && n.to); seen[to] = (seen[to] || 0) + 1; keep[i] = seen[to] <= NOTIF_KEEP; }
+  return ns.filter((n, i) => keep[i]);
+}
 // Server errors: log the details privately, show the browser a plain message.
 // (Internal error text used to be returned to the client.)
 function pmFail(res, e, status) {
@@ -595,7 +628,7 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
           ns.push({ id: pmId('N'), to: _lc(bx.owner), type: 'match', text: txt, listingId: rec.id, at: now, read: false });
           if (pmWantsEmail(prof, 'deals')) hits.push({ to: _lc(bx.owner), txt });
         });
-        await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns);
+        await pmSave('pm_notifs', pmCapNotifs(ns));
         for (const h of hits) await pmSendEmail(h.to, 'AXESS · new deal matches your buy box', h.txt + '\n\nOpen AXESS to view the deal and message the listing agent.');
       } catch (e) { /* best-effort */ }
     }
@@ -721,7 +754,7 @@ app.post('/api/pm/intro', rateLimit('intro', 30, 60 * 1000), ensureAuth, pmGate,
     try {
       const ns = await pmLoad('pm_notifs');
       ns.push({ id: pmId('N'), to: _lc(l.owner), type: 'intro', text: (rec.buyerName || rec.buyer) + ' requested an intro on your ' + (l.area || l.city || 'deal') + ' deal.', listingId: l.id, at: rec.createdAt, read: false });
-      await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns);
+      await pmSave('pm_notifs', pmCapNotifs(ns));
     } catch (e) {}
     try {
       const sProf = allProfs.find(p => p && _lc(p.email) === _lc(l.owner)) || {};
@@ -770,7 +803,7 @@ app.post('/api/pm/intro/decide', ensureAuth, pmGate, async (req, res) => {
     try {
       const ns = await pmLoad('pm_notifs');
       ns.push({ id: pmId('N'), to: _lc(it.buyer), type: 'intro', text: 'Your intro request was ' + decision + (decision === 'approved' ? ' — the address is now unlocked.' : '.'), listingId: it.listingId || '', at: it.decidedAt, read: false });
-      await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns);
+      await pmSave('pm_notifs', pmCapNotifs(ns));
     } catch (e) {}
     try { await pmSendEmail(it.buyer, 'AXESS · your intro was ' + decision, decision === 'approved' ? 'The listing agent approved your intro. Open AXESS to see the address and message them.' : 'The listing agent declined your intro this time.'); } catch (e) {}
     res.json({ ok: true, intro: it });
@@ -862,7 +895,7 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
             ns.push({ id: pmId('N'), to: s, type: 'buyer', text: 'New buyer for your ' + (l.area || l.city || 'deal') + ' listing — their buy box matches', listingId: l.id, at: now, read: false });
           }
         });
-        await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns);
+        await pmSave('pm_notifs', pmCapNotifs(ns));
         for (const s of Object.keys(sellers)) await pmSendEmail(s, 'AXESS · a buyer is hunting deals like yours', 'A new buyer just posted a buy box that matches ' + sellers[s].length + ' of your live deal(s).\n\nOpen AXESS to see the buyer and start a conversation.');
       } catch (e) { /* best-effort */ }
     }
@@ -1197,7 +1230,7 @@ async function pmRunDigest(daysArg, dry) {
       prof.lastDigestAt = now;
     }
   }
-  if (!dry) { await pmSave('pm_profiles', profs); await pmSave('pm_notifs', ns.length > 2000 ? ns.slice(-2000) : ns); }
+  if (!dry) { await pmSave('pm_profiles', profs); await pmSave('pm_notifs', pmCapNotifs(ns)); }
   if (failed) console.error('[digest] ' + failed + ' digest email(s) not sent (send failure or daily email cap)');
   return { dry: !!dry, days, recipients: results.length, emailsSent: sent, emailsFailed: failed, notifsCreated: notifs, breakdown: results.slice(0, 100) };
 }
@@ -1308,7 +1341,8 @@ app.get('/api/pm/admin/export.csv', ensureAuth, pmGate, async (req, res) => {
   try {
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
-    const csvCell = v => { const s = String(v == null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    // Neutralize spreadsheet formulas (=, +, -, @) a member could plant in their profile.
+    const csvCell = v => { let s = String(v == null ? '' : v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const cols = ['Name', 'Email', 'Phone', 'Brokerage', 'Markets', 'Focus', 'Status', 'Verified', 'Deals', 'Marketing opt-in', 'Consent date', 'Joined'];
     const rows = profs.filter(p => p && !p.sample).map(p => [
       p.name || '', p.email || '', p.phone || '', p.brokerage || '', p.markets || '', p.focus || '',
@@ -2307,6 +2341,7 @@ function serveWithIdentity(res, file, user) {
   const inject = `<script>window.__ROLE__=${JSON.stringify(user.role)};window.__USER__=${JSON.stringify(user.name || '')};window.__EMAIL__=${JSON.stringify(user.email)};window.__ACCT__="access";window.__STATUS__=${JSON.stringify(user.status)};window.__LISTING_DAYS__=${LISTING_DAYS};window.__MAPS_KEY__=${JSON.stringify(mapsKey)};window.__GOOGLE_CLIENT_ID__=${JSON.stringify(process.env.GOOGLE_CLIENT_ID || '')};</script>`;
   const aiFlag = '<script>window.__AI__=' + (costguard.aiEnabled() ? 'true' : 'false') + ';</script>';
   html = html.includes('</head>') ? html.replace('</head>', inject + aiFlag + (demo.active() ? DEMO_INJECT : '') + '</head>') : inject + aiFlag + html;
+  if (STAGING) html = html.replace(/<body([^>]*)>/, '<body$1>' + STAGING_BANNER);
   res.type('html').send(html);
 }
 // Demo-only chrome for the members app: a persistent DEMO banner with an
@@ -2407,6 +2442,7 @@ function serveLanding(req, res) {
     let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
     const inject = `<script>window.__TURNSTILE_SITE__=${JSON.stringify(TURNSTILE_SITE)};window.__GOOGLE_CLIENT_ID__=${JSON.stringify(process.env.GOOGLE_CLIENT_ID || '')};</script>`;
     html = html.includes('</head>') ? html.replace('</head>', inject + '</head>') : inject + html;
+    if (STAGING) html = html.replace(/<body([^>]*)>/, '<body$1>' + STAGING_BANNER);
     res.type('html').send(html);
   } catch (e) { res.sendFile(path.join(__dirname, 'public', 'index.html')); }
 }
@@ -2489,6 +2525,8 @@ app.post('/auth/google', async (req, res) => {
   } catch (e) { res.status(502).json({ ok: false, error: 'verify_failed' }); }
 });
 
+// A staging copy tells every crawler to stay out.
+app.get('/robots.txt', (req, res, next) => STAGING ? res.type('text/plain').send('User-agent: *\nDisallow: /\n') : next());
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // ── nightly backups to object storage ──────────────────────────────────────
@@ -2530,6 +2568,11 @@ app.post('/api/pm/admin/backup/run', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   try { const r = await pmRunBackup(true); res.status(r.ok ? 200 : 502).json(r); } catch (e) { pmFail(res, e); }
 });
+// Owner: recent security-policy violation reports (since the last restart).
+app.get('/api/pm/admin/csp', ensureAuth, pmGate, (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  res.json({ ok: true, enforced: !process.env.CSP_REPORT_ONLY, reports: _cspReports.slice().reverse() });
+});
 // Owner downloads a backup file (short-lived signed link). ?date=YYYY-MM-DD, default latest.
 app.get('/api/pm/admin/backup/download', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
@@ -2556,7 +2599,7 @@ app.use((req, res) => {
 app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
   const status = err && (err.status || err.statusCode) && err.status < 500 ? err.status : 500;
   if (status >= 500) console.error('[AXESS error]', req.method, req.originalUrl, (err && err.stack) || err);
-  if (req.path.indexOf('/api/') === 0 || !req.accepts('html')) return res.status(status).json({ ok: false, error: status >= 500 ? 'server_error' : 'bad_request', message: status >= 500 ? 'Something went wrong — please try again.' : 'That request couldn’t be read.' });
+  if (req.path.indexOf('/api/') === 0 || !req.accepts('html')) return res.status(status).json({ ok: false, error: status >= 500 ? 'server_error' : status === 413 ? 'too_large' : 'bad_request', message: status >= 500 ? 'Something went wrong — please try again.' : status === 413 ? 'That request is too large.' : 'That request couldn’t be read.' });
   res.status(status).type('html').send(pmErrorPage(status >= 500 ? 'Something went wrong' : 'Bad request', status >= 500 ? 'Please try again in a moment. If it keeps happening, contact us.' : 'That request couldn’t be read.'));
 });
 

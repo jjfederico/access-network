@@ -2062,6 +2062,11 @@ function adminBillingLoad(){
       +'<button class="btn '+(j.billingOn?'ghost':'acc')+' sm" onclick="adminBillingSet('+(!j.billingOn)+','+(!j.billingStartedAt)+')"'+(!j.billingOn&&!j.ready?' disabled':'')+'>'+(j.billingOn?'Turn billing off':'Turn billing on')+'</button> <span id="billSetMsg" style="font-size:12.5px;color:var(--mut)"></span>';
   });
 }
+/* ── security policy reports (owner) ── */
+function adminCspLoad(){var box=$('admCsp');if(!box)return;
+  api('/api/pm/admin/csp').then(function(j){if(!j||!j.ok){box.textContent='Could not load.';return;}
+    var r=j.reports||[];box.innerHTML='<div style="font-size:13px;margin-bottom:6px">Browser security policy: <b>'+(j.enforced?'enforced':'report-only')+'</b> · '+(r.length?('<span style="color:var(--bad)">'+r.length+' blocked item'+(r.length===1?'':'s')+' since the last restart</span>'):'no blocked items since the last restart')+'</div>'
+      +r.slice(0,8).map(function(x){return '<div style="font-size:11.5px;color:var(--mut2)">'+esc(new Date(x.at).toLocaleString())+' · '+esc(x.directive)+' · '+esc(x.blocked||'inline')+' · '+esc(x.page)+'</div>';}).join('');});}
 /* ── backups (owner) ── */
 function adminBackupLoad(){var box=$('admBackup');if(!box)return;
   api('/api/pm/admin/backup').then(function(j){
@@ -2283,13 +2288,14 @@ function openAdmin(){
         +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Membership billing</div><div id="admBilling" style="color:var(--mut);font-size:12.5px">Loading…</div></div>'
       +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
         +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Backups</div><div id="admBackup" style="color:var(--mut);font-size:12.5px">Loading…</div></div>'
+      +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"><div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Security</div><div id="admCsp" style="color:var(--mut);font-size:12.5px">Loading…</div></div>'
       +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
         +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Sample data (preview only)</div>'
         +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn acc sm" onclick="adminSeed(\'load\')">Load sample data</button><button class="btn ghost sm" onclick="adminSeed(\'clear\')">Clear sample data</button><span id="seedMsg" style="font-size:12.5px;color:var(--mut)"></span></div>'
         +'<div style="color:var(--mut2);font-size:11.5px;margin-top:6px">Loads demo deals, members &amp; client-needs so you can see the site populated and check the totals. Clear before real launch.</div>'
       +'</div>'
       +'</div></div>';
-    open_('mAdmin');adminBillingLoad();adminBackupLoad();
+    open_('mAdmin');adminBillingLoad();adminBackupLoad();adminCspLoad();
   });
 }
 function admTab(t){var aa=$('admAdmissions');if(aa)aa.style.display=t==='a'?'':'none';var ta=$('admTabA');if(ta)ta.classList.toggle('on',t==='a');$('admRequests').style.display=t==='r'?'':'none';$('admMembers').style.display=t==='m'?'':'none';var ai=$('admInvites');if(ai)ai.style.display=t==='i'?'':'none';$('admDeals').style.display=t==='d'?'':'none';$('admTabR').classList.toggle('on',t==='r');$('admTabM').classList.toggle('on',t==='m');var ti=$('admTabI');if(ti)ti.classList.toggle('on',t==='i');$('admTabD').classList.toggle('on',t==='d');}
