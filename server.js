@@ -1331,7 +1331,7 @@ app.get('/api/pm/admin/members', ensureAuth, pmGate, async (req, res) => {
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
     const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', state: p.state || 'MA', status: p.status || 'pending', denialCause: p.denialCause || '', verified: !!p.verified, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', attested: !!(p.attestation && p.attestation.accepted), attestedAt: (p.attestation && p.attestation.at) || '', deactivated: !!p.deactivated, deactivatedAt: p.deactivatedAt || '', marketingOptIn: p.marketingOptIn !== false, marketingConsentAt: p.marketingConsentAt || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.deactivated ? 1 : 0) - (b.deactivated ? 1 : 0) || (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
-    res.json({ ok: true, members, pending: members.filter(m => m.status === 'pending').length, pofPending: members.filter(m => m.pof === 'pending').length });
+    res.json({ ok: true, members, pending: members.filter(m => m.status === 'pending').length, unchecked: pmUncheckedMembers(profs).length, pofPending: members.filter(m => m.pof === 'pending').length });
   } catch (e) { pmFail(res, e); }
 });
 // Owner-only marketing/CRM export — the full member list as a downloadable CSV,
@@ -2312,7 +2312,7 @@ app.all('/api/pm/cron', async (req, res) => {
   const tok = String((req.query && req.query.token) || (req.body && req.body.token) || '');
   const authed = (PM_CRON_TOKEN && tok === PM_CRON_TOKEN) || (req.user && req.user.role === 'owner');
   if (!authed) return res.status(403).json({ ok: false, error: 'forbidden' });
-  try { res.json({ ok: true, sent: await pmRunRenewals(), trialReminders: await pmTrialReminders() }); }
+  try { res.json({ ok: true, sent: await pmRunRenewals(), trialReminders: await pmTrialReminders(), licenseReminder: await pmLicenseReminder(false) }); }
   catch (e) { pmFail(res, e); }
 });
 setTimeout(() => { pmRunRenewals().catch(() => {}); }, 30000);
@@ -2525,8 +2525,18 @@ app.post('/auth/google', async (req, res) => {
   } catch (e) { res.status(502).json({ ok: false, error: 'verify_failed' }); }
 });
 
-// A staging copy tells every crawler to stay out.
-app.get('/robots.txt', (req, res, next) => STAGING ? res.type('text/plain').send('User-agent: *\nDisallow: /\n') : next());
+// A staging copy tells every crawler to stay out; production lists the public
+// pages for search engines.
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  if (STAGING) return res.send('User-agent: *\nDisallow: /\n');
+  res.send('User-agent: *\nDisallow: /app.html\nDisallow: /api/\nDisallow: /demo-mode\n\nSitemap: ' + PM_BASE + '/sitemap.xml\n');
+});
+app.get('/sitemap.xml', (req, res) => {
+  if (STAGING) return res.status(404).type('text/plain').send('not found');
+  const pages = [['/', '1.0'], ['/membership', '0.8'], ['/demo.html', '0.6'], ['/terms', '0.3'], ['/privacy', '0.3']];
+  res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + pages.map(([u, pr]) => '  <url><loc>' + PM_BASE + u + '</loc><priority>' + pr + '</priority></url>').join('\n') + '\n</urlset>\n');
+});
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // ── nightly backups to object storage ──────────────────────────────────────
@@ -2568,6 +2578,79 @@ app.post('/api/pm/admin/backup/run', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   try { const r = await pmRunBackup(true); res.status(r.ok ? 200 : 502).json(r); } catch (e) { pmFail(res, e); }
 });
+// ── listing reports (moderation) ─────────────────────────────────────────────
+// Any member can flag another member's listing (fair-housing language,
+// inaccurate, already sold / on the MLS, posted without the seller's
+// authorization, other). The owner reviews them in Admin → Reports and can
+// dismiss or withdraw the listing; every decision is kept on the report.
+const REPORT_REASONS = { fair_housing: 'Fair-housing concern', inaccurate: 'Inaccurate or misleading', stale: 'Already sold, on the MLS, or no longer available', not_authorized: 'Posted without the seller’s authorization', other: 'Other' };
+app.post('/api/pm/listing/report', rateLimit('report', 20, 60 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
+  const b = req.body || {};
+  const id = String(b.id || ''), reason = String(b.reason || ''), note = String(b.note || '').trim().slice(0, 1000);
+  if (!REPORT_REASONS[reason]) return res.status(400).json({ ok: false, error: 'bad_reason', message: 'Choose a reason.' });
+  try {
+    if (!(await pmApproved(req.user))) return res.status(403).json({ ok: false, error: 'not_approved' });
+    const l = (await pmLoad(PM_KEYS.listings)).find(x => x && x.id === id);
+    if (!l) return res.status(404).json({ ok: false, error: 'not_found' });
+    const me = pmEmail(req.user);
+    if (_lc(l.owner) === me) return res.status(400).json({ ok: false, error: 'own_listing', message: 'You can’t report your own listing.' });
+    const rec = { id: pmId('R'), listingId: id, listingOwner: _lc(l.owner), listingLabel: (l.propType || 'Deal') + ' · ' + (l.area || l.city || '') + (pmNum(l.price) ? ' · ' + pmMoneyShort(l.price) : ''), reporter: me, reporterName: req.user.name || '', reason, note, status: 'open', at: new Date().toISOString() };
+    const dup = await pmMutate('pm_reports', arr => {
+      if (arr.some(r => r && r.listingId === id && r.reporter === me && r.status === 'open')) return { save: arr, result: true };
+      arr.push(rec); return { save: arr.length > 2000 ? arr.slice(-2000) : arr, result: false };
+    });
+    if (!dup && ADMIN) { try { await pmSendEmail(ADMIN, 'AXESS · listing reported: ' + REPORT_REASONS[reason], rec.listingLabel + '\nReported by: ' + (rec.reporterName || me) + ' (' + me + ')\nReason: ' + REPORT_REASONS[reason] + (note ? '\nNote: ' + note : '') + '\n\nReview it in AXESS → Admin → Reports: ' + PM_BASE + '/app.html'); } catch (e) {} }
+    res.json({ ok: true, already: dup });
+  } catch (e) { pmFail(res, e); }
+});
+app.get('/api/pm/admin/reports', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const list = (await pmLoad('pm_reports')).filter(Boolean).sort((a, b) => (a.status === 'open' ? 0 : 1) - (b.status === 'open' ? 0 : 1) || String(b.at).localeCompare(String(a.at)));
+    res.json({ ok: true, reports: list.map(r => Object.assign({ reasonLabel: REPORT_REASONS[r.reason] || r.reason }, r)), open: list.filter(r => r.status === 'open').length });
+  } catch (e) { pmFail(res, e); }
+});
+app.post('/api/pm/admin/report/resolve', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const b = req.body || {}, action = b.action === 'withdraw' ? 'withdraw' : 'dismiss';
+  try {
+    const now = new Date().toISOString();
+    const rep = await pmMutate('pm_reports', arr => { const r = arr.find(x => x && x.id === String(b.id || '')); if (r) { r.status = action === 'withdraw' ? 'withdrawn' : 'dismissed'; r.decidedAt = now; r.decidedBy = pmEmail(req.user); r.decisionNote = String(b.note || '').slice(0, 500); } return { save: arr, result: r || null }; });
+    if (!rep) return res.status(404).json({ ok: false, error: 'not_found' });
+    if (action === 'withdraw') {
+      // Take the listing off the feed (status off; nothing deleted) and tell the lister why.
+      const l = await pmMutate(PM_KEYS.listings, arr => { const x = arr.find(y => y && y.id === rep.listingId); if (x) { x.status = 'off'; x.withdrawnByAdminAt = now; x.withdrawnReason = rep.reason; } return { save: arr, result: x || null }; });
+      if (l) {
+        const why = REPORT_REASONS[rep.reason] || 'a report';
+        try { await pmMutate('pm_notifs', ns => { ns.push({ id: pmId('N'), to: _lc(l.owner), type: 'withdrawn', text: 'Your listing ' + rep.listingLabel + ' was taken off the feed after review: ' + why + '.', listingId: l.id, at: now, read: false }); return { save: pmCapNotifs(ns) }; }); } catch (e) {}
+        try { await pmSendEmail(l.owner, 'AXESS · your listing was taken off the feed', 'After review, your listing ' + rep.listingLabel + ' was taken off the AXESS feed. Reason: ' + why + '.' + (rep.decisionNote ? '\n\n' + rep.decisionNote : '') + '\n\nNothing was deleted. Once the issue is fixed you can edit and relist it from My activity, or reply to this email with questions.'); } catch (e) {}
+      }
+    }
+    res.json({ ok: true, report: rep });
+  } catch (e) { pmFail(res, e); }
+});
+
+// ── daily license-check email ──────────────────────────────────────────────
+// Admission is automatic on the published criteria; the license is then checked
+// against the state registry. Once a day, if any member's license hasn't been
+// checked yet, the owner gets one email listing them with a registry link.
+function pmUncheckedMembers(profs) {
+  return (profs || []).filter(p => p && !p.sample && !p.is_demo && p.status === 'approved' && !p.deactivated && !p.verified && !ADMINS.includes(_lc(p.email)));
+}
+async function pmLicenseReminder(force) {
+  const s = await pmSettings();
+  if (!force && s.lastLicenseReminderAt && Date.now() - new Date(s.lastLicenseReminderAt).getTime() < 20 * 3600 * 1000) return { ok: true, skipped: true };
+  const list = pmUncheckedMembers(await pmLoad('pm_profiles'));
+  if (list.length && ADMIN) {
+    const lines = list.map(p => '• ' + (p.name || p.email) + ' — MA license #' + (p.license || '?') + ' · ' + (p.brokerage || '—') + ' · joined ' + String(p.approvedAt || p.createdAt || '').slice(0, 10));
+    await pmSendEmail(ADMIN, 'AXESS · ' + list.length + ' license' + (list.length === 1 ? '' : 's') + ' to check today', lines.join('\n') + '\n\nLook each one up on the Massachusetts registry: https://occupationallicensingandpermitting.mass.gov/madol/s/\nThen in AXESS → Admin → Members, click "Verify license" (or deny for cause if it isn’t active).\n' + PM_BASE + '/app.html');
+  }
+  const s2 = await pmSettings(); s2.lastLicenseReminderAt = new Date().toISOString(); await pmSaveSettings(s2);
+  return { ok: true, count: list.length };
+}
+setTimeout(() => { pmLicenseReminder(false).catch(() => {}); }, 5 * 60 * 1000);
+setInterval(() => { pmLicenseReminder(false).catch(() => {}); }, 3600 * 1000);
+
 // Owner: recent security-policy violation reports (since the last restart).
 app.get('/api/pm/admin/csp', ensureAuth, pmGate, (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });

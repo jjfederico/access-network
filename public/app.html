@@ -1135,13 +1135,14 @@ function loadAll(){
     loadThreads(function(){});loadNotifs(function(){});
   });
 }
-function loadAdminDot(){Promise.all([api('/api/pm/admin/members'),api('/api/pm/admin/requests')]).then(function(r){var n=Math.max((r[0]&&r[0].pending)||0,(r[1]&&r[1].pending)||0);var d=$('adminDot');if(d){d.style.display=n?'':'none';d.textContent=' '+n;}renderOwnerAlert(n);});}
+function loadAdminDot(){Promise.all([api('/api/pm/admin/members'),api('/api/pm/admin/requests'),api('/api/pm/admin/reports')]).then(function(r){var lic=Math.max((r[0]&&r[0].pending)||0,(r[1]&&r[1].pending)||0,(r[0]&&r[0].unchecked)||0);var rep=(r[2]&&r[2].open)||0;var n=lic+rep;var d=$('adminDot');if(d){d.style.display=n?'':'none';d.textContent=' '+n;}renderOwnerAlert(lic,rep);});}
 var MA_LICENSE_URL='https://occupationallicensingandpermitting.mass.gov/madol/s/';
-function renderOwnerAlert(n){var el=$('ownerAlert');if(!el)return;if(!n||ME.role!=='owner'){el.style.display='none';el.innerHTML='';return;}
+function renderOwnerAlert(n,rep){var el=$('ownerAlert');if(!el)return;rep=rep||0;if((!n&&!rep)||ME.role!=='owner'){el.style.display='none';el.innerHTML='';return;}
   el.innerHTML='<div class="ownalert"><span class="oa-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>'
-    +'<span class="oa-tx"><b>'+n+' agent'+(n===1?'':'s')+' to re-check on the state registry.</b> Membership is automatic; this is a license re-check, not a waitlist.</span>'
+    +'<span class="oa-tx">'+(n?('<b>'+n+' license'+(n===1?'':'s')+' to check on the state registry.</b> Membership is automatic; this is a license check, not a waitlist. ')
+      :'')+(rep?('<b>'+rep+' listing report'+(rep===1?'':'s')+' to review.</b>'):'')+'</span>'
     +'<a class="oa-link" href="'+MA_LICENSE_URL+'" target="_blank" rel="noopener">Look up a license ↗</a>'
-    +'<button class="btn acc sm" onclick="openAdmin()">Review requests</button></div>';
+    +'<button class="btn acc sm" onclick="openAdmin();setTimeout(function(){admTab(\''+(n?'m':'x')+'\');},900)">Review</button></div>';
   el.style.display='';}
 // Approval gate banner for outside members awaiting review.
 function renderGate(){
@@ -1695,7 +1696,7 @@ function openDetail(id){
       : d.status==='mls'
         ? '<button class="btn acc" onclick="markMLS(\''+d.id+'\',false)">Relist to network</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>'
         : '<button class="btn acc" onclick="openEdit(\''+d.id+'\')">✎ Edit</button><button class="btn acc" onclick="markClosed(\''+d.id+'\',true)" style="background:#1E7A52;border-color:#1E7A52">✓ Mark closed</button><button class="btn ghost" onclick="renewDeal(\''+d.id+'\')">'+renewLbl+'</button>'+featBtn+'<button class="btn ghost" onclick="toggleOff(\''+d.id+'\')">'+(d.status==='off'?'Relist':'Withdraw')+'</button><button class="btn ghost" onclick="markMLS(\''+d.id+'\',true)">Moved to MLS</button><button class="btn ghost" onclick="delDeal(\''+d.id+'\')" style="color:var(--bad)">Delete</button>')
-    : nonOwnerCta;
+    : nonOwnerCta+'<button class="btn ghost" style="color:var(--mut)" onclick="reportListing(\''+d.id+'\')">⚑ Report listing</button>';
   var expBadge=d.expiresAt?('<div class="drow"><span>Expires</span><b class="mono">'+ago2(d.expiresAt)+'</b></div>'):'';
   $('detailBody').innerHTML=
     '<div class="mhead"><div><h3>'+esc(d.submarket||'Pre-market deal')+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★ Featured</span>':'')+(d.soon?' <span class="pill req" style="background:var(--acc);color:#fff">◔ Coming soon</span>':'')+'</h3><div style="color:var(--acc2);font-weight:700;font-size:12.5px;margin-top:3px">'+esc(d.type||'')+' · '+money(d.price)+'</div></div><button class="x" onclick="close_(\'mDetail\')">×</button></div>'
@@ -2062,6 +2063,30 @@ function adminBillingLoad(){
       +'<button class="btn '+(j.billingOn?'ghost':'acc')+' sm" onclick="adminBillingSet('+(!j.billingOn)+','+(!j.billingStartedAt)+')"'+(!j.billingOn&&!j.ready?' disabled':'')+'>'+(j.billingOn?'Turn billing off':'Turn billing on')+'</button> <span id="billSetMsg" style="font-size:12.5px;color:var(--mut)"></span>';
   });
 }
+/* ── report a listing (members) ── */
+var REPORT_REASONS={fair_housing:'Fair-housing concern',inaccurate:'Inaccurate or misleading',stale:'Already sold, on the MLS, or no longer available',not_authorized:'Posted without the seller’s authorization',other:'Other'};
+async function reportListing(id){
+  var reason=await uiDialog({title:'Report this listing',body:'What’s wrong with it? AXESS reviews every report. The listing agent isn’t told who reported it.',options:Object.keys(REPORT_REASONS).map(function(k){return [k,REPORT_REASONS[k]];}),ok:'Next',required:'Choose a reason.'});
+  if(!reason)return;
+  var note=await uiDialog({title:'Anything else?',body:'Optional — details that help us review it.',input:true,placeholder:'e.g. it closed last week',ok:'Send report'});
+  if(note===null)return;
+  api('/api/pm/listing/report',{id:id,reason:reason,note:note}).then(function(j){
+    if(j&&j.ok)uiAlert(j.already?'You already reported this listing — it’s in the review queue.':'Thanks — your report was sent for review.','Report sent');
+    else uiAlert((j&&j.message)||'Could not send the report — try again.');
+  });
+}
+/* ── listing reports (owner) ── */
+function adminReportRows(list){
+  return list.length?list.map(function(r){
+    var st=r.status==='open'?'<span class="pill req">Open</span>':r.status==='withdrawn'?'<span class="pill dec">Listing withdrawn</span>':'<span class="pill appr">Dismissed</span>';
+    var act=r.status==='open'?('<button class="btn ghost sm" onclick="adminResolveReport(\''+r.id+'\',\'dismiss\')">Dismiss</button><button class="btn ghost sm" style="color:var(--bad)" onclick="adminResolveReport(\''+r.id+'\',\'withdraw\')">Withdraw listing</button><button class="btn ghost sm" onclick="close_(\'mAdmin\');openDetail(\''+r.listingId+'\')">View</button>'):'';
+    return '<div class="reqrow"><div class="grow"><b>'+esc(r.listingLabel||r.listingId)+'</b> '+st+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+esc(r.reasonLabel)+(r.note?(' · “'+esc(r.note)+'”'):'')+'</div><div style="color:var(--mut2);font-size:11.5px">Reported by '+esc(r.reporterName||r.reporter)+' · '+esc(new Date(r.at).toLocaleString())+' · listed by '+esc(r.listingOwner)+(r.decidedAt?(' · decided '+esc(new Date(r.decidedAt).toLocaleDateString())):'')+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
+  }).join(''):'<div class="empty">No listing reports.</div>';
+}
+async function adminResolveReport(id,action){
+  if(action==='withdraw'&&!(await uiDialog({title:'Withdraw this listing?',body:'It comes off the feed (nothing is deleted) and the listing agent is notified with the reason. They can fix it and relist.',ok:'Withdraw listing',danger:true})))return;
+  api('/api/pm/admin/report/resolve',{id:id,action:action}).then(function(j){if(j&&!j.ok){uiAlert(j.message||'Could not update.');return;}openAdmin();loadAdminDot();loadAll();});
+}
 /* ── security policy reports (owner) ── */
 function adminCspLoad(){var box=$('admCsp');if(!box)return;
   api('/api/pm/admin/csp').then(function(j){if(!j||!j.ok){box.textContent='Could not load.';return;}
@@ -2227,8 +2252,8 @@ function saveNotifPrefs(){
 }
 /* ── admin panel (owner) ── */
 function openAdmin(){
-  Promise.all([api('/api/pm/admin/members'),api('/api/pm/feed'),api('/api/pm/admin/requests'),api('/api/pm/admin/invites'),api('/api/pm/admin/admissions')]).then(function(r){
-    var mj=r[0]||{},fj=r[1]||{},rj=r[2]||{},vj=r[3]||{},aj=r[4]||{};var adm=(aj&&aj.entries)||[];var members=(mj&&mj.members)||[];var deals=(fj.listings||[]).map(nL).filter(Boolean);var requests=(rj&&rj.requests)||[];var invites=(vj&&vj.invites)||[];
+  Promise.all([api('/api/pm/admin/members'),api('/api/pm/feed'),api('/api/pm/admin/requests'),api('/api/pm/admin/invites'),api('/api/pm/admin/admissions'),api('/api/pm/admin/reports')]).then(function(r){
+    var mj=r[0]||{},fj=r[1]||{},rj=r[2]||{},vj=r[3]||{},aj=r[4]||{},xj=r[5]||{};var adm=(aj&&aj.entries)||[];var members=(mj&&mj.members)||[];var deals=(fj.listings||[]).map(nL).filter(Boolean);var requests=(rj&&rj.requests)||[];var invites=(vj&&vj.invites)||[];
     var invRows=invites.length?invites.map(function(v){
       var st=v.status==='verified'?'<span class="pill appr">Signed up · verified</span>':v.status==='signed_up'?'<span class="pill appr">Signed up</span>':'<span class="pill req">Link sent</span>';
       var resend=v.status==='invited'?'<button class="btn ghost sm" onclick="resendInvite(\''+escJS(v.email)+'\')">Resend</button>':'';
@@ -2277,8 +2302,8 @@ function openAdmin(){
       return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+money(d.price)+' · '+esc(d.by||d.byEmail)+'</span>'+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★</span>':'')+(d.expired?' <span class="pill dec">Expired</span>':'')+(d.status==='mls'?' <span class="pill dec">On MLS</span>':'')+'</div><button class="btn '+(d.featured?'ghost':'acc')+' sm" onclick="adminFeature(\''+d.id+'\','+(!d.featured)+')">'+(d.featured?'Unfeature':'Feature')+'</button></div>';
     }).join(''):'<div class="empty">No deals.</div>';
     $('mAdmin').innerHTML='<div class="modal wide"><div class="mhead"><h3>Admin</h3><button class="x" onclick="close_(\'mAdmin\')">×</button></div><div class="mbody">'
-      +'<div class="tabs"><span class="tab on" onclick="admTab(\'r\')" id="admTabR">Requests'+((rj.pending)?(' <span class="pill req">'+rj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'m\')" id="admTabM">Members'+((mj.pending)?(' <span class="pill req">'+mj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'i\')" id="admTabI">Sign-up links'+(invites.length?(' <span class="pill req">'+invites.length+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'a\')" id="admTabA">Admissions log</span><span class="tab" onclick="admTab(\'d\')" id="admTabD">Deals</span></div>'
-      +'<div id="admRequests">'+reqRows+'</div><div id="admMembers" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap"><span style="color:var(--mut);font-size:12px">Full member list with marketing opt-in status.</span><a class="btn ghost sm" href="/api/pm/admin/export.csv" download="axess-members.csv">⬇ Export members (CSV)</a></div>'+memRows+'</div><div id="admInvites" style="display:none">'+invRows+'</div><div id="admAdmissions" style="display:none"><div style="color:var(--mut);font-size:12px;margin-bottom:10px">Every admission decision: date, applicant, criteria checked, license verification result, and decision — with the stated cause for any denial. Admin-only.</div>'+admRows+'</div><div id="admDeals" style="display:none">'+dealRows+'</div>'
+      +'<div class="tabs"><span class="tab on" onclick="admTab(\'r\')" id="admTabR">Requests'+((rj.pending)?(' <span class="pill req">'+rj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'m\')" id="admTabM">Members'+((mj.pending)?(' <span class="pill req">'+mj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'i\')" id="admTabI">Sign-up links'+(invites.length?(' <span class="pill req">'+invites.length+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'x\')" id="admTabX">Reports'+((xj.open)?(' <span class="pill req">'+xj.open+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'a\')" id="admTabA">Admissions log</span><span class="tab" onclick="admTab(\'d\')" id="admTabD">Deals</span></div>'
+      +'<div id="admRequests">'+reqRows+'</div><div id="admMembers" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap"><span style="color:var(--mut);font-size:12px">Full member list with marketing opt-in status.</span><a class="btn ghost sm" href="/api/pm/admin/export.csv" download="axess-members.csv">⬇ Export members (CSV)</a></div>'+memRows+'</div><div id="admInvites" style="display:none">'+invRows+'</div><div id="admReports" style="display:none">'+adminReportRows((xj&&xj.reports)||[])+'</div><div id="admAdmissions" style="display:none"><div style="color:var(--mut);font-size:12px;margin-bottom:10px">Every admission decision: date, applicant, criteria checked, license verification result, and decision — with the stated cause for any denial. Admin-only.</div>'+admRows+'</div><div id="admDeals" style="display:none">'+dealRows+'</div>'
       +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
         +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Smart-match digest</div>'
         +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn ghost sm" onclick="adminDigest(true)">Preview</button><button class="btn acc sm" onclick="adminDigest(false)">Send digest now</button><span id="digMsg" style="font-size:12.5px;color:var(--mut)"></span></div>'
@@ -2298,7 +2323,7 @@ function openAdmin(){
     open_('mAdmin');adminBillingLoad();adminBackupLoad();adminCspLoad();
   });
 }
-function admTab(t){var aa=$('admAdmissions');if(aa)aa.style.display=t==='a'?'':'none';var ta=$('admTabA');if(ta)ta.classList.toggle('on',t==='a');$('admRequests').style.display=t==='r'?'':'none';$('admMembers').style.display=t==='m'?'':'none';var ai=$('admInvites');if(ai)ai.style.display=t==='i'?'':'none';$('admDeals').style.display=t==='d'?'':'none';$('admTabR').classList.toggle('on',t==='r');$('admTabM').classList.toggle('on',t==='m');var ti=$('admTabI');if(ti)ti.classList.toggle('on',t==='i');$('admTabD').classList.toggle('on',t==='d');}
+function admTab(t){var ax=$('admReports');if(ax)ax.style.display=t==='x'?'':'none';var tx=$('admTabX');if(tx)tx.classList.toggle('on',t==='x');var aa=$('admAdmissions');if(aa)aa.style.display=t==='a'?'':'none';var ta=$('admTabA');if(ta)ta.classList.toggle('on',t==='a');$('admRequests').style.display=t==='r'?'':'none';$('admMembers').style.display=t==='m'?'':'none';var ai=$('admInvites');if(ai)ai.style.display=t==='i'?'':'none';$('admDeals').style.display=t==='d'?'':'none';$('admTabR').classList.toggle('on',t==='r');$('admTabM').classList.toggle('on',t==='m');var ti=$('admTabI');if(ti)ti.classList.toggle('on',t==='i');$('admTabD').classList.toggle('on',t==='d');}
 function resendInvite(email){api('/api/pm/admin/invite',{email:email}).then(function(j){openAdmin();});}
 var CAUSE_LBL={license_lapse:'License not active or not in good standing',non_payment:'Non-payment of the published subscription',material_breach:'Material breach of the Terms'};
 // Denials, revocations, and terminations require one of the stated causes.
