@@ -970,7 +970,7 @@ html.dark .bdg.lease{color:#D9B368!important;background:rgba(180,136,46,.14)!imp
 <!-- MORTGAGE CALCULATOR — nav-anchored dropdown, top right -->
 <div id="mcPanel" role="dialog" aria-label="Mortgage calculator">
   <div class="mcHead"><b>Mortgage calculator</b><button class="x" onclick="mcClose()" aria-label="Close">×</button></div>
-  <div class="mcRow"><label>Purchase price</label><input id="mcPrice" inputmode="decimal" placeholder="1,000,000" oninput="mcCalc()"></div>
+  <div class="mcRow"><label>Purchase price</label><input id="mcPrice" inputmode="decimal" value="1,000,000" placeholder="1,000,000" oninput="mcCalc()"></div>
   <div class="mcGrid">
     <div class="mcRow"><label>Down (%)</label><input id="mcDown" inputmode="decimal" value="25" oninput="mcCalc()"></div>
     <div class="mcRow"><label>Rate (%)</label><input id="mcRate" inputmode="decimal" value="6.75" oninput="mcCalc()"></div>
@@ -1099,7 +1099,7 @@ function nL(l){
     units:l.units,cap:l.capRate,noi:l.noi,sf:l.sqft,gross:l.grossIncome,exp:l.expenses,vac:l.vacancy,tax:l.taxes,hasFin:!!l.hasFinancials,
     beds:l.beds,baths:l.baths,yb:l.yearBuilt,desc:l.notes||'',dist:(l.dist==='pocket'?'matched':(l.dist||'broad')),soon:!!l.comingSoon,priceBasis:l.priceBasis||'sale',
     docs:Array.isArray(l.docs)?l.docs:[],photos:Array.isArray(l.photos)?l.photos:[],photoCount:(l.photoCount||(Array.isArray(l.photos)?l.photos.length:0)),lat:l.lat||'',lng:l.lng||'',views:l.views||0,featured:!!l.featured,
-    ownerVerified:!!l.ownerVerified,ownerPof:l.ownerPof||null,expiresAt:l.expiresAt||'',expired:!!l.expired};
+    sample:!!l.sample,ownerVerified:!!l.ownerVerified,ownerPof:l.ownerPof||null,expiresAt:l.expiresAt||'',expired:!!l.expired};
 }
 var PROFILE=null, APPROVED=true, BBMATCHES=[], PAYCFG={enabled:false,membership:false,prices:{}};
 // api() with a timeout so one slow/hanging Apps Script call can never resolve late
@@ -1200,7 +1200,7 @@ function ggGateCard(n){
     +count
     +'<p style="margin-bottom:16px">Post <b>one deal</b> or a <b>live client need</b> and the entire board unlocks — instantly. Your listings stay private: no one sees your address or numbers unless <b>you</b> approve them.</p>'
     +'<div class="fl-act"><button class="btn acc" onclick="openSubmit()">＋ Post a deal</button><button class="btn ghost" onclick="openBuyBox()">Post a client need</button></div>'
-    +'<div class="fl-note">Takes about 30 seconds. No listing yet? A client need counts.</div>'
+    +'<div class="fl-note">Takes about 60 seconds. No listing yet? A client need counts.</div>'
     +'</div>';
 }
 // Friendly first-run card: shown to a new member who hasn't posted yet and is
@@ -1263,9 +1263,12 @@ function repStats(rep){if(!rep)return '';var parts=[];
 function trustBadges(v,p){return badgeVer(v)+badgePof(p);}
 
 /* ── stats ── */
+// A deal counts toward live totals and charts only if it's live, unexpired, and
+// real — owner-loaded sample data never counts.
+function isLiveDeal(d){return !!d&&!d.sample&&d.status!=='off'&&d.status!=='mls'&&d.status!=='closed'&&!d.expired;}
 function renderStats(){
     if(GATED&&GATEDSTATS){var s2=$('stats').querySelectorAll('.s .v');s2[0].textContent=GATEDSTATS.count;s2[1].textContent=money(GATEDSTATS.value);s2[2].textContent=GATEDSTATS.subs||'—';s2[3].textContent='—';return;}
-  var live=LISTINGS.filter(function(d){return d.status!=='off'&&d.status!=='mls'&&d.status!=='closed'&&!d.expired;});
+  var live=LISTINGS.filter(isLiveDeal);
   var val=live.reduce(function(a,d){return a+num(d.price);},0);
   var soon=live.filter(function(d){return d.soon;}).length;
   var subs={};live.forEach(function(d){if(d.submarket)subs[d.submarket]=1;});
@@ -1284,24 +1287,31 @@ var MARKETS={
    {k:'merrimack',name:'Merrimack Valley',cities:['lowell','lawrence','haverhill','methuen','andover','tewksbury','dracut','chelmsford','billerica']},
    {k:'south',name:'South Shore',cities:['quincy','weymouth','braintree','randolph','milton','brockton','hingham','plymouth','marshfield','abington','rockland','holbrook','canton','stoughton']},
    {k:'southeast',name:'Fall River / New Bedford',cities:['fall river','new bedford','taunton','dartmouth','somerset','swansea','attleboro','raynham','middleboro','fairhaven','acushnet','westport']},
+   {k:'innercore',name:'Cambridge & Inner Core',cities:['cambridge','brookline','arlington','belmont','lexington','winchester','woburn','burlington','wakefield','reading','wilmington','concord','lincoln','sudbury','wayland','weston','dover','westwood','norwood','sharon','walpole']},
    {k:'metrowest',name:'MetroWest',cities:['framingham','natick','waltham','marlborough','newton','needham','wellesley','ashland','hudson','milford','watertown','dedham']},
    {k:'worcester',name:'Worcester',cities:['worcester','fitchburg','leominster','shrewsbury','auburn','millbury','gardner','clinton','westborough','grafton']},
    {k:'western',name:'Western MA',cities:['springfield','chicopee','holyoke','westfield','pittsfield','northampton','amherst','agawam','west springfield','ludlow']},
-   {k:'cape',name:'Cape Cod & Islands',cities:['barnstable','hyannis','falmouth','sandwich','bourne','mashpee','yarmouth','dennis','harwich','chatham','orleans','brewster','eastham','wellfleet','truro','provincetown','cape cod','nantucket','edgartown','oak bluffs','tisbury','vineyard haven','west tisbury','chilmark','aquinnah','marthas vineyard','marion','wareham']}
+   {k:'cape',name:'Cape Cod & Islands',cities:['barnstable','hyannis','falmouth','sandwich','bourne','mashpee','yarmouth','dennis','harwich','chatham','orleans','brewster','eastham','wellfleet','truro','provincetown','cape cod','nantucket','edgartown','oak bluffs','tisbury','vineyard haven','west tisbury','chilmark','aquinnah','marthas vineyard','marion','wareham']},
+   {k:'other',name:'Other MA',cities:null,other:true}
  ]}
 };
 function curRegions(){return (MARKETS[MARKET]||MARKETS.MA).regions;}
 function regionMatch(d){
   if(REGION==='all')return true;
-  var r=curRegions().filter(function(x){return x.k===REGION;})[0]; if(!r||!r.cities)return true;
+  var r=curRegions().filter(function(x){return x.k===REGION;})[0]; if(!r)return true;
   var loc=((d.submarket||'')+' '+(d.city||'')+' '+(d.area||'')).toLowerCase();
-  return r.cities.some(function(c){return loc.indexOf(c)>=0;});
+  var inR=function(x){return x.cities.some(function(c){return loc.indexOf(c)>=0;});};
+  // "Other MA" catches any deal no named region covers, so region counts add up.
+  if(r.other)return !curRegions().some(function(x){return x.cities&&inR(x);});
+  if(!r.cities)return true;
+  return inR(r);
 }
 function setRegion(k){REGION=k;renderRegionTabs();render();}
 function setMarket(m){MARKET=(MARKETS[m]?m:'MA');REGION='all';renderRegionTabs();render();}
 function renderRegionTabs(){
   var t=$('regionTabs'); if(!t)return;
   t.innerHTML=curRegions().map(function(r){var n=r.k==='all'?LISTINGS.filter(feedVisible).length:LISTINGS.filter(function(d){var sv=feedVisible(d);var save=REGION;REGION=r.k;var m=regionMatch(d);REGION=save;return sv&&m;}).length;
+    if(r.other&&!n&&REGION!=='other')return '';
     return '<span class="mtab'+(REGION===r.k?' on':'')+'" onclick="setRegion(\''+r.k+'\')">'+esc(r.name)+(n?' <span class="ct">'+n+'</span>':'')+'</span>';}).join('');
 }
 function typeChecked(){var s=[];$('typeChecks').querySelectorAll('input:checked').forEach(function(i){s.push(i.value);});return s;}
@@ -1565,7 +1575,9 @@ function render(){
 }
 
 /* ── detail ── */
-function mapEmbed(addr){var q=encodeURIComponent(addr);return '<iframe class="dmap" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q='+q+'&output=embed"></iframe>';}
+// Uses the official Maps Embed API when a key is configured (the keyless
+// maps?output=embed URL is legacy and can render blank); falls back to it otherwise.
+function mapEmbed(addr){var q=encodeURIComponent(addr);var src=MAPS_KEY?('https://www.google.com/maps/embed/v1/place?key='+encodeURIComponent(MAPS_KEY)+'&q='+q):('https://www.google.com/maps?q='+q+'&output=embed');return '<iframe class="dmap" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="'+src+'" title="Map of '+esc(addr)+'"></iframe>';}
 // Street View of the exact building — only for entitled viewers (we have real coords).
 // Uses the free Maps Embed API; returns nothing without coords so privacy holds.
 function streetEmbed(d){var la=parseFloat(d.lat),ln=parseFloat(d.lng);if(!MAPS_KEY||!isFinite(la)||!isFinite(ln)||la===0)return '';return '<div style="font-size:11.5px;color:var(--mut);margin:10px 0 4px">Street view</div><iframe class="dmap" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed/v1/streetview?key='+encodeURIComponent(MAPS_KEY)+'&location='+la+','+ln+'&fov=85"></iframe>';}
@@ -2063,6 +2075,7 @@ function adminBillingLoad(){
       +'<button class="btn '+(j.billingOn?'ghost':'acc')+' sm" onclick="adminBillingSet('+(!j.billingOn)+','+(!j.billingStartedAt)+')"'+(!j.billingOn&&!j.ready?' disabled':'')+'>'+(j.billingOn?'Turn billing off':'Turn billing on')+'</button> <span id="billSetMsg" style="font-size:12.5px;color:var(--mut)"></span>';
   });
 }
+function adminTestAccount(email,on){api('/api/pm/admin/test-account',{email:email,on:on}).then(function(j){if(j&&!j.ok){uiAlert(j.message||'Could not update.');return;}openAdmin();loadAdminDot();});}
 /* ── report a listing (members) ── */
 var REPORT_REASONS={fair_housing:'Fair-housing concern',inaccurate:'Inaccurate or misleading',stale:'Already sold, on the MLS, or no longer available',not_authorized:'Posted without the seller’s authorization',other:'Other'};
 async function reportListing(id){
@@ -2281,13 +2294,15 @@ function openAdmin(){
       }
       var att=m.attested?(' <span title="Licensure certification accepted'+(m.attestedAt?(' '+new Date(m.attestedAt).toLocaleString()):'')+'" style="color:#1E7A52;font-size:11px;font-weight:600">✓ certified</span>'):' <span style="color:var(--bad);font-size:11px">no attestation</span>';
       var lookup=m.license?(' <a href="'+MA_LICENSE_URL+'" target="_blank" rel="noopener" title="Look up this license on the MA state portal" style="color:var(--acc);text-decoration:none;font-weight:600">🔎 look up license ↗</a>'):'';
+      var testBadge=m.testAccount?' <span class="pill req" title="Not counted as a member anywhere">Test account</span>':'';
+      var testBtn='<button class="btn ghost sm" onclick="adminTestAccount(\''+escJS(m.email)+'\','+(!m.testAccount)+')">'+(m.testAccount?'Unmark test account':'Mark as test account')+'</button>';
       var deactBadge=m.deactivated?(' <span class="pill dec" title="Access revoked '+(m.deactivatedAt?new Date(m.deactivatedAt).toLocaleDateString():'')+' — records kept">Deactivated</span>'):'';
       var reactBtn='<button class="btn acc sm" onclick="adminDeactivate(\''+escJS(m.email)+'\',false)">Reactivate</button>';
       var deactBtn='<button class="btn ghost sm" style="color:var(--bad)" onclick="adminDeactivate(\''+escJS(m.email)+'\',true)">Deactivate</button>';
-      var act=m.deactivated?reactBtn
+      var act=m.deactivated?reactBtn+testBtn
         :m.status==='pending'?('<button class="btn acc sm" onclick="adminApprove(\''+escJS(m.email)+'\',\'approved\')">Admit</button><button class="btn ghost sm" onclick="adminApprove(\''+escJS(m.email)+'\',\'rejected\')">Deny for cause</button>'+deactBtn)
-        :(verBtn+pofBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+escJS(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke for cause':'Admit')+'</button>'+deactBtn);
-      return '<div class="reqrow"'+(m.deactivated?' style="opacity:.6"':'')+'><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+deactBadge+verBadge+pofBadge+att+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+esc(m.state||'MA')+' Lic <b>'+esc(m.license||'—')+'</b>'+lookup+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+(m.phone?(' · '+esc(m.phone)):'')+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
+        :(verBtn+pofBtn+testBtn+'<button class="btn ghost sm" onclick="adminApprove(\''+escJS(m.email)+'\',\''+(m.status==='approved'?'rejected':'approved')+'\')">'+(m.status==='approved'?'Revoke for cause':'Admit')+'</button>'+deactBtn);
+      return '<div class="reqrow"'+(m.deactivated?' style="opacity:.6"':'')+'><div class="grow"><b>'+esc(m.name||m.email)+'</b> '+badge+testBadge+deactBadge+verBadge+pofBadge+att+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+esc(m.state||'MA')+' Lic <b>'+esc(m.license||'—')+'</b>'+lookup+' · '+esc(m.brokerage||'—')+' · '+m.deals+' deal'+(m.deals===1?'':'s')+'</div><div style="color:var(--mut2);font-size:11.5px">'+esc(m.email)+(m.phone?(' · '+esc(m.phone)):'')+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+act+'</div></div>';
     }).join(''):'<div class="empty">No members yet.</div>';
     var admRows=adm.length?adm.slice(0,300).map(function(e){
       var a=e.applicant||{},c=e.criteria||null,lv=e.licenseVerification||{};
@@ -2623,7 +2638,7 @@ function mpSpark(data,w,h,color){
 function mpMoneyShort(v){v=+v||0;if(v>=1e6)return '$'+(v/1e6).toFixed(v>=1e7?0:1)+'M';if(v>=1e3)return '$'+Math.round(v/1e3)+'k';return '$'+Math.round(v);}
 // Trend series computed from the listings the app already has (viewer-visible, live).
 function mpSeries(weeks){
-  var L=(window.LISTINGS||[]).filter(function(d){return d&&d.at&&feedVisible(d);});
+  var L=(window.LISTINGS||[]).filter(function(d){return d&&d.at&&feedVisible(d)&&isLiveDeal(d);});
   var now=Date.now(),wk=6048e5;
   var sorted=L.slice().sort(function(a,b){return new Date(a.at)-new Date(b.at);});
   var cumCount=[],cumVal=[],cumCap=[],cumComm=[],perCount=new Array(weeks).fill(0);
@@ -2663,7 +2678,7 @@ function renderMarket(m){
     +tile('Avg cap rate',(m.avgCap||0).toFixed(1)+'%',mpSpark(S.cumCap,72,26,'#1C7A4E'),'')
     +tile('New this week',String(newThisWk||0),mpSpark(S.perCount,72,26,'#6D5AA8'),'')
     +'</div>';
-  var byC={};(window.LISTINGS||[]).filter(feedVisible).forEach(function(d){var t=d.type||'Other';byC[t]=(byC[t]||0)+1;});
+  var byC={};(window.LISTINGS||[]).filter(function(d){return feedVisible(d)&&isLiveDeal(d);}).forEach(function(d){var t=d.type||'Other';byC[t]=(byC[t]||0)+1;});
   var cKeys=Object.keys(byC).sort(function(a,b){return byC[b]-byC[a];}).slice(0,6),cmx=cKeys.length?byC[cKeys[0]]:1;
   var bars=cKeys.length?cKeys.map(function(t){return '<div class="mp-bar"><span class="lb">'+esc(t)+'</span><div class="tr"><div class="fl" style="width:'+(byC[t]/cmx*100)+'%;background:var(--acc)"></div></div><span class="nv">'+byC[t]+'</span></div>';}).join(''):'<div class="mp-empty">No live deals yet.</div>';
   var hasTrend=S.weeksWithData>=3;
@@ -2747,7 +2762,7 @@ async function deleteBuyBox(){
 function openBuyBox(){
   if($('bDelBtn'))$('bDelBtn').style.display=BUYBOX?'':'none';
   buildChecks('bTypeChecks',TYPES,BUYBOX?BUYBOX.propType:'');
-  buildChecks('bSubChecks',MARKETS.MA.regions.filter(function(r){return r.k!=='all';}).map(function(r){return r.name;}),BUYBOX?BUYBOX.markets:'');
+  buildChecks('bSubChecks',MARKETS.MA.regions.filter(function(r){return r.k!=='all'&&!r.other;}).map(function(r){return r.name;}),BUYBOX?BUYBOX.markets:'');
   if($('bBand'))$('bBand').value=(BUYBOX&&BUYBOX.priceBand)||'';
   if($('bTimeline'))$('bTimeline').value=(BUYBOX&&BUYBOX.timeline)||'';
   if($('bBeds'))$('bBeds').value=(BUYBOX&&BUYBOX.beds)||'';
@@ -2772,6 +2787,8 @@ function mcToggle(e){if(e)e.stopPropagation();var p=$('mcPanel');if(!p)return;if
 function mcClose(){var p=$('mcPanel');if(p)p.classList.remove('on');}
 function mcOpen(){var p=$('mcPanel');if(p&&!p.classList.contains('on')){mcPlace();p.classList.add('on');}mcCalc();}
 window.addEventListener('scroll',function(){if($('mcPanel').classList.contains('on'))mcPlace();});
+// Show a computed result immediately, not only after the first keystroke.
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){try{mcCalc();}catch(e){}});else{try{mcCalc();}catch(e){}}
 function mcCalc(){
   var price=num($('mcPrice').value),downPct=num($('mcDown').value),rate=num($('mcRate').value),term=num($('mcTerm').value)||30;
   var down=price*downPct/100,loan=price-down;
