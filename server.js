@@ -2316,6 +2316,25 @@ async function pmRunRenewals() {
   if (changed) await pmSave(PM_KEYS.listings, listings);
   return sent;
 }
+// Read-only operations status for the nightly audit: backup freshness, billing
+// state, and the numbers that must agree. Requires PM_CRON_TOKEN (Bearer header)
+// or an owner session; exposes no member data.
+app.get('/api/pm/ops/status', async (req, res) => {
+  const auth = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const okToken = PM_CRON_TOKEN && auth.length === PM_CRON_TOKEN.length && require('crypto').timingSafeEqual(Buffer.from(auth), Buffer.from(PM_CRON_TOKEN));
+  if (!okToken && !(req.user && req.user.role === 'owner')) return res.status(403).json({ ok: false, error: 'forbidden' });
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const [s, snap, profs] = await Promise.all([pmSettings(), pmPublicSnapshot(), pmLoad('pm_profiles')]);
+    const hoursSinceBackup = s.lastBackupAt ? Math.round((Date.now() - new Date(s.lastBackupAt).getTime()) / 36e5 * 10) / 10 : null;
+    res.json({ ok: true, at: new Date().toISOString(),
+      backup: { enabled: R2_ENABLED, lastBackupAt: s.lastBackupAt || '', hoursSinceBackup, lastBackupBytes: s.lastBackupBytes || 0, lastBackupLists: s.lastBackupLists || 0, lastBackupError: s.lastBackupError || '', fresh: hoursSinceBackup != null && hoursSinceBackup <= 26 },
+      billing: { billingOn: !!s.billingOn, billingStartedAt: s.billingStartedAt || '' },
+      numbers: { members: snap.members, directory: profs.filter(pmCountedMember).length, foundingLeft: snap.foundingLeft, foundingCap: snap.foundingCap, liveDeals: snap.liveDeals, volume: snap.volume, teaserCards: snap.cards.length },
+      csp: { enforced: !process.env.CSP_REPORT_ONLY, reportsSinceRestart: _cspReports.length },
+      demoMode: demo.enabled(), staging: STAGING });
+  } catch (e) { pmFail(res, e); }
+});
 app.all('/api/pm/cron', async (req, res) => {
   const tok = String((req.query && req.query.token) || (req.body && req.body.token) || '');
   const authed = (PM_CRON_TOKEN && tok === PM_CRON_TOKEN) || (req.user && req.user.role === 'owner');
