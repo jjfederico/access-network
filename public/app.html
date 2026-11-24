@@ -825,6 +825,13 @@ html.dark .nav{background:#0C1526!important}
 .ownalert .oa-link:hover{text-decoration:underline}
 /* distribution segmented buttons + coming-soon toggle (post-a-deal) */
 .distbtns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px}
+.authpane{margin-top:10px;background:var(--card);border:1px solid var(--line2);border-radius:10px;padding:12px 13px}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cgrid span{display:block;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace}
+.cgrid b{font-size:14px;word-break:break-word}
+.ctext{margin:10px 0 4px 18px;font-size:12.5px;line-height:1.5;color:var(--tx)}
+.ctext li{margin:4px 0}
+@media(max-width:560px){.cgrid{grid-template-columns:1fr}}
 .distbtn{text-align:left;background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;transition:border-color .12s,background .12s}
 .distbtn b{font-size:13.5px;color:var(--tx)}
 .distbtn span{font-size:11px;color:var(--mut);line-height:1.35}
@@ -907,9 +914,28 @@ html.dark .bdg.lease{color:#D9B368!important;background:rgba(180,136,46,.14)!imp
         <button type="button" class="distbtn" data-v="matched" onclick="setDist('matched')"><b>Matched only</b><span>Only members with a matching client need see it</span></button>
       </div>
     </div>
-    <div class="f full"><label>Seller-signed Non-MLS or delayed-listing form <span class="hint">— required to go live · PDF or image</span></label>
-      <input type="file" id="sSellerForm" accept=".pdf,image/*,application/pdf" onchange="uploadSellerForm()" style="font-size:13px;color:var(--mut)">
-      <div id="sSellerFormList" style="margin-top:8px;font-size:12.5px;color:var(--acc2)"></div>
+    <div class="f full" id="authWrap"><label>Seller authorization <span class="hint">— required to go live · signed form or recorded consent</span></label>
+      <div id="sAuthOnFile" style="font-size:12.5px;color:var(--acc2);margin:2px 0 6px"></div>
+      <div class="distbtns" id="authBtns" role="radiogroup" aria-label="Seller authorization">
+        <button type="button" class="distbtn" data-a="upload" role="radio" aria-checked="false" onclick="setAuthMode('upload')"><b>Upload a signed form</b><span>Seller-signed Non-MLS or delayed-listing form · PDF or image</span></button>
+        <button type="button" class="distbtn" data-a="owner" role="radio" aria-checked="false" onclick="setAuthMode('owner')"><b>Sign in AXESS now</b><span>You own the property — record your consent here</span></button>
+        <button type="button" class="distbtn" data-a="link" role="radio" aria-checked="false" onclick="setAuthMode('link')"><b>Email the seller a consent link</b><span>You represent the seller — they consent from their phone, no account</span></button>
+      </div>
+      <div id="authUpload" class="authpane" style="display:none">
+        <input type="file" id="sSellerForm" accept=".pdf,image/*,application/pdf" onchange="uploadSellerForm()" style="font-size:13px;color:var(--mut)">
+        <div id="sSellerFormList" style="margin-top:8px;font-size:12.5px;color:var(--acc2)"></div>
+      </div>
+      <div id="authOwner" class="authpane" style="display:none">
+        <div class="cgrid"><div><span>Property address</span><b id="cAddr">—</b></div><div><span>Asking price</span><b id="cPrice">—</b></div></div>
+        <ol id="cText" class="ctext"></ol>
+        <label class="ck" style="align-items:flex-start;gap:9px;margin:8px 0"><input type="checkbox" id="cAgree" style="margin-top:3px;width:18px;height:18px"><span style="font-size:13.5px;font-weight:600">I am the owner of this property and I agree to the above.</span></label>
+        <label for="cName" style="font-size:12px;color:var(--mut)">Type your full name</label><input id="cName" autocomplete="name" placeholder="Full name">
+        <button type="button" class="btn acc" style="margin-top:10px;width:100%" onclick="submitDeal()">I agree — record my consent</button>
+      </div>
+      <div id="authLink" class="authpane" style="display:none">
+        <div class="cgrid"><div><label for="cSellerName" style="font-size:12px;color:var(--mut)">Seller’s name</label><input id="cSellerName" autocomplete="off" placeholder="Seller’s full name"></div><div><label for="cSellerEmail" style="font-size:12px;color:var(--mut)">Seller’s email</label><input id="cSellerEmail" type="email" autocomplete="off" placeholder="seller@email.com"></div></div>
+        <div style="font-size:12px;color:var(--mut);margin-top:8px;line-height:1.45">AXESS emails the seller a secure link that works once and expires in 7 days. They see the address, asking price, your name and brokerage, and the consent text — no account needed. Until they consent, this listing is <b>Awaiting seller consent</b> and not visible to anyone else. You can resend the link.</div>
+      </div>
     </div>
     <div class="f full" id="mlsZoneWrap" style="display:none;background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:11px 13px">
       <label class="ck" style="align-items:flex-start;gap:9px"><input type="checkbox" id="sMlsAck" style="margin-top:3px"><span id="mlsZoneTxt" style="font-size:12.5px;line-height:1.45;color:var(--tx)">Posting a property in the Cape Cod &amp; Islands or Berkshire area on this network may count as public marketing under that area’s MLS rules. Confirm with your broker and your MLS before you post. AXESS does not determine whether a post satisfies or violates any MLS rule.</span></label>
@@ -1074,6 +1100,8 @@ function loadMaps(cb){if(window.google&&window.google.maps&&window.google.maps.p
 var SUBMIT_COORDS=null; // {lat,lng} captured from the address autocomplete, saved with the deal
 var SUBMIT_STATE='MA';
 var SUBMIT_SELLER_FORM=null;
+var AUTH_MODE='';
+var CONSENT_TEXT=null;
 var MLS_ZONE_CITIES={cape_islands:['barnstable','hyannis','falmouth','sandwich','bourne','mashpee','yarmouth','dennis','harwich','chatham','orleans','brewster','eastham','wellfleet','truro','provincetown','cape cod','nantucket','edgartown','oak bluffs','tisbury','vineyard haven','west tisbury','chilmark','aquinnah',"martha's vineyard",'marthas vineyard','marion','wareham','gosnold'],berkshire:['pittsfield','lenox','great barrington','lee','stockbridge','williamstown','north adams','adams','dalton','sheffield','egremont','monterey','new marlborough','sandisfield','otis','becket','hinsdale','peru','washington','cheshire','lanesborough','hancock','richmond','west stockbridge','alford','tyringham','new ashford','clarksburg','florida','savoy','windsor','cummington','middlefield']};
 function mlsZoneFor(city,area,address){var loc=((city||'')+' '+(area||'')+' '+(address||'')).toLowerCase();if(!loc.trim())return '';function inList(list){return list.some(function(c){return loc.indexOf(c)>=0;});}if(inList(MLS_ZONE_CITIES.cape_islands))return 'cape_islands';if(inList(MLS_ZONE_CITIES.berkshire))return 'berkshire';return '';}
 function updateMlsZoneHint(){var wrap=$('mlsZoneWrap');if(!wrap)return;var zone=mlsZoneFor(($('sCity')&&$('sCity').value)||'',($('sSub')&&$('sSub').value)||'',($('sAddr')&&$('sAddr').value)||'');wrap.style.display=zone?'':'none';if(!zone&&$('sMlsAck'))$('sMlsAck').checked=false;}
@@ -1092,10 +1120,10 @@ function api(path,body){
 function nL(l){
   if(!l)return null;
   return {id:l.id,byEmail:String(l.owner||''),by:l.ownerName||'',at:l.createdAt||l.updatedAt||'',
-    status:(l.status==='off'?'off':l.status==='mls'?'mls':l.status==='closed'?'closed':'live'),mlsAt:l.mlsAt||'',closedAt:l.closedAt||'',closePrice:l.closePrice||'',
+    status:(l.status==='off'?'off':l.status==='mls'?'mls':l.status==='closed'?'closed':l.status==='awaiting_consent'?'awaiting':'live'),mlsAt:l.mlsAt||'',closedAt:l.closedAt||'',closePrice:l.closePrice||'',
     addressHidden:(l.addressHidden!==false),addr:l.address||'',hideAddress:!!l.hideAddress,
     submarket:l.area||l.city||'',city:l.city||'',area:l.area||'',state:l.state||'',zip:l.zip||l.zipPrefix||'',
-    type:l.propType||'',price:l.price,brokerage:l.brokerage||'',hasSellerForm:!!l.hasSellerForm,
+    type:l.propType||'',price:l.price,brokerage:l.brokerage||'',hasSellerForm:!!l.hasSellerForm,hasConsent:!!l.hasConsent,sellerRevoked:!!l.sellerRevoked,authz:l.authz||null,
     units:l.units,cap:l.capRate,noi:l.noi,sf:l.sqft,gross:l.grossIncome,exp:l.expenses,vac:l.vacancy,tax:l.taxes,hasFin:!!l.hasFinancials,
     beds:l.beds,baths:l.baths,yb:l.yearBuilt,desc:l.notes||'',dist:(l.dist==='pocket'?'matched':(l.dist||'broad')),soon:!!l.comingSoon,priceBasis:l.priceBasis||'sale',
     docs:Array.isArray(l.docs)?l.docs:[],photos:Array.isArray(l.photos)?l.photos:[],photoCount:(l.photoCount||(Array.isArray(l.photos)?l.photos.length:0)),lat:l.lat||'',lng:l.lng||'',views:l.views||0,featured:!!l.featured,
@@ -1265,7 +1293,7 @@ function trustBadges(v,p){return badgeVer(v)+badgePof(p);}
 /* ── stats ── */
 // A deal counts toward live totals and charts only if it's live, unexpired, and
 // real — owner-loaded sample data never counts.
-function isLiveDeal(d){return !!d&&!d.sample&&d.status!=='off'&&d.status!=='mls'&&d.status!=='closed'&&!d.expired;}
+function isLiveDeal(d){return !!d&&!d.sample&&d.status!=='off'&&d.status!=='mls'&&d.status!=='closed'&&d.status!=='awaiting'&&!d.expired;}
 function renderStats(){
     if(GATED&&GATEDSTATS){var s2=$('stats').querySelectorAll('.s .v');s2[0].textContent=GATEDSTATS.count;s2[1].textContent=money(GATEDSTATS.value);s2[2].textContent=GATEDSTATS.subs||'—';s2[3].textContent='—';return;}
   var live=LISTINGS.filter(isLiveDeal);
@@ -1507,7 +1535,7 @@ function renderMap(list){
 function dealMarket(d){return 'MA';}
 function marketMatch(d){return dealMarket(d)===MARKET;}
 function feedVisible(d){
-  if(d.status==='off'||d.status==='mls')return false;
+  if(d.status==='off'||d.status==='mls'||d.status==='awaiting')return false;
   if((d.dist==='pocket'||d.dist==='matched')&&!isMine(d)&&ME.role!=='owner')return false;   // matched-only hidden from the general feed
   if(!marketMatch(d))return false;                                    // only the selected state-market
   return true;
@@ -1714,7 +1742,10 @@ function openDetail(id){
     '<div class="mhead"><div><h3>'+esc(d.submarket||'Pre-market deal')+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★ Featured</span>':'')+(d.soon?' <span class="pill req" style="background:var(--acc);color:#fff">◔ Coming soon</span>':'')+'</h3><div style="color:var(--acc2);font-weight:700;font-size:12.5px;margin-top:3px">'+esc(d.type||'')+' · '+money(d.price)+'</div></div><button class="x" onclick="close_(\'mDetail\')">×</button></div>'
     +'<div class="mbody">'
       +(d.status==='closed'?'<div class="reveal" style="background:rgba(30,122,82,.08);border-color:#1E7A52"><b style="color:#1E7A52">🎉 Marked closed'+(d.closedAt?(' · '+new Date(d.closedAt).toLocaleDateString()):'')+(num(d.closePrice)?(' · '+money(d.closePrice)):'')+'.</b> Counted in the network\'s closed-deal proof. Removed from the live feed.</div>':'')
-      +(mine&&d.status==='live'&&!d.hasSellerForm?'<div class="reveal" style="background:var(--card);border-color:var(--bad)"><b style="color:var(--bad)">Not live — seller authorization required.</b> Other members can’t see this listing until you upload the seller-signed Non-MLS or delayed-listing form. Use ✎ Edit to upload it.</div>':'')
+      +(mine&&d.status==='live'&&!d.hasSellerForm&&!d.hasConsent?'<div class="reveal" style="background:var(--card);border-color:var(--bad)"><b style="color:var(--bad)">Not live — seller authorization required.</b> Other members can’t see this listing until the seller authorizes it: upload the seller-signed Non-MLS or delayed-listing form, or record the seller’s consent in AXESS. Use ✎ Edit → Seller authorization.</div>':'')
+      +((mine||ME.role==='owner')&&d.status==='awaiting'?'<div class="reveal" style="background:var(--card);border-color:var(--gold)"><b style="color:var(--gold)">⏳ Awaiting seller consent — not live.</b> Nobody else can see this listing until the seller’s consent is recorded. '+((d.authz&&d.authz.request)?'<button class="btn ghost sm" style="margin-top:6px" onclick="resendConsent(\''+d.id+'\')">Resend consent link</button>':'Use ✎ Edit → Seller authorization to email the seller a link or record consent.')+'</div>':'')
+      +((mine||ME.role==='owner')&&d.sellerRevoked&&d.status!=='awaiting'?'<div class="reveal" style="background:var(--card);border-color:var(--bad)"><b style="color:var(--bad)">Seller consent revoked — taken down.</b> It can go live again only with a new seller authorization (✎ Edit → Seller authorization).</div>':'')
+      +((mine||ME.role==='owner')&&(d.authz&&(d.authz.consent||d.authz.form||d.authz.request))?'<div class="drow" style="display:block;margin:0 0 12px"><span style="display:block;margin-bottom:4px">Seller authorization</span><div style="font-size:13px;line-height:1.5">'+authSummary(d,false)+'</div>'+(ME.role==='owner'&&!d.sellerRevoked&&(d.authz.form||(d.authz.consent&&!d.authz.consent.revokedAt))?'<button class="btn ghost sm" style="margin-top:6px;color:var(--bad)" onclick="adminRevokeConsent(\''+d.id+'\')">Revoke on the seller’s request</button>':'')+'</div>':'')
       +(d.status==='mls'?'<div class="reveal" style="background:var(--card);border-color:var(--gold)"><b style="color:var(--gold)">✓ Moved to the MLS'+(d.mlsAt?(' · '+new Date(d.mlsAt).toLocaleDateString()):'')+'.</b> This deal is now public and has been removed from the AXESS feed.</div>':'')
       +(d.desc?'<p style="color:var(--mut);font-size:14px;margin-bottom:12px">'+esc(d.desc)+'</p>':'')
       +addrBlock
@@ -1921,9 +1952,61 @@ function uploadDocs(){
 }
 function renderSellerForm(){
   var el=$('sSellerFormList');if(!el)return;
-  if(SUBMIT_SELLER_FORM){el.textContent='Attached: '+(SUBMIT_SELLER_FORM.name||'seller form')+' ✓';}
-  else if(EDIT_ID){var cur=LISTINGS.find(function(x){return x.id===EDIT_ID;});el.textContent=(cur&&cur.hasSellerForm)?'Seller-signed form already on file ✓':'';}
-  else el.textContent='';
+  var cur=EDIT_ID?LISTINGS.find(function(x){return x.id===EDIT_ID;}):null;
+  if(SUBMIT_SELLER_FORM){el.textContent='Attached: '+(SUBMIT_SELLER_FORM.name||'seller form')+' ✓';if(AUTH_MODE!=='upload')setAuthMode('upload');}
+  else el.textContent=(cur&&cur.hasSellerForm)?'Seller-signed form already on file ✓':'';
+  var of=$('sAuthOnFile');if(of)of.innerHTML=cur?authSummary(cur,true):'';
+  renderConsentPreview();
+}
+// Seller authorization: one of three paths (upload / owner consent / seller link).
+function resetAuth(){AUTH_MODE='';['cName','cSellerName','cSellerEmail'].forEach(function(i){if($(i))$(i).value='';});if($('cAgree'))$('cAgree').checked=false;setAuthMode('');}
+function setAuthMode(m){
+  AUTH_MODE=m||'';
+  if(!setAuthMode._wired){['sAddr','sPrice','sType','sBasis'].forEach(function(i){var el=$(i);if(el){el.addEventListener('input',renderConsentPreview);el.addEventListener('change',renderConsentPreview);setAuthMode._wired=1;}});}
+  var w=$('authBtns');if(w)[].forEach.call(w.querySelectorAll('.distbtn'),function(b){var on=b.getAttribute('data-a')===AUTH_MODE;b.classList.toggle('on',on);b.setAttribute('aria-checked',on?'true':'false');});
+  if($('authUpload'))$('authUpload').style.display=AUTH_MODE==='upload'?'':'none';
+  if($('authOwner'))$('authOwner').style.display=AUTH_MODE==='owner'?'':'none';
+  if($('authLink'))$('authLink').style.display=AUTH_MODE==='link'?'':'none';
+  if(AUTH_MODE==='owner')loadConsentText();
+  if(AUTH_MODE==='link'){var cur=EDIT_ID?LISTINGS.find(function(x){return x.id===EDIT_ID;}):null;var rq=cur&&cur.authz&&cur.authz.request;if(rq){if($('cSellerName')&&!$('cSellerName').value)$('cSellerName').value=rq.sellerName||'';if($('cSellerEmail')&&!$('cSellerEmail').value)$('cSellerEmail').value=rq.sellerEmail||'';}}
+  renderConsentPreview();
+}
+function loadConsentText(){
+  if(CONSENT_TEXT){renderConsentPreview();return;}
+  api('/api/pm/consent/text').then(function(j){if(j&&j.ok){CONSENT_TEXT=j;renderConsentPreview();}});
+}
+function renderConsentPreview(){
+  if($('cAddr'))$('cAddr').textContent=(($('sAddr')&&$('sAddr').value)||'').trim()||'Add the address above';
+  if($('cPrice')){var p=noComma('sPrice');$('cPrice').textContent=num(p)?(moneyFull(p)+(dealBasis()==='rent_mo'?' / month':dealBasis()==='rent_psf'?' / sq ft / yr':'')):'Add the asking price above';}
+  if($('cText')&&CONSENT_TEXT)$('cText').innerHTML=(CONSENT_TEXT.text||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join('');
+}
+function fmtWhen(iso){try{return new Date(iso).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});}catch(e){return '';}}
+// One line describing how a listing is authorized (poster/admin only).
+function authSummary(d,inForm){
+  var a=d.authz;if(!a)return d.hasSellerForm?'Seller-signed form on file ✓':'';
+  var out=[];
+  if(d.sellerRevoked||a.revokedAt)out.push('<span style="color:var(--bad)">Seller revoked consent '+esc(fmtWhen(a.revokedAt))+' — taken down. A new authorization is needed to go live.</span>');
+  if(a.consent&&!a.consent.revokedAt){
+    if(a.consent.lapsed)out.push('<span style="color:var(--bad)">Consent by '+esc(a.consent.name)+' no longer covers this listing — the address or asking price changed. Record consent again.</span>');
+    else out.push('✓ '+esc(a.consent.pathLabel)+' — '+esc(a.consent.name)+(a.consent.email?' ('+esc(a.consent.email)+')':'')+', '+esc(fmtWhen(a.consent.at)));
+  }
+  if(a.form)out.push('✓ Uploaded signed form — '+esc(a.form.name)+(a.form.at?', '+esc(fmtWhen(a.form.at)):''));
+  if(d.status==='awaiting'&&a.request)out.push('<span style="color:var(--gold)">⏳ Awaiting seller consent — link sent to '+esc(a.request.sellerEmail)+' '+esc(fmtWhen(a.request.sentAt))+(new Date(a.request.expiresAt)<new Date()?' (expired)':' · expires '+esc(fmtWhen(a.request.expiresAt)))+'</span>');
+  if(inForm&&a.consent&&!a.consent.revokedAt&&!a.consent.lapsed&&!a.form)out.push('<span style="color:var(--mut)">Changing the address or asking price means the seller must consent again.</span>');
+  return out.join('<br>');
+}
+async function resendConsent(id){
+  var d=LISTINGS.find(function(x){return x.id===id;})||{};var rq=(d.authz&&d.authz.request)||{};
+  var em=await uiDialog({title:'Resend the consent link',body:'AXESS emails the seller a new link (the old one stops working). Seller’s email:',input:true,value:rq.sellerEmail||'',ok:'Send link',required:'Add the seller’s email.'});
+  if(em===null)return;
+  api('/api/pm/listing/consent/resend',{id:id,sellerEmail:String(em).trim(),sellerName:rq.sellerName||''}).then(function(j){
+    if(!(j&&j.ok)){uiAlert((j&&j.message)||'Could not send — try again.');return;}
+    if(j.demoLink){demoSellerLink(j.demoLink);}else uiAlert('Sent to '+j.sentTo+'. The link expires in 7 days.');
+    loadAll();
+  });
+}
+async function demoSellerLink(link){
+  if(await uiDialog({title:'DEMO — simulated seller',body:'No email is sent in demo mode. Open the seller’s consent page to act as the seller.',ok:'Open seller’s page',cancel:'Later'}))window.open(link,'_blank','noopener');
 }
 function uploadSellerForm(){
   var inp=$('sSellerForm'),f=inp&&inp.files&&inp.files[0];
@@ -1946,6 +2029,8 @@ function submitDeal(){
   var editing=!!EDIT_ID;
   var cur=editing?LISTINGS.find(function(x){return x.id===EDIT_ID;}):null;
   var keepStatus=cur?(cur.status==='off'?'off':cur.status==='mls'?'mls':'active'):'active';
+  // Recording consent from Edit on a withdrawn listing is a request to go live.
+  if(cur&&cur.status==='off'&&(AUTH_MODE==='owner'||AUTH_MODE==='link'))keepStatus='active';
   var body={address:($('sAddr').value||'').trim(),city:($('sCity').value||'').trim(),area:($('sSub').value||'').trim(),propType:$('sType').value,
     ownerName:ME.name||(PROFILE&&PROFILE.name)||'',price:noComma('sPrice'),priceBasis:dealBasis(),
     units:($('sUnits').value||'').trim(),capRate:($('sCap').value||'').trim(),noi:noComma('sNoi'),
@@ -1960,7 +2045,20 @@ function submitDeal(){
   if(!body.area){$('sMsg').textContent='Add a submarket.';return;}
   if(!num(body.price)){$('sMsg').textContent='Add an asking price.';return;}
   if(!(PROFILE&&PROFILE.brokerage)){$('sMsg').textContent='Add your licensed Massachusetts brokerage in Profile before posting.';return;}
-  if(!SUBMIT_SELLER_FORM&&!(cur&&cur.hasSellerForm)){$('sMsg').textContent='Upload the seller-signed Non-MLS or delayed-listing form before this listing can go live.';return;}
+  if(AUTH_MODE==='owner'){
+    if(!body.address){$('sMsg').textContent='Add the property address — your consent covers this address and asking price.';return;}
+    if(!$('cAgree').checked){$('sMsg').textContent='Check “I am the owner of this property and I agree to the above.”';return;}
+    if((($('cName').value)||'').trim().length<2){$('sMsg').textContent='Type your full name to record your consent.';return;}
+    body.consent={mode:'owner',agree:true,name:$('cName').value.trim()};
+  }else if(AUTH_MODE==='link'){
+    if(!body.address){$('sMsg').textContent='Add the property address — the seller consents to this address and asking price.';return;}
+    var sn=(($('cSellerName').value)||'').trim(),se=(($('cSellerEmail').value)||'').trim();
+    if(sn.length<2){$('sMsg').textContent='Add the seller’s name.';return;}
+    if(!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(se)){$('sMsg').textContent='Add a valid email address for the seller.';return;}
+    body.consent={mode:'seller_link',sellerName:sn,sellerEmail:se};
+  }else if(AUTH_MODE==='upload'&&!SUBMIT_SELLER_FORM&&!(cur&&cur.hasSellerForm)){$('sMsg').textContent='Choose the seller-signed form to upload.';return;}
+  var onFile=SUBMIT_SELLER_FORM||(cur&&(cur.hasSellerForm||cur.hasConsent||cur.status==='awaiting'||(cur.authz&&cur.authz.consent&&!cur.authz.consent.revokedAt)));
+  if(keepStatus==='active'&&!body.consent&&!onFile){$('sMsg').textContent='Choose how the seller authorizes this listing: upload the signed form, sign in AXESS now, or email the seller a consent link.';return;}
   if(mlsZoneFor(body.city,body.area,body.address)&&!body.mlsZoneAck){$('sMsg').textContent='Confirm the Cape / Berkshire MLS note with your broker before posting.';return;}
   $('sMsg').textContent=editing?'Saving…':'Posting…';
   if(submitDeal._busy)return; submitDeal._busy=true; setTimeout(function(){submitDeal._busy=false;},5000);
@@ -1968,9 +2066,14 @@ function submitDeal(){
     submitDeal._busy=false;
     if(j&&j.error==='not_approved'){$('sMsg').textContent='Your membership isn’t approved yet.';return;}
     if(j&&!j.ok){$('sMsg').textContent=(j&&j.message)||'Failed — retry';return;}
-    $('sMsg').textContent=editing?'Saved ✓':'Posted ✓';
+    $('sMsg').textContent=j.awaiting?'Saved — awaiting seller consent':(editing?'Saved ✓':'Posted ✓');
     resetSubmitForm();renderDocList();renderPhotoList();syncDealFields();EDIT_ID=null;
-    loadAll();setTimeout(function(){close_('mSubmit');$('sMsg').textContent='';},800);
+    loadAll();setTimeout(function(){close_('mSubmit');$('sMsg').textContent='';
+      if(j.demoLink)demoSellerLink(j.demoLink);
+      else if(j.consentSentTo)uiAlert('Consent link sent to '+j.consentSentTo+'. The listing stays “Awaiting seller consent” — not visible to anyone else — until they agree. We’ll notify you the moment they do.');
+      else if(j.lapsed)uiAlert('Saved. The address or asking price changed, so the seller’s consent no longer covers this listing. It’s now “Awaiting seller consent” and hidden until consent is recorded again (✎ Edit → Seller authorization).');
+      else if(body.consent&&body.consent.mode==='owner'&&j.ok)uiAlert('Your consent is recorded and the listing is live. A confirmation with a link to revoke is in your email.');
+    },800);
   });
 }
 /* ── in-page dialogs (no native confirm/prompt: they're unreliable on phones
@@ -2265,8 +2368,8 @@ function saveNotifPrefs(){
 }
 /* ── admin panel (owner) ── */
 function openAdmin(){
-  Promise.all([api('/api/pm/admin/members'),api('/api/pm/feed'),api('/api/pm/admin/requests'),api('/api/pm/admin/invites'),api('/api/pm/admin/admissions'),api('/api/pm/admin/reports')]).then(function(r){
-    var mj=r[0]||{},fj=r[1]||{},rj=r[2]||{},vj=r[3]||{},aj=r[4]||{},xj=r[5]||{};var adm=(aj&&aj.entries)||[];var members=(mj&&mj.members)||[];var deals=(fj.listings||[]).map(nL).filter(Boolean);var requests=(rj&&rj.requests)||[];var invites=(vj&&vj.invites)||[];
+  Promise.all([api('/api/pm/admin/members'),api('/api/pm/feed'),api('/api/pm/admin/requests'),api('/api/pm/admin/invites'),api('/api/pm/admin/admissions'),api('/api/pm/admin/reports'),api('/api/pm/admin/consents')]).then(function(r){
+    var mj=r[0]||{},fj=r[1]||{},rj=r[2]||{},vj=r[3]||{},aj=r[4]||{},xj=r[5]||{},cj=r[6]||{};var adm=(aj&&aj.entries)||[];var members=(mj&&mj.members)||[];var deals=(fj.listings||[]).map(nL).filter(Boolean);var requests=(rj&&rj.requests)||[];var invites=(vj&&vj.invites)||[];
     var invRows=invites.length?invites.map(function(v){
       var st=v.status==='verified'?'<span class="pill appr">Signed up · verified</span>':v.status==='signed_up'?'<span class="pill appr">Signed up</span>':'<span class="pill req">Link sent</span>';
       var resend=v.status==='invited'?'<button class="btn ghost sm" onclick="resendInvite(\''+escJS(v.email)+'\')">Resend</button>':'';
@@ -2314,11 +2417,11 @@ function openAdmin(){
         +'<div style="color:var(--mut2);font-size:11.5px">Criteria: '+crit+' · License check: '+esc((lv.method||'')+' — '+String(lv.result||'—').replace(/_/g,' '))+' · By: '+esc(e.decidedBy||'—')+' · Source: '+esc(e.source||'—')+(e.note?(' · '+esc(e.note)):'')+'</div></div></div>';
     }).join(''):'<div class="empty">No admission decisions recorded yet.</div>';
     var dealRows=deals.length?deals.slice(0,40).map(function(d){
-      return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+money(d.price)+' · '+esc(d.by||d.byEmail)+'</span>'+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★</span>':'')+(d.expired?' <span class="pill dec">Expired</span>':'')+(d.status==='mls'?' <span class="pill dec">On MLS</span>':'')+'</div><button class="btn '+(d.featured?'ghost':'acc')+' sm" onclick="adminFeature(\''+d.id+'\','+(!d.featured)+')">'+(d.featured?'Unfeature':'Feature')+'</button></div>';
+      return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+money(d.price)+' · '+esc(d.by||d.byEmail)+'</span>'+(d.featured?' <span class="pill req" style="background:var(--gold);color:var(--bg)">★</span>':'')+(d.expired?' <span class="pill dec">Expired</span>':'')+(d.status==='mls'?' <span class="pill dec">On MLS</span>':'')+(d.status==='awaiting'?' <span class="pill req">Awaiting seller consent</span>':'')+'<div style="color:var(--mut2);font-size:11.5px;margin-top:3px">'+(authSummary(d,false)||'<span style="color:var(--bad)">No seller authorization on file</span>')+'</div></div><button class="btn ghost sm" onclick="close_(\'mAdmin\');openDetail(\''+d.id+'\')">Open</button><button class="btn '+(d.featured?'ghost':'acc')+' sm" onclick="adminFeature(\''+d.id+'\','+(!d.featured)+')">'+(d.featured?'Unfeature':'Feature')+'</button></div>';
     }).join(''):'<div class="empty">No deals.</div>';
     $('mAdmin').innerHTML='<div class="modal wide"><div class="mhead"><h3>Admin</h3><button class="x" onclick="close_(\'mAdmin\')">×</button></div><div class="mbody">'
-      +'<div class="tabs"><span class="tab on" onclick="admTab(\'r\')" id="admTabR">Requests'+((rj.pending)?(' <span class="pill req">'+rj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'m\')" id="admTabM">Members'+((mj.pending)?(' <span class="pill req">'+mj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'i\')" id="admTabI">Sign-up links'+(invites.length?(' <span class="pill req">'+invites.length+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'x\')" id="admTabX">Reports'+((xj.open)?(' <span class="pill req">'+xj.open+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'a\')" id="admTabA">Admissions log</span><span class="tab" onclick="admTab(\'d\')" id="admTabD">Deals</span></div>'
-      +'<div id="admRequests">'+reqRows+'</div><div id="admMembers" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap"><span style="color:var(--mut);font-size:12px">Full member list with marketing opt-in status.</span><a class="btn ghost sm" href="/api/pm/admin/export.csv" download="axess-members.csv">⬇ Export members (CSV)</a></div>'+memRows+'</div><div id="admInvites" style="display:none">'+invRows+'</div><div id="admReports" style="display:none">'+adminReportRows((xj&&xj.reports)||[])+'</div><div id="admAdmissions" style="display:none"><div style="color:var(--mut);font-size:12px;margin-bottom:10px">Every admission decision: date, applicant, criteria checked, license verification result, and decision — with the stated cause for any denial. Admin-only.</div>'+admRows+'</div><div id="admDeals" style="display:none">'+dealRows+'</div>'
+      +'<div class="tabs"><span class="tab on" onclick="admTab(\'r\')" id="admTabR">Requests'+((rj.pending)?(' <span class="pill req">'+rj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'m\')" id="admTabM">Members'+((mj.pending)?(' <span class="pill req">'+mj.pending+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'i\')" id="admTabI">Sign-up links'+(invites.length?(' <span class="pill req">'+invites.length+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'x\')" id="admTabX">Reports'+((xj.open)?(' <span class="pill req">'+xj.open+'</span>'):'')+'</span><span class="tab" onclick="admTab(\'a\')" id="admTabA">Admissions log</span><span class="tab" onclick="admTab(\'c\')" id="admTabC">Seller consents</span><span class="tab" onclick="admTab(\'d\')" id="admTabD">Deals</span></div>'
+      +'<div id="admRequests">'+reqRows+'</div><div id="admMembers" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap"><span style="color:var(--mut);font-size:12px">Full member list with marketing opt-in status.</span><a class="btn ghost sm" href="/api/pm/admin/export.csv" download="axess-members.csv">⬇ Export members (CSV)</a></div>'+memRows+'</div><div id="admInvites" style="display:none">'+invRows+'</div><div id="admReports" style="display:none">'+adminReportRows((xj&&xj.reports)||[])+'</div><div id="admAdmissions" style="display:none"><div style="color:var(--mut);font-size:12px;margin-bottom:10px">Every admission decision: date, applicant, criteria checked, license verification result, and decision — with the stated cause for any denial. Admin-only.</div>'+admRows+'</div><div id="admConsents" style="display:none"><div style="color:var(--mut);font-size:12px;margin-bottom:10px">Every seller authorization — uploaded form, owner consent in AXESS, or seller consent by emailed link — with who, when, the consent text version, IP and device, plus links sent and revocations. Admin-only.</div>'+adminConsentRows(cj)+'</div><div id="admDeals" style="display:none">'+dealRows+'</div>'
       +'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">'
         +'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:7px">Smart-match digest</div>'
         +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn ghost sm" onclick="adminDigest(true)">Preview</button><button class="btn acc sm" onclick="adminDigest(false)">Send digest now</button><span id="digMsg" style="font-size:12.5px;color:var(--mut)"></span></div>'
@@ -2338,7 +2441,20 @@ function openAdmin(){
     open_('mAdmin');adminBillingLoad();adminBackupLoad();adminCspLoad();
   });
 }
-function admTab(t){var ax=$('admReports');if(ax)ax.style.display=t==='x'?'':'none';var tx=$('admTabX');if(tx)tx.classList.toggle('on',t==='x');var aa=$('admAdmissions');if(aa)aa.style.display=t==='a'?'':'none';var ta=$('admTabA');if(ta)ta.classList.toggle('on',t==='a');$('admRequests').style.display=t==='r'?'':'none';$('admMembers').style.display=t==='m'?'':'none';var ai=$('admInvites');if(ai)ai.style.display=t==='i'?'':'none';$('admDeals').style.display=t==='d'?'':'none';$('admTabR').classList.toggle('on',t==='r');$('admTabM').classList.toggle('on',t==='m');var ti=$('admTabI');if(ti)ti.classList.toggle('on',t==='i');$('admTabD').classList.toggle('on',t==='d');}
+function admTab(t){var ac=$('admConsents');if(ac)ac.style.display=t==='c'?'':'none';var tc=$('admTabC');if(tc)tc.classList.toggle('on',t==='c');var ax=$('admReports');if(ax)ax.style.display=t==='x'?'':'none';var tx=$('admTabX');if(tx)tx.classList.toggle('on',t==='x');var aa=$('admAdmissions');if(aa)aa.style.display=t==='a'?'':'none';var ta=$('admTabA');if(ta)ta.classList.toggle('on',t==='a');$('admRequests').style.display=t==='r'?'':'none';$('admMembers').style.display=t==='m'?'':'none';var ai=$('admInvites');if(ai)ai.style.display=t==='i'?'':'none';$('admDeals').style.display=t==='d'?'':'none';$('admTabR').classList.toggle('on',t==='r');$('admTabM').classList.toggle('on',t==='m');var ti=$('admTabI');if(ti)ti.classList.toggle('on',t==='i');$('admTabD').classList.toggle('on',t==='d');}
+async function adminRevokeConsent(id){
+  var note=await uiDialog({title:'Revoke seller authorization',body:'Use this when the seller contacts AXESS to revoke. The listing is taken down and the revocation is logged. Note (who asked, how):',input:true,ok:'Revoke and take down',danger:true,required:'Add a short note.'});
+  if(note===null)return;
+  api('/api/pm/admin/consent/revoke',{listingId:id,note:note}).then(function(j){if(!(j&&j.ok)){uiAlert((j&&j.message)||'Could not revoke.');return;}close_('mDetail');loadAll();});
+}
+function adminConsentRows(j){
+  var recs=(j&&j.records)||[],links=(j&&j.links)||[];var ev=[];
+  recs.forEach(function(r){ev.push({at:r.at,h:'<span class="pill appr">'+esc(r.pathLabel||r.path)+'</span> <b>'+esc(r.name||'—')+'</b>',d:esc(r.address||'—')+' · '+esc(moneyFull(r.price))+' · listing '+esc(r.listingId),m:'From '+esc(r.email||r.account||'—')+' · text '+esc(r.textVersion||'')+(r.file?' · file '+esc(r.file):'')+' · IP '+esc(r.ip||'—')+' · '+esc(String(r.ua||'').slice(0,80))+(r.lapsedAt?' · <span style="color:var(--bad)">no longer covers the listing since '+esc(fmtWhen(r.lapsedAt))+' ('+esc(r.lapsedReason||'')+')</span>':'')});
+    if(r.revokedAt)ev.push({at:r.revokedAt,h:'<span class="pill dec">Revoked</span> <b>'+esc(r.name||'—')+'</b>',d:esc(r.address||'—')+' · listing '+esc(r.listingId),m:'By '+esc(r.revokedBy||'—')+' via '+esc(String(r.revokeVia||'').replace(/_/g,' '))+(r.revokeNote?' · “'+esc(r.revokeNote)+'”':'')+' · IP '+esc(r.revokeIp||'—')});});
+  links.forEach(function(k){ev.push({at:k.createdAt,h:'<span class="pill req">Consent link sent</span> <b>'+esc(k.sellerName||'—')+'</b>',d:esc(k.sellerEmail)+' · listing '+esc(k.listingId),m:'By '+esc(k.sentBy||k.poster||'—')+' · expires '+esc(fmtWhen(k.expiresAt))+(k.usedAt?' · used '+esc(fmtWhen(k.usedAt)):k.supersededAt?' · replaced '+esc(fmtWhen(k.supersededAt)):'')});});
+  ev.sort(function(a,b){return String(b.at).localeCompare(String(a.at));});
+  return ev.length?ev.slice(0,400).map(function(e){return '<div class="reqrow"><div class="grow">'+e.h+'<div style="color:var(--mut);font-size:12.5px;margin-top:3px">'+esc(fmtWhen(e.at))+' · '+e.d+'</div><div style="color:var(--mut2);font-size:11.5px">'+e.m+'</div></div></div>';}).join(''):'<div class="empty">No seller authorizations recorded yet.</div>';
+}
 function resendInvite(email){api('/api/pm/admin/invite',{email:email}).then(function(j){openAdmin();});}
 var CAUSE_LBL={license_lapse:'License not active or not in good standing',non_payment:'Non-payment of the published subscription',material_breach:'Material breach of the Terms'};
 // Denials, revocations, and terminations require one of the stated causes.
@@ -2539,7 +2655,7 @@ function renderActivity(){
   var b=$('actBody'),h='';
   if(ACTTAB==='mydeals'){
     var mine=LISTINGS.filter(isMine);
-    h=mine.length?mine.map(function(d){var reqs=INBOUND.filter(function(x){return x.listingId===d.id&&x.status==='pending';}).length;return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+'</span>'+(d.status==='off'?' <span class="pill dec">Withdrawn</span>':'')+(d.status==='mls'?' <span class="pill dec" style="background:var(--gold);color:var(--bg)">Moved to MLS</span>':'')+(d.status==='live'&&!d.hasSellerForm?' <span class="pill dec" title="Not visible to other members until the seller-signed Non-MLS or delayed-listing form is uploaded">Needs seller authorization</span>':'')+(reqs?(' <span class="pill req">'+reqs+' pending intro'+(reqs>1?'s':'')+'</span>'):'')+'</div><button class="btn ghost sm" onclick="openDetail(\''+d.id+'\')">Open</button></div>';}).join(''):'<div class="empty">You haven\'t posted a deal yet.</div>';
+    h=mine.length?mine.map(function(d){var reqs=INBOUND.filter(function(x){return x.listingId===d.id&&x.status==='pending';}).length;return '<div class="reqrow"><div class="grow"><b>'+esc(d.submarket||'Deal')+'</b> <span style="color:var(--mut)">· '+esc(d.type||'')+' · '+money(d.price)+'</span>'+(d.status==='off'?' <span class="pill dec">Withdrawn</span>':'')+(d.status==='mls'?' <span class="pill dec" style="background:var(--gold);color:var(--bg)">Moved to MLS</span>':'')+(d.status==='live'&&!d.hasSellerForm&&!d.hasConsent?' <span class="pill dec" title="Not visible to other members until the seller authorizes it: signed form or recorded consent">Needs seller authorization</span>':'')+(d.status==='awaiting'?' <span class="pill req" title="Not visible to other members until the seller’s consent is recorded">Awaiting seller consent</span>':'')+(d.sellerRevoked&&d.status!=='awaiting'?' <span class="pill dec">Seller revoked consent</span>':'')+(reqs?(' <span class="pill req">'+reqs+' pending intro'+(reqs>1?'s':'')+'</span>'):'')+'</div><button class="btn ghost sm" onclick="openDetail(\''+d.id+'\')">Open</button></div>';}).join(''):'<div class="empty">You haven\'t posted a deal yet.</div>';
   } else if(ACTTAB==='requests'){
     h=INBOUND.length?INBOUND.map(function(x){var sub=x.listing?(x.listing.area||x.listing.city||''):'';return '<div class="reqrow"><div class="grow"><b>'+esc(x.buyerName||x.buyer||'Buyer')+'</b> '+trustBadges(x.buyerVerified,x.buyerPof)+' '+pill(x.status)+'<div style="color:var(--mut);font-size:12.5px;margin-top:4px">'+esc(sub)+' · '+esc(x.message||'(no note)')+'</div></div>'+(x.status==='pending'?'<button class="btn acc sm" onclick="setIntro(\''+x.id+'\',\'approved\')">Approve</button><button class="btn ghost sm" onclick="setIntro(\''+x.id+'\',\'declined\')">Decline</button>':(x.status==='approved'?'<button class="btn acc sm" onclick="close_(\'mActivity\');openThread(\''+escJS(x.buyer)+'\',\''+escJS(x.listingId||'')+'\')">💬 Deal room</button>':'<span style="color:var(--mut);font-size:12px">'+esc(x.buyer||'')+'</span>'))+'</div>';}).join(''):'<div class="empty">No introduction requests yet.</div>';
   } else if(ACTTAB==='sent'){
@@ -2724,7 +2840,7 @@ function resetSubmitForm(){
   if($('sType'))$('sType').value=(TYPES[0]||'');
   setDist('broad');setSoon(false);
   SUBMIT_DOCS=[];SUBMIT_PHOTOS=[];SUBMIT_COORDS=null;SUBMIT_STATE='MA';SUBMIT_SELLER_FORM=null;
-  stampBrokerage();updateMlsZoneHint();renderSellerForm();
+  resetAuth();stampBrokerage();updateMlsZoneHint();renderSellerForm();
 }
 function openSubmit(){EDIT_ID=null;resetSubmitForm();if($('sTitle'))$('sTitle').textContent='Post a deal';if($('sBtn'))$('sBtn').textContent='Post deal';if($('sMsg'))$('sMsg').textContent='';
   fillFilters();attachMoney(['sPrice','sNoi','sGross','sVac','sTax','sExp','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();renderSellerForm();stampBrokerage();open_('mSubmit');}
@@ -2746,7 +2862,7 @@ function openEdit(id){
   SUBMIT_DOCS=Array.isArray(d.docs)?d.docs.slice():[];
   SUBMIT_PHOTOS=Array.isArray(d.photos)?d.photos.slice():[];
   SUBMIT_COORDS=(d.lat&&d.lng)?{lat:d.lat,lng:d.lng}:null;SUBMIT_STATE='MA';SUBMIT_SELLER_FORM=null;
-  stampBrokerage();updateMlsZoneHint();if($('sMlsAck'))$('sMlsAck').checked=false;
+  resetAuth();stampBrokerage();updateMlsZoneHint();if($('sMlsAck'))$('sMlsAck').checked=false;
   if($('sTitle'))$('sTitle').textContent='Edit deal';if($('sBtn'))$('sBtn').textContent='Save changes';if($('sMsg'))$('sMsg').textContent='';
   attachMoney(['sPrice','sNoi','sGross','sVac','sTax','sExp','sSf']);syncDealFields();initAddrAuto();initPhotoDrop();renderPhotoList();renderSellerForm();open_('mSubmit');
 }
@@ -2810,7 +2926,7 @@ var TOUR=[
  {el:'.sortbar',title:'Sort & search',body:'Sort by newest, price, or cap rate — or type a keyword to jump straight to it.',place:'bottom'},
  {el:'#grid .deal',title:'Open any deal',body:'Tap a card for the full numbers, the map, and documents. The exact address stays private until you request an intro.',place:'top'},
  {el:'#grid .deal',title:'Request an intro → deal room',body:'Ask the listing agent for an intro. When they approve, the address unlocks and a private “deal room” opens where you two share docs and talk — agent to agent, no lead forms.',place:'top'},
- {el:'.hero .btn.acc',title:'Post your own deal',body:'Add a listing in about 60 seconds. Hide the exact address or show it on a map — your call. Upload the seller-signed Non-MLS or delayed-listing form before it goes live.',place:'bottom'},
+ {el:'.hero .btn.acc',title:'Post your own deal',body:'Add a listing in about 60 seconds. Hide the exact address or show it on a map — your call. Before it goes live, add the seller’s authorization: upload the signed form, sign in AXESS if you own it, or email the seller a consent link.',place:'bottom'},
  {el:'.hero .btn.ghost',title:'Post a client need',body:'Tell the network what your clients are hunting for and get matched to new deals automatically.',place:'bottom'},
  {el:'.nlink.ico[title="Alerts"]',title:'Alerts & messages',body:'The bell shows your match alerts. “Messages” is where you talk agent-to-agent about a deal.',place:'bottom'},
  {title:'You’re all set',body:'Post a deal, save a search, and start connecting. Need this again? Hit the “?” in the top bar anytime.'}
@@ -2891,7 +3007,7 @@ function sendInvite(){
   <div class="modal" style="max-width:640px">
     <div class="mhead"><div><h3>Import inventory</h3><div style="color:var(--mut);font-size:12.5px;margin-top:2px">Owner only. Adds each row to the live feed under your account — it appends, it never overwrites what's already there.</div></div><button class="x" onclick="close_('mImport')">×</button></div>
     <div style="padding:16px 20px 20px">
-      <div style="font-size:12.5px;color:var(--mut);margin-bottom:8px">One JSON object per listing. Fields: <b>address, city, area, state, zip, price, propType, dist</b> (broad/private/matched). Edit freely, then Add all. Live posts still need a seller-signed form and a Massachusetts city.</div>
+      <div style="font-size:12.5px;color:var(--mut);margin-bottom:8px">One JSON object per listing. Fields: <b>address, city, area, state, zip, price, propType, dist</b> (broad/private/matched). Edit freely, then Add all. Live posts still need the seller’s authorization (signed form or consent recorded in AXESS) and a Massachusetts city.</div>
       <textarea id="impJson" spellcheck="false" style="width:100%;height:230px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.5;border:1px solid var(--line2);border-radius:10px;padding:12px;background:var(--bg2);color:var(--tx);resize:vertical"></textarea>
       <div id="impMsg" style="font-size:13px;color:var(--mut);min-height:20px;margin:8px 0"></div>
       <div style="display:flex;gap:10px;align-items:center">
