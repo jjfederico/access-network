@@ -46,9 +46,9 @@ const outbound = [];
 const authStub = {
   mount() {}, attachUser: mw, ensureAuth: (req, res, next) => next(),
   userFor: async () => null, profileFor: async () => null,
-  sendEmail: async (to, subject) => { sent.push({ to, subject, demo: demo.active() }); return true; },
+  sendEmail: async (to, subject, html) => { sent.push({ to, subject, html: String(html || ''), demo: demo.active() }); return true; },
   sendMagicLink: async () => true,
-  emailShell: h => h, emailBtn: () => '', ADMIN: '', ADMINS: [], lc: s => String(s || '').toLowerCase()
+  emailShell: h => h, emailBtn: (label, url) => '<a href="' + url + '">' + label + '</a>', ADMIN: '', ADMINS: [], lc: s => String(s || '').toLowerCase()
 };
 const root = path.join(__dirname, '..');
 const origLoad = Module._load;

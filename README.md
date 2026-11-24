@@ -36,13 +36,24 @@ Admissions log tab.
 ## Seller authorization
 
 A listing is live (feed, detail, intros, alerts, digest, teaser, stats) only
-with the seller-signed Non-MLS / delayed-listing form on file
-(`compliance.listingAuthorized`). Every path that can set a listing active —
+with the seller's authorization on file — the seller-signed Non-MLS /
+delayed-listing form or a recorded consent (`compliance.listingAuthorized`). Every path that can set a listing active —
 post, edit, relist, renew, undo-MLS, undo-closed, paid renew — enforces it.
 Owner-loaded sample data (`sample: true`) is exempt. A newly submitted form is
 validated after sanitizing (`compliance.cleanSellerForm`): it must be an upload
 key issued by `/api/pm/upload` or an inline PDF/image/Word data URL; anything
 else is refused with `seller_form_invalid`.
+
+The seller's authorization can instead be a consent recorded in AXESS
+(`compliance.consentCovers`): the owner consents in the Post a deal form
+(`consent: {mode:'owner'}`), or AXESS emails the seller a single-use 7-day link
+(`consent: {mode:'seller_link'}`) to the public page `/consent`, and the listing
+stays `awaiting_consent` (hidden) until they agree. A consent covers one address
+and asking price; changing either drops the listing back to `awaiting_consent`.
+Revocation (seller link in the confirmation email, or Admin on the seller's
+request) takes the listing down. Every authorization — all three paths — is
+recorded in `pm_consents` (links in `pm_consent_links`, token hashes only), so
+it rides the nightly backups; Admin → Seller consents shows the log.
 
 Tests: `npm test` (unit + copy audit in `test/compliance.test.js`; route tests in
 `test/routes.test.js` run `server.js` against in-memory stubs — no database,

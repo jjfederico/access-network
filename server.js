@@ -188,7 +188,7 @@ function pmReciprocity(email, listings, boxes, profs) {
   const prof = (profs || []).find(p => p && _lc(p.email) === e) || {};
   if (prof.exemptGiveGet || prof.founder) return { active: true, exempt: true, enforce: GG_ENFORCE, hasDeal: true, hasNeed: false, inGrace: false, graceDaysLeft: 0, lastDealDays: 0, lastNeedDays: null, windowDays: GG_DAYS };
   let lastDeal = Infinity, lastNeed = Infinity;
-  (listings || []).forEach(l => { if (l && _lc(l.owner) === e && (l.status || 'active') !== 'off') { const d = _daysSince(l.updatedAt || l.createdAt); if (d < lastDeal) lastDeal = d; } });
+  (listings || []).forEach(l => { if (l && _lc(l.owner) === e && (l.status || 'active') !== 'off' && (l.status || 'active') !== AWAITING) { const d = _daysSince(l.updatedAt || l.createdAt); if (d < lastDeal) lastDeal = d; } });
   (boxes || []).forEach(b => { if (b && _lc(b.owner) === e) { const d = _daysSince(b.updatedAt || b.createdAt); if (d < lastNeed) lastNeed = d; } });
   const hasDeal = lastDeal <= GG_DAYS, hasNeed = lastNeed <= GG_DAYS;
   const graceUsed = _daysSince(prof.approvedAt || prof.createdAt);
@@ -252,6 +252,7 @@ function pmPublicView(l, full, gated) {
     hasFinancials: !!(l.noi || l.grossIncome || l.expenses || l.vacancy || l.taxes),
     brokerage: l.brokerage || '',
     hasSellerForm: !!(l.sellerForm && (l.sellerForm.key || l.sellerForm.url)), sample: !!l.sample,
+    hasConsent: compliance.consentCovers(l), awaitingConsent: (l.status || '') === 'awaiting_consent', sellerRevoked: !!l.sellerRevokedAt,
     notes: l.notes || '', docCount: Array.isArray(l.docs) ? l.docs.length : 0, views: l.views || 0,
     photoCount: Array.isArray(l.photos) ? l.photos.length : 0,
     hideAddress: !!l.hideAddress, addressHidden: !showAddr, comingSoon: !!l.comingSoon,
@@ -424,9 +425,87 @@ function pmFail(res, e, status) {
   return res.status(status || 502).json({ ok: false, error: 'server_error', message: 'Something went wrong — please try again. If it keeps happening, contact us.' });
 }
 // Seller authorization: no listing is shown to other members, matched, alerted,
-// teased, or contacted unless the seller-signed form is on file.
+// teased, or contacted unless the seller-signed form or a covering recorded
+// consent is on file.
 const pmAuthorized = l => compliance.listingAuthorized(l);
-const SELLER_FORM_MSG = 'Upload the seller-signed Non-MLS or delayed-listing form before this listing can go live.';
+const SELLER_FORM_MSG = 'This listing needs the seller’s authorization before it can go live: upload the seller-signed Non-MLS or delayed-listing form, or record the seller’s consent in AXESS (✎ Edit → Seller authorization).';
+
+// ── Seller consent recorded in AXESS ────────────────────────────────────────
+// Every authorization — owner consent in AXESS, seller consent by emailed link,
+// or an uploaded signed form — is recorded in pm_consents (so it rides the
+// nightly backups) with the listing, address, asking price, consent text
+// version, path, typed name, who it came from, time, IP and user agent. Seller
+// links live in pm_consent_links: single-use, expiring, stored only as a hash.
+const PM_CONSENTS = 'pm_consents';
+const PM_CONSENT_LINKS = 'pm_consent_links';
+const AWAITING = 'awaiting_consent';
+const pmNotLiveStatus = s => s === 'off' || s === 'mls' || s === 'closed' || s === AWAITING;
+const _sha256 = t => require('crypto').createHash('sha256').update(String(t)).digest('hex');
+const _rand = n => require('crypto').randomBytes(n).toString('hex');
+const PM_EMAIL_RE = /^[^\s@<>"']+@[^\s@<>"']+\.[a-z]{2,}$/i;
+function pmReqMeta(req) {
+  return { ip: String((req && req.ip) || '').slice(0, 64), ua: String((req && req.headers && req.headers['user-agent']) || '').slice(0, 300) };
+}
+// Demo-mode tokens carry a prefix so the public consent pages run against the
+// demo partition without needing the demo cookie (the simulated seller).
+function pmPriceText(l) {
+  const n = Math.round(pmNum(l && l.price) * 100) / 100;
+  if (!n) return '';
+  const b = (l && l.priceBasis) || 'sale';
+  return '$' + n.toLocaleString('en-US') + (b === 'rent_mo' ? ' / month' : b === 'rent_psf' ? ' / sq ft / yr' : '');
+}
+const pmNewToken = () => (demo.active() ? 'demo_' : '') + _rand(24);
+// Writes the consent record (before the listing is saved, like the admissions
+// log) and returns the snapshot to keep on the listing plus the revoke token.
+async function pmRecordConsent(l, o) {
+  const now = new Date().toISOString();
+  const revokeToken = pmNewToken();
+  const row = {
+    id: pmId('C'), at: now, listingId: l.id, address: String(l.address || ''), price: String(l.price || ''),
+    textVersion: compliance.CONSENT_TEXT_VERSION, path: o.path, name: String(o.name || '').trim().slice(0, 120),
+    account: _lc(o.account || ''), email: _lc(o.email || ''), poster: _lc(l.owner || ''),
+    ip: (o.meta && o.meta.ip) || '', ua: (o.meta && o.meta.ua) || '',
+    file: o.file || '', linkId: o.linkId || '', rth: o.path === 'uploaded_form' ? '' : _sha256(revokeToken), is_demo: demo.active() || undefined
+  };
+  await pmMutate(PM_CONSENTS, arr => { arr.push(row); return { save: arr }; });
+  if (o.path !== 'uploaded_form') {
+    l.consent = { id: row.id, path: row.path, name: row.name, account: row.account, email: row.email, at: now, address: row.address, price: row.price, textVersion: row.textVersion };
+  }
+  delete l.sellerRevokedAt;
+  // Any seller link still outstanding for this listing is no longer needed.
+  await pmMutate(PM_CONSENT_LINKS, arr => { let ch = false; arr.forEach(x => { if (x && x.listingId === l.id && !x.usedAt && !x.supersededAt) { x.supersededAt = now; ch = true; } }); return { save: ch ? arr : undefined }; });
+  return { row, revokeToken };
+}
+async function pmConsentPatch(id, patch) {
+  await pmMutate(PM_CONSENTS, arr => { const r = arr.find(x => x && x.id === id); if (!r) return { save: false }; Object.assign(r, patch); return { save: arr }; });
+}
+// Email the seller a single-use consent link (7 days). Supersedes earlier links.
+async function pmSendConsentLink(l, sellerName, sellerEmail, req) {
+  const now = new Date();
+  const token = pmNewToken();
+  const link = { id: pmId('K'), th: _sha256(token), listingId: l.id, sellerName, sellerEmail: _lc(sellerEmail), poster: _lc(l.owner), sentBy: pmEmail(req.user), createdAt: now.toISOString(), expiresAt: new Date(now.getTime() + compliance.CONSENT_LINK_DAYS * 864e5).toISOString(), is_demo: demo.active() || undefined };
+  await pmMutate(PM_CONSENT_LINKS, arr => {
+    arr.forEach(x => { if (x && x.listingId === l.id && !x.usedAt && !x.supersededAt) x.supersededAt = link.createdAt; });
+    arr.push(link); return { save: arr.length > 20000 ? arr.slice(-20000) : arr };
+  });
+  l.consentRequest = { linkId: link.id, sellerName, sellerEmail: link.sellerEmail, sentAt: link.createdAt, expiresAt: link.expiresAt };
+  const url = PM_BASE + '/consent?t=' + encodeURIComponent(token);
+  const profs = await pmLoad('pm_profiles');
+  const poster = profs.find(p => p && _lc(p.email) === _lc(l.owner)) || {};
+  try {
+    await pmSendRich(link.sellerEmail, 'Please confirm: marketing ' + (l.address || 'your property') + ' on AXESS', {
+      heading: 'Your consent is requested',
+      paras: [
+        'Hi ' + _emailEsc(sellerName) + ',',
+        _emailEsc(poster.name || l.ownerName || 'Your agent') + (poster.brokerage ? ' of ' + _emailEsc(poster.brokerage) : '') + ' would like to market <b>' + _emailEsc(l.address || 'your property') + '</b> at an asking price of <b>' + _emailEsc(pmPriceText(l)) + '</b> on AXESS, agent-to-agent software for Massachusetts licensed agents, as a non-MLS (delayed-listing) offering.',
+        'Open the link below to read the consent and record your agreement. No account or password is needed. The link works once and expires in ' + compliance.CONSENT_LINK_DAYS + ' days.',
+        'If you did not expect this email, you can ignore it — nothing is marketed without your consent.'
+      ],
+      cta: { label: 'Review and consent', url }
+    });
+  } catch (e) { console.error('[AXESS error] consent link email', e && e.message); }
+  return { link, url };
+}
 
 // ── admission decision log (admin-visible only) ─────────────────────────────
 // Every admission decision — automatic admit at sign-up, admin admit, denial,
@@ -485,13 +564,13 @@ app.get('/api/pm/feed', ensureAuth, pmGate, async (req, res) => {
     // A buyer with an APPROVED intro is entitled to the full view (address + docs).
     const entitled = l => mine(l) || isOwner || intros.some(i => i && i.listingId === l.id && _lc(i.buyer) === meEmail && i.status === 'approved');
     const rows = listings
-      .filter(l => l && (((l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed') || mine(l) || isOwner))
+      .filter(l => l && (((l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && (l.status || 'active') !== AWAITING) || mine(l) || isOwner))
       .filter(l => !isExpired(l) || mine(l) || isOwner)
       // No seller authorization on file → not live for anyone but its lister/admin.
       .filter(l => pmAuthorized(l) || mine(l) || isOwner)
       // Matched-only deals stay out of the general feed for everyone but the owner/admin.
       .filter(l => ((l.dist || 'broad') !== 'pocket' && (l.dist || 'broad') !== 'matched') || mine(l) || isOwner)
-      .map(l => attachOwner(pmPublicView(l, entitled(l), gated && !mine(l)), l.owner))
+      .map(l => pmAttachAuthz(attachOwner(pmPublicView(l, entitled(l), gated && !mine(l)), l.owner), l, mine(l) || isOwner))
       .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
     // Server-side give-to-get: a member past their first GG_GRACE days who has
     // never contributed gets NO deal rows at all — only aggregate counts for the
@@ -528,6 +607,27 @@ app.get('/api/pm/listing/:id', ensureAuth, pmGate, async (req, res) => {
     res.json({ ok: true, listing: view, reciprocity: recip });
   } catch (e) { pmFail(res, e); }
 });
+
+// Buy-box alerts for a deal that has just gone live (best-effort).
+async function pmAlertNewDeal(rec) {
+  const now = new Date().toISOString();
+  try {
+    const boxes = await pmLoad(PM_KEYS.buyboxes), ns = await pmLoad('pm_notifs'), profs = await pmLoad('pm_profiles');
+    const profOf = {}; profs.forEach(p => { if (p && p.email) profOf[_lc(p.email)] = p; });
+    const hits = [];
+    boxes.forEach(bx => {
+      if (!bx || _lc(bx.owner) === _lc(rec.owner) || !pmMatch(rec, bx)) return;
+      const prof = profOf[_lc(bx.owner)] || {};
+      // Member's own notification settings decide this (default = their focus).
+      if (!pmWantsDealAlert(prof, rec)) return;
+      const txt = 'New match — ' + (rec.propType || 'deal') + ' in ' + (rec.area || rec.city || 'your market') + (rec.price ? (' · ' + pmMoneyShort(rec.price)) : '');
+      ns.push({ id: pmId('N'), to: _lc(bx.owner), type: 'match', text: txt, listingId: rec.id, at: now, read: false });
+      if (pmWantsEmail(prof, 'deals')) hits.push({ to: _lc(bx.owner), txt });
+    });
+    await pmSave('pm_notifs', pmCapNotifs(ns));
+    for (const h of hits) await pmSendEmail(h.to, 'AXESS · new deal matches your buy box', h.txt + '\n\nOpen AXESS to view the deal and message the listing agent.');
+  } catch (e) { /* best-effort */ }
+}
 
 app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
   const b = req.body || {};
@@ -569,13 +669,15 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
     if ((fields.dist || 'broad') !== 'broad') fields.hideAddress = true;
     if (!id && !pmNum(fields.price)) return res.status(400).json({ ok: false, error: 'no_price', message: 'Add an asking price.' });
     const expiresIn = new Date(Date.now() + LISTING_DAYS * 864e5).toISOString();
-    let rec, isNew = false;
+    let rec, isNew = false, curStatusBefore = '';
+    const meStampName = () => String(meProfStamp.name || req.user.name || '').trim();
     if (id) {
       const idx = listings.findIndex(x => x && x.id === id);
       if (idx < 0) return res.status(404).json({ ok: false, error: 'not_found' });
       const cur = listings[idx];
       if (req.user.role !== 'owner' && _lc(cur.owner) !== pmEmail(req.user))
         return res.status(403).json({ ok: false, error: 'not_your_listing' });
+      curStatusBefore = cur.status || 'active';
       rec = Object.assign({}, cur, fields, { updatedAt: now });
       // Preserve existing media when the request doesn't include it (e.g. status toggles).
       if (!Array.isArray(b.docs)) rec.docs = Array.isArray(cur.docs) ? cur.docs : [];
@@ -596,23 +698,47 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
       rec = Object.assign({ id: pmId('L'), owner: req.user.email, createdAt: now, updatedAt: now, expiresAt: expiresIn, views: 0, featured: false }, fields);
       listings.push(rec); isNew = true;
     }
+    const prevStatus = curStatusBefore;
     // Seller-signed form: validate it AFTER sanitizing, so nothing that cleans
     // down to an empty or bogus reference can count as authorization. A form
     // already on file is kept when none is sent; a sent form that can't be
     // used is refused out loud rather than dropped.
+    let newForm = null;
     if (b.sellerForm && typeof b.sellerForm === 'object') {
       const cleanForm = compliance.cleanSellerForm(b.sellerForm, now);
       if (!cleanForm) return res.status(400).json({ ok: false, error: 'seller_form_invalid', message: 'The seller-signed form could not be read. Upload the signed Non-MLS or delayed-listing form again (PDF, image, or Word document).' });
-      rec.sellerForm = cleanForm;
+      rec.sellerForm = cleanForm; newForm = cleanForm;
     }
+    // Seller consent in AXESS: the owner consents now, or the seller is emailed a link.
+    const cIn = (b.consent && typeof b.consent === 'object') ? b.consent : null;
+    let ownerConsent = null, sellerLink = null;
     const goingLive = (rec.status || 'active') === 'active';
+    let awaiting = false, lapsed = false;
     if (goingLive) {
       if (!String(rec.city || '').trim())
         return res.status(400).json({ ok: false, error: 'city_required', message: 'Add the Massachusetts city before this listing can go live.' });
       if (!String(rec.brokerage || '').trim())
         return res.status(400).json({ ok: false, error: 'brokerage_required', message: 'Your profile must list your licensed Massachusetts brokerage before you can post.' });
-      if (!compliance.sellerFormOk(rec.sellerForm))
-        return res.status(400).json({ ok: false, error: 'seller_form_required', message: SELLER_FORM_MSG });
+      if (cIn && (cIn.mode === 'owner' || cIn.mode === 'seller_link') && !String(rec.address || '').trim())
+        return res.status(400).json({ ok: false, error: 'consent_address_required', message: 'Add the property address — the seller’s consent covers this address and asking price.' });
+      if (cIn && cIn.mode === 'owner') {
+        if (cIn.agree !== true) return res.status(400).json({ ok: false, error: 'consent_agree_required', message: 'Check “I am the owner of this property and I agree to the above” to record your consent.' });
+        if (!compliance.consentNameOk(cIn.name)) return res.status(400).json({ ok: false, error: 'consent_name_required', message: 'Type your full name to record your consent.' });
+        ownerConsent = { name: String(cIn.name).trim().slice(0, 120) };
+      } else if (cIn && cIn.mode === 'seller_link') {
+        const sn = String(cIn.sellerName || '').trim().slice(0, 120), se = String(cIn.sellerEmail || '').trim().slice(0, 200);
+        if (!compliance.consentNameOk(sn)) return res.status(400).json({ ok: false, error: 'seller_name_required', message: 'Add the seller’s name.' });
+        if (!PM_EMAIL_RE.test(se)) return res.status(400).json({ ok: false, error: 'seller_email_required', message: 'Add a valid email address for the seller.' });
+        if (_lc(se) === pmEmail(req.user)) return res.status(400).json({ ok: false, error: 'seller_email_is_you', message: 'That’s your own email. If you own the property, choose “Sign in AXESS now” instead.' });
+        sellerLink = { name: sn, email: se };
+      }
+      if (!pmAuthorized(rec) && !ownerConsent) {
+        // Not authorized yet: wait for the seller (link sent now or earlier), or —
+        // when the address or price changed after consent — drop back to waiting.
+        lapsed = compliance.consentLapsed(rec) && !rec.sellerRevokedAt;
+        if (sellerLink || prevStatus === AWAITING || lapsed) awaiting = true;
+        else return res.status(400).json({ ok: false, error: 'seller_form_required', message: SELLER_FORM_MSG });
+      }
       const zone = compliance.mlsZoneFor(rec.city, rec.area, rec.address);
       if (zone) {
         if (b.mlsZoneAck !== true && !rec.mlsZoneAckAt)
@@ -621,26 +747,33 @@ app.post('/api/pm/listing', rateLimit('listing', 40, 10 * 60 * 1000), ensureAuth
         rec.mlsZoneAckAt = rec.mlsZoneAckAt || now;
       }
     }
-    await pmSave(PM_KEYS.listings, listings);
-    if (isNew && goingLive) {
-      try {
-        const boxes = await pmLoad(PM_KEYS.buyboxes), ns = await pmLoad('pm_notifs'), profs = await pmLoad('pm_profiles');
-        const profOf = {}; profs.forEach(p => { if (p && p.email) profOf[_lc(p.email)] = p; });
-        const hits = [];
-        boxes.forEach(bx => {
-          if (!bx || _lc(bx.owner) === pmEmail(req.user) || !pmMatch(rec, bx)) return;
-          const prof = profOf[_lc(bx.owner)] || {};
-          // Member's own notification settings decide this (default = their focus).
-          if (!pmWantsDealAlert(prof, rec)) return;
-          const txt = 'New match — ' + (rec.propType || 'deal') + ' in ' + (rec.area || rec.city || 'your market') + (rec.price ? (' · ' + pmMoneyShort(rec.price)) : '');
-          ns.push({ id: pmId('N'), to: _lc(bx.owner), type: 'match', text: txt, listingId: rec.id, at: now, read: false });
-          if (pmWantsEmail(prof, 'deals')) hits.push({ to: _lc(bx.owner), txt });
-        });
-        await pmSave('pm_notifs', pmCapNotifs(ns));
-        for (const h of hits) await pmSendEmail(h.to, 'AXESS · new deal matches your buy box', h.txt + '\n\nOpen AXESS to view the deal and message the listing agent.');
-      } catch (e) { /* best-effort */ }
+    // Every authorization is recorded before the listing that relies on it is saved.
+    const meta = pmReqMeta(req);
+    if (newForm) await pmRecordConsent(rec, { path: 'uploaded_form', name: meStampName(), account: pmEmail(req.user), file: newForm.name, meta });
+    let ownerRevoke = '';
+    if (ownerConsent) {
+      if (lapsed || compliance.consentLapsed(rec)) { const old = rec.consent; if (old && old.id) await pmConsentPatch(old.id, { lapsedAt: now, lapsedReason: 'address or asking price changed' }); }
+      ownerRevoke = (await pmRecordConsent(rec, { path: 'owner_in_app', name: ownerConsent.name, account: pmEmail(req.user), meta })).revokeToken;
+      delete rec.consentRequest;
+      awaiting = false;
     }
-    res.json({ ok: true, listing: pmPublicView(rec, req.user.role === 'owner' || _lc(rec.owner) === pmEmail(req.user)), id: rec.id });
+    if (lapsed && !ownerConsent && rec.consent && rec.consent.id && !rec.consent.lapsedAt) {
+      rec.consent.lapsedAt = now;
+      await pmConsentPatch(rec.consent.id, { lapsedAt: now, lapsedReason: 'address or asking price changed' });
+    }
+    if (goingLive) rec.status = awaiting ? AWAITING : 'active';
+    // Going live for the first time after waiting on consent starts the clock.
+    const becameLive = rec.status === 'active' && (isNew || prevStatus === AWAITING);
+    if (becameLive && prevStatus === AWAITING) { rec.expiresAt = expiresIn; rec.renew5Sent = false; rec.renew1Sent = false; }
+    let sent = null;
+    if (sellerLink) sent = await pmSendConsentLink(rec, sellerLink.name, sellerLink.email, req);
+    await pmSave(PM_KEYS.listings, listings);
+    if (ownerConsent) pmConsentConfirm(rec, pmEmail(req.user), ownerConsent.name, ownerRevoke).catch(() => {});
+    if (becameLive) await pmAlertNewDeal(rec);
+    const out = { ok: true, listing: pmPublicView(rec, req.user.role === 'owner' || _lc(rec.owner) === pmEmail(req.user)), id: rec.id, status: rec.status || 'active' };
+    if (rec.status === AWAITING) { out.awaiting = true; out.lapsed = lapsed && !sellerLink; }
+    if (sent) { out.consentSentTo = sent.link.sellerEmail; if (demo.active()) out.demoLink = sent.url.replace(PM_BASE, ''); }
+    res.json(out);
   } catch (e) { pmFail(res, e); }
 });
 
@@ -698,6 +831,196 @@ app.post('/api/pm/listing/close', ensureAuth, pmGate, async (req, res) => {
     res.json({ ok: true, status: l.status });
   } catch (e) { pmFail(res, e); }
 });
+// The poster and admins see how a listing is authorized (path, who, when).
+function pmAttachAuthz(r, l, can) {
+  if (!can || !r) return r;
+  const c = l.consent;
+  r.authz = {
+    form: (l.sellerForm && (l.sellerForm.key || l.sellerForm.url)) ? { name: l.sellerForm.name || '', at: l.sellerForm.uploadedAt || '' } : null,
+    consent: c ? { path: c.path, pathLabel: compliance.CONSENT_PATH_LABELS[c.path] || c.path, name: c.name || '', email: c.email || '', account: c.account || '', at: c.at || '', textVersion: c.textVersion || '', revokedAt: c.revokedAt || '', lapsed: compliance.consentLapsed(l), address: c.address || '', price: c.price || '' } : null,
+    request: l.consentRequest ? { sellerName: l.consentRequest.sellerName || '', sellerEmail: l.consentRequest.sellerEmail || '', sentAt: l.consentRequest.sentAt || '', expiresAt: l.consentRequest.expiresAt || '' } : null,
+    revokedAt: l.sellerRevokedAt || ''
+  };
+  return r;
+}
+// ── seller consent: confirmations, public consent pages, revocation ─────────
+async function pmConsentConfirm(l, to, name, revokeToken) {
+  if (!to) return;
+  const rurl = PM_BASE + '/consent?r=' + encodeURIComponent(revokeToken);
+  await pmSendRich(to, 'AXESS · your consent is recorded', {
+    heading: 'Consent recorded',
+    paras: [
+      'Thank you, ' + _emailEsc(name) + '. Your consent to market <b>' + _emailEsc(l.address || 'the property') + '</b> at <b>' + _emailEsc(pmPriceText(l)) + '</b> on AXESS as a non-MLS (delayed-listing) offering was recorded on ' + _emailEsc(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })) + ' (Eastern).',
+      'You may revoke this consent at any time. Revoking takes the listing down. Use the link below, or reply to this email.',
+      'AXESS RE LLC is a software platform only — not a real estate broker, not a party to any sale, and it does not negotiate or hold any money.'
+    ],
+    cta: { label: 'Revoke my consent', url: rurl }
+  });
+}
+// Public consent pages carry their token in the query or body. A demo token
+// runs against the demo partition (the simulated seller), never real data.
+function pmConsentScope(req, res, next) {
+  const t = String((req.query && (req.query.t || req.query.r)) || (req.body && (req.body.t || req.body.r)) || '');
+  if (t.indexOf('demo_') === 0) {
+    if (!demo.enabled()) return res.status(404).json({ ok: false, error: 'invalid', message: 'This link isn’t valid.' });
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    return demo.run(() => next());
+  }
+  next();
+}
+const _tokOk = t => typeof t === 'string' && t.length >= 20 && t.length <= 80 && /^[a-z0-9_]+$/i.test(t);
+async function pmConsentLinkState(t) {
+  if (!_tokOk(t)) return { err: [404, 'invalid', 'This consent link isn’t valid. Ask your agent to send a new one.'] };
+  const k = (await pmLoad(PM_CONSENT_LINKS)).find(x => x && x.th === _sha256(t));
+  if (!k) return { err: [404, 'invalid', 'This consent link isn’t valid. Ask your agent to send a new one.'] };
+  if (k.usedAt) return { err: [410, 'used', 'Your consent was already recorded with this link. Thank you — nothing more is needed.'] };
+  if (k.supersededAt) return { err: [410, 'superseded', 'A newer link was sent for this property. Please use the most recent email from AXESS.'] };
+  if (new Date(k.expiresAt) < new Date()) return { err: [410, 'expired', 'This link has expired. Ask your agent to send you a new one.'] };
+  const listings = await pmLoad(PM_KEYS.listings);
+  const l = listings.find(x => x && x.id === k.listingId);
+  if (!l || ['closed', 'mls'].indexOf(l.status || 'active') >= 0) return { err: [404, 'gone', 'This listing is no longer being marketed on AXESS, so no consent is needed.'] };
+  return { k, l, listings };
+}
+const _sendErr = (res, e) => res.status(e[0]).json({ ok: false, error: e[1], message: e[2] });
+app.get('/api/consent/info', rateLimit('consent', 60, 10 * 60 * 1000), pmConsentScope, async (req, res) => {
+  try {
+    const st = await pmConsentLinkState(String(req.query.t || ''));
+    if (st.err) return _sendErr(res, st.err);
+    const { k, l } = st;
+    const poster = (await pmLoad('pm_profiles')).find(p => p && _lc(p.email) === _lc(l.owner)) || {};
+    res.json({ ok: true, sellerName: k.sellerName || '', address: l.address || '', city: l.city || '', price: String(l.price || ''), priceText: pmPriceText(l),
+      agentName: poster.name || l.ownerName || '', brokerage: poster.brokerage || l.brokerage || '',
+      text: compliance.CONSENT_TEXT, version: compliance.CONSENT_TEXT_VERSION, expiresAt: k.expiresAt, demo: demo.active() });
+  } catch (e) { pmFail(res, e); }
+});
+app.post('/api/consent/accept', rateLimit('consent_post', 20, 10 * 60 * 1000), pmConsentScope, async (req, res) => {
+  const b = req.body || {};
+  try {
+    const t = String(b.t || '');
+    const st = await pmConsentLinkState(t);
+    if (st.err) return _sendErr(res, st.err);
+    const { k, l, listings } = st;
+    if (b.agree !== true) return res.status(400).json({ ok: false, error: 'agree_required', message: 'Check the box to confirm you are the owner and agree.' });
+    if (!compliance.consentNameOk(b.name)) return res.status(400).json({ ok: false, error: 'name_required', message: 'Type your full name.' });
+    if (compliance.consentAddrKey(b.address) !== compliance.consentAddrKey(l.address) || compliance.consentPriceKey(b.price) !== compliance.consentPriceKey(l.price))
+      return res.status(409).json({ ok: false, error: 'changed', message: 'The address or asking price changed since this page opened. Reload the page to review the current details.' });
+    // Single use: claim the link under lock before recording anything.
+    const now = new Date().toISOString();
+    const claimed = await pmMutate(PM_CONSENT_LINKS, arr => { const x = arr.find(y => y && y.id === k.id); if (!x || x.usedAt || x.supersededAt) return { save: false, result: false }; x.usedAt = now; return { save: arr, result: true }; });
+    if (!claimed) return res.status(410).json({ ok: false, error: 'used', message: 'Your consent was already recorded with this link. Thank you — nothing more is needed.' });
+    const name = String(b.name).trim().slice(0, 120);
+    if (l.consent && l.consent.id && !l.consent.revokedAt && !compliance.consentCovers(l)) await pmConsentPatch(l.consent.id, { lapsedAt: now, lapsedReason: 'address or asking price changed' });
+    const { revokeToken } = await pmRecordConsent(l, { path: 'seller_link', name, email: k.sellerEmail, linkId: k.id, meta: pmReqMeta(req) });
+    delete l.consentRequest;
+    const wasAwaiting = (l.status || 'active') === AWAITING;
+    if (wasAwaiting) { l.status = 'active'; l.expiresAt = new Date(Date.now() + LISTING_DAYS * 864e5).toISOString(); l.renew5Sent = false; l.renew1Sent = false; }
+    l.updatedAt = now;
+    await pmSave(PM_KEYS.listings, listings);
+    const live = (l.status || 'active') === 'active' && pmAuthorized(l);
+    const label = (l.address || l.area || l.city || 'your listing');
+    try {
+      const ns = await pmLoad('pm_notifs');
+      ns.push({ id: pmId('N'), to: _lc(l.owner), type: 'consent', text: 'Seller consent recorded for ' + label + (live ? ' — the listing is now live.' : '.'), listingId: l.id, at: now, read: false });
+      await pmSave('pm_notifs', pmCapNotifs(ns));
+    } catch (e) {}
+    pmSendEmail(l.owner, 'AXESS · seller consent recorded', name + ' recorded their consent for ' + label + ' (' + pmPriceText(l) + ').' + (live ? '\n\nThe listing is now live on AXESS.' : '\n\nThe listing is not live right now — open AXESS to relist it.')).catch(() => {});
+    pmConsentConfirm(l, k.sellerEmail, name, revokeToken).catch(() => {});
+    if (wasAwaiting && live) await pmAlertNewDeal(l);
+    res.json({ ok: true, live });
+  } catch (e) { pmFail(res, e); }
+});
+// Revocation: by the seller (link in their confirmation email) or by AXESS when
+// the seller contacts us. Takes the listing down and is logged on the record.
+async function pmRevokeConsent(row, by, via, meta, note) {
+  const now = new Date().toISOString();
+  await pmConsentPatch(row.id, { revokedAt: now, revokedBy: by, revokeVia: via, revokeIp: (meta && meta.ip) || '', revokeUa: (meta && meta.ua) || '', revokeNote: String(note || '').slice(0, 500) });
+  const listings = await pmLoad(PM_KEYS.listings);
+  const l = listings.find(x => x && x.id === row.listingId);
+  if (!l) return null;
+  if (l.consent && l.consent.id === row.id) l.consent.revokedAt = now;
+  l.sellerRevokedAt = now;
+  if ((l.status || 'active') !== 'closed') { l.status = 'off'; l.withdrawnReason = 'seller_revoked'; }
+  delete l.consentRequest;
+  l.updatedAt = now;
+  await pmSave(PM_KEYS.listings, listings);
+  // Outstanding seller links for this listing stop working.
+  await pmMutate(PM_CONSENT_LINKS, arr => { arr.forEach(x => { if (x && x.listingId === l.id && !x.usedAt && !x.supersededAt) x.supersededAt = now; }); return { save: arr }; });
+  try {
+    const ns = await pmLoad('pm_notifs');
+    ns.push({ id: pmId('N'), to: _lc(l.owner), type: 'consent', text: 'Seller consent revoked for ' + (l.address || l.area || 'your listing') + ' — the listing was taken down.', listingId: l.id, at: now, read: false });
+    await pmSave('pm_notifs', pmCapNotifs(ns));
+  } catch (e) {}
+  pmSendEmail(l.owner, 'AXESS · seller consent revoked', 'The seller revoked their consent for ' + (l.address || l.area || 'your listing') + '. The listing has been taken down and is visible only to you. It can go live again only with a new seller authorization.').catch(() => {});
+  return l;
+}
+async function pmConsentByRevokeToken(r) {
+  if (!_tokOk(r)) return null;
+  return (await pmLoad(PM_CONSENTS)).find(x => x && x.rth && x.rth === _sha256(r)) || null;
+}
+app.get('/api/consent/revoke-info', rateLimit('consent', 60, 10 * 60 * 1000), pmConsentScope, async (req, res) => {
+  try {
+    const row = await pmConsentByRevokeToken(String(req.query.r || ''));
+    if (!row) return res.status(404).json({ ok: false, error: 'invalid', message: 'This revocation link isn’t valid. To revoke, reply to your consent email or contact AXESS.' });
+    res.json({ ok: true, address: row.address, priceText: pmPriceText({ price: row.price }), name: row.name, at: row.at, revokedAt: row.revokedAt || '', demo: demo.active() });
+  } catch (e) { pmFail(res, e); }
+});
+app.post('/api/consent/revoke', rateLimit('consent_post', 20, 10 * 60 * 1000), pmConsentScope, async (req, res) => {
+  try {
+    const row = await pmConsentByRevokeToken(String((req.body || {}).r || ''));
+    if (!row) return res.status(404).json({ ok: false, error: 'invalid', message: 'This revocation link isn’t valid. To revoke, reply to your consent email or contact AXESS.' });
+    if (row.revokedAt) return res.json({ ok: true, already: true });
+    await pmRevokeConsent(row, row.email || row.account || 'seller', 'revocation_link', pmReqMeta(req), '');
+    res.json({ ok: true });
+  } catch (e) { pmFail(res, e); }
+});
+app.get('/api/pm/consent/text', ensureAuth, pmGate, (req, res) => res.json({ ok: true, text: compliance.CONSENT_TEXT, version: compliance.CONSENT_TEXT_VERSION, linkDays: compliance.CONSENT_LINK_DAYS }));
+// Poster: send (or resend) the seller a new consent link.
+app.post('/api/pm/listing/consent/resend', rateLimit('consent_resend', 10, 60 * 60 * 1000), ensureAuth, pmGate, async (req, res) => {
+  const b = req.body || {};
+  try {
+    const listings = await pmLoad(PM_KEYS.listings);
+    const l = listings.find(x => x && x.id === String(b.id || ''));
+    if (!l) return res.status(404).json({ ok: false, error: 'not_found' });
+    if (req.user.role !== 'owner' && _lc(l.owner) !== pmEmail(req.user)) return res.status(403).json({ ok: false, error: 'not_your_listing' });
+    if ((l.status || 'active') !== AWAITING) return res.status(400).json({ ok: false, error: 'not_awaiting', message: 'This listing isn’t waiting on seller consent.' });
+    if (!String(l.address || '').trim()) return res.status(400).json({ ok: false, error: 'consent_address_required', message: 'Add the property address first (✎ Edit).' });
+    const prev = l.consentRequest || {};
+    const sn = String(b.sellerName || prev.sellerName || '').trim().slice(0, 120), se = String(b.sellerEmail || prev.sellerEmail || '').trim().slice(0, 200);
+    if (!compliance.consentNameOk(sn)) return res.status(400).json({ ok: false, error: 'seller_name_required', message: 'Add the seller’s name.' });
+    if (!PM_EMAIL_RE.test(se)) return res.status(400).json({ ok: false, error: 'seller_email_required', message: 'Add a valid email address for the seller.' });
+    if (_lc(se) === _lc(l.owner)) return res.status(400).json({ ok: false, error: 'seller_email_is_you', message: 'That’s the poster’s own email. If you own the property, use ✎ Edit → “Sign in AXESS now.”' });
+    const sent = await pmSendConsentLink(l, sn, se, req);
+    await pmSave(PM_KEYS.listings, listings);
+    const out = { ok: true, sentTo: sent.link.sellerEmail, expiresAt: sent.link.expiresAt };
+    if (demo.active()) out.demoLink = sent.url.replace(PM_BASE, '');
+    res.json(out);
+  } catch (e) { pmFail(res, e); }
+});
+// Admin: the consent log (records + links) and revocation on the seller's behalf.
+app.get('/api/pm/admin/consents', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const [recs, links] = await Promise.all([pmLoad(PM_CONSENTS), pmLoad(PM_CONSENT_LINKS)]);
+    const records = recs.filter(Boolean).map(r => { const o = Object.assign({}, r); delete o.rth; o.pathLabel = compliance.CONSENT_PATH_LABELS[o.path] || o.path; return o; }).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const sent = links.filter(Boolean).map(k => { const o = Object.assign({}, k); delete o.th; return o; }).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    res.json({ ok: true, records, links: sent });
+  } catch (e) { pmFail(res, e); }
+});
+app.post('/api/pm/admin/consent/revoke', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const b = req.body || {};
+  try {
+    const listings = await pmLoad(PM_KEYS.listings);
+    const l = listings.find(x => x && x.id === String(b.listingId || ''));
+    if (!l) return res.status(404).json({ ok: false, error: 'not_found' });
+    const recs = await pmLoad(PM_CONSENTS);
+    const row = recs.filter(x => x && x.listingId === l.id && !x.revokedAt).sort((a, c) => String(c.at).localeCompare(String(a.at)))[0];
+    if (!row) return res.status(400).json({ ok: false, error: 'no_consent', message: 'No active seller authorization is recorded for this listing.' });
+    await pmRevokeConsent(row, pmEmail(req.user), 'contacted_axess', pmReqMeta(req), b.note);
+    res.json({ ok: true });
+  } catch (e) { pmFail(res, e); }
+});
+
 // Closed-deal proof: aggregate totals, recent public closings, and a leaderboard.
 app.get('/api/pm/closings', ensureAuth, pmGate, async (req, res) => {
   try {
@@ -837,7 +1160,7 @@ app.get('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
     let matches = [];
     if (mine) {
       const isExpired = l => l.expiresAt && (new Date(l.expiresAt) < new Date());
-      matches = listings.filter(l => l && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !isExpired(l) && _lc(l.owner) !== email && pmMatch(l, mine))
+      matches = listings.filter(l => l && pmAuthorized(l) && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && (l.status || 'active') !== AWAITING && !isExpired(l) && _lc(l.owner) !== email && pmMatch(l, mine))
         .map(l => pmPublicView(l, false))
         .sort((a, b) => (b.featured - a.featured) || String(b.createdAt).localeCompare(String(a.createdAt)));
     }
@@ -898,7 +1221,7 @@ app.post('/api/pm/buybox', ensureAuth, pmGate, async (req, res) => {
         const isExpired = l => l.expiresAt && (new Date(l.expiresAt) < new Date());
         const sellers = {};
         listings.forEach(l => {
-          if (l && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !isExpired(l) && _lc(l.owner) !== email && pmMatch(l, rec)) {
+          if (l && pmAuthorized(l) && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && (l.status || 'active') !== AWAITING && !isExpired(l) && _lc(l.owner) !== email && pmMatch(l, rec)) {
             const s = _lc(l.owner); (sellers[s] = sellers[s] || []).push(l);
             ns.push({ id: pmId('N'), to: s, type: 'buyer', text: 'New buyer for your ' + (l.area || l.city || 'deal') + ' listing — their buy box matches', listingId: l.id, at: now, read: false });
           }
@@ -961,7 +1284,8 @@ app.get('/api/pm/activity', ensureAuth, pmGate, async (req, res) => {
     const myListingIds = new Set(myListings.map(l => l.id));
     res.json({ ok: true, activity: {
       listings: myListings.length,
-      active: myListings.filter(l => (l.status || 'active') !== 'off').length,
+      active: myListings.filter(l => (l.status || 'active') !== 'off' && (l.status || 'active') !== AWAITING).length,
+      awaitingConsent: myListings.filter(l => (l.status || 'active') === AWAITING).length,
       sentPending: intros.filter(i => i && _lc(i.buyer) === email && i.status === 'pending').length,
       sentApproved: intros.filter(i => i && _lc(i.buyer) === email && i.status === 'approved').length,
       inboundPending: intros.filter(i => i && myListingIds.has(i.listingId) && i.status === 'pending').length
@@ -1048,7 +1372,7 @@ app.get('/api/pm/market', ensureAuth, pmGate, async (req, res) => {
   try {
     const [listings, boxes] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.buyboxes)]);
     const _now = new Date();
-    const _liveStatus = l => l && !l.sample && pmAuthorized(l) && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && !(l.expiresAt && new Date(l.expiresAt) < _now);
+    const _liveStatus = l => l && !l.sample && pmAuthorized(l) && (l.status || 'active') !== 'off' && (l.status || 'active') !== 'mls' && (l.status || 'active') !== 'closed' && (l.status || 'active') !== AWAITING && !(l.expiresAt && new Date(l.expiresAt) < _now);
     const live = listings.filter(_liveStatus);
     const off = listings.filter(l => l && !l.sample && (l.status || 'active') === 'off');
     const val = live.reduce((a, l) => a + pmNum(l.price), 0);
@@ -1204,7 +1528,7 @@ function pmDigestFor(prof, listings, boxes, sinceMs) {
   if (!box && !hasPrefs) return [];   // nothing to match on → no digest (never spam)
   return listings.filter(l => {
     if (!l || _lc(l.owner) === email) return false;
-    const st = l.status || 'active'; if (st === 'off' || st === 'mls' || st === 'closed') return false;
+    const st = l.status || 'active'; if (pmNotLiveStatus(st)) return false;
     if (!pmAuthorized(l)) return false;
     if (l.expiresAt && new Date(l.expiresAt) < new Date()) return false;
     const created = l.createdAt ? new Date(l.createdAt).getTime() : 0;
@@ -1295,7 +1619,7 @@ function pmMemberRep(email, listings, intros, prof) {
   const e = _lc(email);
   const mine = (listings || []).filter(l => l && !l.sample && _lc(l.owner) === e);
   const closed = mine.filter(l => (l.status || '') === 'closed').length;
-  const live = mine.filter(l => { const s = l.status || 'active'; return s !== 'off' && s !== 'mls' && s !== 'closed' && !(l.expiresAt && new Date(l.expiresAt) < new Date()); }).length;
+  const live = mine.filter(l => { const s = l.status || 'active'; return !pmNotLiveStatus(s) && !(l.expiresAt && new Date(l.expiresAt) < new Date()); }).length;
   const recv = (intros || []).filter(i => i && _lc(i.seller) === e);
   const decided = recv.filter(i => i.status === 'approved' || i.status === 'declined');
   const responseRate = recv.length ? Math.round(100 * decided.length / recv.length) : null;
@@ -2305,7 +2629,7 @@ async function pmRunRenewals() {
   const listings = await pmLoad(PM_KEYS.listings);
   const now = new Date(); let changed = false; const sent = { r5: 0, r1: 0, expired: 0 };
   for (const l of listings) {
-    if (!l || !l.expiresAt || (l.status || 'active') === 'off') continue;
+    if (!l || !l.expiresAt || (l.status || 'active') === 'off' || (l.status || 'active') === AWAITING) continue;
     const days = (new Date(l.expiresAt) - now) / 864e5;
     const link = 'Open AXESS and hit Renew to keep this deal live another ' + LISTING_DAYS + ' days.';
     const label = (l.area || l.city || 'your deal') + (l.price ? (' · ' + pmMoneyShort(l.price)) : '');
@@ -2411,7 +2735,7 @@ async function pmInsightsData() {
   const daysAgo = iso => iso ? (now - new Date(iso).getTime()) / 864e5 : 1e9;
   const isExpired = l => l.expiresAt && new Date(l.expiresAt) < new Date();
   const st = l => (l.status || 'active');
-  const liveDeals = listings.filter(l => l && !l.sample && ['off', 'mls', 'closed'].indexOf(st(l)) < 0 && !isExpired(l));
+  const liveDeals = listings.filter(l => l && !l.sample && !pmNotLiveStatus(st(l)) && !isExpired(l));
   const posters = new Set(listings.filter(l => l && !l.sample).map(l => _lc(l.owner)));
   const needers = new Set(boxes.filter(Boolean).map(b => _lc(b.owner)));
   const approved = real.filter(p => p.status === 'approved' && !p.deactivated);
@@ -2557,7 +2881,7 @@ app.post('/auth/google', async (req, res) => {
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
   if (STAGING) return res.send('User-agent: *\nDisallow: /\n');
-  res.send('User-agent: *\nDisallow: /app.html\nDisallow: /api/\nDisallow: /demo-mode\n\nSitemap: ' + PM_BASE + '/sitemap.xml\n');
+  res.send('User-agent: *\nDisallow: /app.html\nDisallow: /api/\nDisallow: /demo-mode\nDisallow: /consent\n\nSitemap: ' + PM_BASE + '/sitemap.xml\n');
 });
 app.get('/sitemap.xml', (req, res) => {
   if (STAGING) return res.status(404).type('text/plain').send('not found');

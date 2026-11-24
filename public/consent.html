@@ -1,0 +1,104 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Seller Consent — AXESS</title>
+<meta name="description" content="Record or revoke a seller's consent to market a property on AXESS.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" type="image/svg+xml" href="/brand/axess/favicon/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0E1013;--paper:#F7F6F3;--acc:#1D5A4A;--mut:#6B6A63;--line:#E7E3DA;--line2:#D9D4C9;--bad:#A3271B;--ok:#1E7A52}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.55;font-size:16px}
+a{color:var(--acc)}
+.top{border-bottom:1px solid var(--line);background:var(--paper)}
+.top .in{max-width:640px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;gap:10px}
+.wm{font-family:Inter,sans-serif;font-weight:800;letter-spacing:.16em;font-size:16px;color:var(--ink)}
+.wrap{max-width:640px;margin:0 auto;padding:26px 16px 60px}
+.kick{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut)}
+h1{font-family:Inter,sans-serif;font-weight:800;font-size:26px;line-height:1.18;margin:8px 0 10px}
+.card{background:#fff;border:1px solid var(--line2);border-radius:14px;padding:18px 16px;margin:16px 0}
+.row{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row span{font-size:12.5px;color:var(--mut);font-family:'IBM Plex Mono',monospace;letter-spacing:.04em;text-transform:uppercase}
+.row b{font-size:17px;font-weight:600;word-break:break-word}
+ol{margin:4px 0 0 20px}
+ol li{margin:8px 0;font-size:15.5px}
+.ck{display:flex;gap:12px;align-items:flex-start;padding:14px 0;cursor:pointer;font-size:16px;font-weight:500}
+.ck input{width:24px;height:24px;flex:none;margin-top:1px;accent-color:var(--acc)}
+label.f{display:block;font-size:13px;color:var(--mut);margin:6px 0 6px;font-weight:600}
+input.t{width:100%;font:inherit;font-size:17px;padding:13px 12px;border:1px solid var(--line2);border-radius:10px;background:#fff;color:var(--ink)}
+input.t:focus{outline:2px solid var(--acc);outline-offset:1px}
+button.go{display:block;width:100%;margin-top:16px;min-height:52px;font:inherit;font-size:17px;font-weight:700;color:#fff;background:var(--acc);border:0;border-radius:12px;cursor:pointer}
+button.go.bad{background:var(--bad)}
+button.go:disabled{opacity:.6;cursor:default}
+.msg{min-height:20px;margin-top:10px;font-size:14.5px;color:var(--bad)}
+.done{border-color:var(--ok)}
+.done h2{color:var(--ok)}
+h2{font-family:Inter,sans-serif;font-size:20px;margin-bottom:6px}
+.small{font-size:13.5px;color:var(--mut)}
+.demo{background:#B4882E;color:#fff;font-weight:700;font-size:12.5px;letter-spacing:.1em;text-align:center;padding:6px}
+.foot{max-width:640px;margin:0 auto;padding:0 16px 30px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mut)}
+.foot a{color:var(--mut)}
+</style></head>
+<body>
+<div id="demoBanner" class="demo" style="display:none">DEMO — test data only, no real property or seller</div>
+<div class="top"><div class="in">
+  <svg viewBox="0 0 100 100" style="width:24px;height:24px" aria-hidden="true" fill="var(--ink)"><path d="M50 0 100 100H74L50 30 26 100H0Z"/><rect x="22.4" y="56.6" width="30.3" height="14.5"/></svg>
+  <span class="wm">AXESS</span>
+</div></div>
+<main class="wrap" id="app" aria-live="polite"><p class="small">Loading…</p></main>
+<div class="foot">AXESS RE LLC · software platform only · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></div>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search), t=q.get('t')||'', r=q.get('r')||'';
+  var app=document.getElementById('app');
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function when(iso){try{return new Date(iso).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});}catch(e){return '';}}
+  function fail(m){app.innerHTML='<div class="kick">Seller consent</div><h1>This link can’t be used</h1><div class="card"><p>'+esc(m||'Something went wrong. Please try again.')+'</p></div>';}
+  function getJ(u){return fetch(u,{credentials:'omit',cache:'no-store'}).then(function(x){return x.json().catch(function(){return {ok:false};});}).catch(function(){return {ok:false,message:'Can’t reach AXESS right now — check your connection and try again.'};});}
+  function postJ(u,b){return fetch(u,{method:'POST',credentials:'omit',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(x){return x.json().catch(function(){return {ok:false};});}).catch(function(){return {ok:false,message:'Can’t reach AXESS right now — check your connection and try again.'};});}
+  if(r){
+    getJ('/api/consent/revoke-info?r='+encodeURIComponent(r)).then(function(j){
+      if(!j||!j.ok)return fail(j&&j.message);
+      if(j.demo)document.getElementById('demoBanner').style.display='';
+      if(j.revokedAt){app.innerHTML='<div class="kick">Seller consent</div><h1>Consent revoked</h1><div class="card done"><p>Your consent for <b>'+esc(j.address)+'</b> was revoked on '+esc(when(j.revokedAt))+'. The listing has been taken down.</p></div>';return;}
+      app.innerHTML='<div class="kick">Seller consent</div><h1>Revoke your consent?</h1>'
+        +'<div class="card"><div class="row"><span>Property</span><b>'+esc(j.address)+'</b></div><div class="row"><span>Asking price</span><b>'+esc(j.priceText)+'</b></div><div class="row"><span>Consent recorded</span><b>'+esc(when(j.at))+' · '+esc(j.name)+'</b></div></div>'
+        +'<p>Revoking takes this listing down from AXESS right away. It can go live again only if a new authorization is given.</p>'
+        +'<button class="go bad" id="rv">Revoke my consent</button><div class="msg" id="msg" role="alert"></div>';
+      document.getElementById('rv').onclick=function(){var b=this;b.disabled=true;
+        postJ('/api/consent/revoke',{r:r}).then(function(x){if(x&&x.ok){app.innerHTML='<div class="kick">Seller consent</div><h1>Consent revoked</h1><div class="card done"><h2>✓ Done</h2><p>The listing for <b>'+esc(j.address)+'</b> has been taken down from AXESS, and the agent has been told.</p></div>';}else{b.disabled=false;document.getElementById('msg').textContent=(x&&x.message)||'Could not revoke — please try again.';}});};
+    });
+    return;
+  }
+  if(!t)return fail('This page needs the link from your email. Open the email from AXESS and tap the button again.');
+  getJ('/api/consent/info?t='+encodeURIComponent(t)).then(function(j){
+    if(!j||!j.ok)return fail(j&&j.message);
+    if(j.demo)document.getElementById('demoBanner').style.display='';
+    app.innerHTML='<div class="kick">Seller consent · no account needed</div>'
+      +'<h1>Consent to market your property on AXESS</h1>'
+      +(j.sellerName?'<p>Hi '+esc(j.sellerName)+', please review the details below.</p>':'')
+      +'<div class="card"><div class="row"><span>Property</span><b>'+esc(j.address)+'</b></div>'
+      +'<div class="row"><span>Asking price</span><b>'+esc(j.priceText)+'</b></div>'
+      +'<div class="row"><span>Listing agent</span><b>'+esc(j.agentName||'—')+(j.brokerage?' · '+esc(j.brokerage):'')+'</b></div></div>'
+      +'<div class="card"><h2>What you’re agreeing to</h2><ol>'+(j.text||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol><p class="small" style="margin-top:10px">Consent text '+esc(j.version)+'</p></div>'
+      +'<label class="ck"><input type="checkbox" id="ag"> <span>I am the owner of this property and I agree to the above.</span></label>'
+      +'<label class="f" for="nm">Type your full name</label><input class="t" id="nm" autocomplete="name" placeholder="Full name">'
+      +'<button class="go" id="go">I agree — record my consent</button><div class="msg" id="msg" role="alert"></div>'
+      +'<p class="small" style="margin-top:12px">This link works once and expires '+esc(when(j.expiresAt))+'. You can revoke your consent later from your confirmation email.</p>';
+    document.getElementById('go').onclick=function(){
+      var m=document.getElementById('msg'),b=this,nm=document.getElementById('nm').value.trim();
+      if(!document.getElementById('ag').checked){m.textContent='Check the box to confirm you are the owner and agree.';return;}
+      if(nm.length<2){m.textContent='Type your full name.';return;}
+      m.textContent='';b.disabled=true;b.textContent='Recording…';
+      postJ('/api/consent/accept',{t:t,agree:true,name:nm,address:j.address,price:j.price}).then(function(x){
+        if(x&&x.ok){window.scrollTo(0,0);app.innerHTML='<div class="kick">Seller consent</div><h1>Thank you</h1><div class="card done"><h2>✓ Consent recorded</h2><p>Your consent for <b>'+esc(j.address)+'</b> at <b>'+esc(j.priceText)+'</b> was recorded'+(x.live?' and the listing is now live for agents on AXESS':'')+'. A confirmation email with a link to revoke at any time is on its way.</p></div>';}
+        else{b.disabled=false;b.textContent='I agree — record my consent';m.textContent=(x&&x.message)||'Could not record your consent — please try again.';}
+      });
+    };
+  });
+})();
+</script>
+</body></html>
