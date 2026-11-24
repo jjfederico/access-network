@@ -52,3 +52,17 @@ const idx = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 
 
   console.log('audit nov22 tests ok');
 })().catch(e => { console.error(e); process.exit(1); });
+
+// Nightly-audit status endpoint: owner-only (or PM_CRON_TOKEN), no member data.
+(async () => {
+  const { call, store } = require('./server-harness');
+  store.pm_settings = [{ billingOn: false, lastBackupAt: new Date(Date.now() - 3600e3).toISOString(), lastBackupBytes: 1000, lastBackupLists: 5 }];
+  assert.strictEqual((await call('get', '/api/pm/ops/status', {}, null)).status, 403);
+  assert.strictEqual((await call('get', '/api/pm/ops/status', {}, { email: 'm@x.co', role: 'member', status: 'approved' })).status, 403);
+  const st = (await call('get', '/api/pm/ops/status', {}, { email: 'o@x.co', role: 'owner', status: 'approved' })).body;
+  assert.strictEqual(st.billing.billingOn, false);
+  assert.strictEqual(st.backup.fresh, true);
+  assert.strictEqual(st.numbers.members, st.numbers.directory, 'counter and directory agree');
+  assert.ok(!JSON.stringify(st).includes('@x.co'), 'no member emails in the status');
+  console.log('ops status tests ok');
+})().catch(e => { console.error(e); process.exit(1); });
