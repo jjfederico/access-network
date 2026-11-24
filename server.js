@@ -251,7 +251,7 @@ function pmPublicView(l, full, gated) {
     // below. Cap rate stays public as the headline metric / filter.
     hasFinancials: !!(l.noi || l.grossIncome || l.expenses || l.vacancy || l.taxes),
     brokerage: l.brokerage || '',
-    hasSellerForm: !!(l.sellerForm && (l.sellerForm.key || l.sellerForm.url)),
+    hasSellerForm: !!(l.sellerForm && (l.sellerForm.key || l.sellerForm.url)), sample: !!l.sample,
     notes: l.notes || '', docCount: Array.isArray(l.docs) ? l.docs.length : 0, views: l.views || 0,
     photoCount: Array.isArray(l.photos) ? l.photos.length : 0,
     hideAddress: !!l.hideAddress, addressHidden: !showAddr, comingSoon: !!l.comingSoon,
@@ -354,6 +354,7 @@ const MARKET_REGIONS = {
   'merrimack valley': ['lowell','lawrence','haverhill','methuen','andover','tewksbury','dracut','chelmsford','billerica'],
   'south shore': ['quincy','weymouth','braintree','randolph','milton','brockton','hingham','plymouth','marshfield','abington','rockland','holbrook','canton','stoughton'],
   'fall river / new bedford': ['fall river','new bedford','taunton','dartmouth','somerset','swansea','attleboro','raynham','middleboro','fairhaven','acushnet','westport'],
+  'cambridge & inner core': ['cambridge','brookline','arlington','belmont','lexington','winchester','woburn','burlington','wakefield','reading','wilmington','concord','lincoln','sudbury','wayland','weston','dover','westwood','norwood','sharon','walpole'],
   'metrowest': ['framingham','natick','waltham','marlborough','newton','needham','wellesley','ashland','hudson','milford','watertown','dedham'],
   'worcester': ['worcester','fitchburg','leominster','shrewsbury','auburn','millbury','gardner','clinton','westborough','grafton'],
   'western ma': ['springfield','chicopee','holyoke','westfield','pittsfield','northampton','amherst','agawam','west springfield','ludlow'],
@@ -401,6 +402,13 @@ function pmThreadKey(a, b, listingId) {
   return p[0] + '|' + p[1] + (listingId ? ('|' + listingId) : '');
 }
 function pmIsAdmin(req) { return req.user && req.user.role === 'owner'; }
+// The one definition of "a member" for every count and list: homepage counter,
+// founding spots, admin directory, billing counts, license-check list. Excludes
+// sample/demo data, admins, removed members, and accounts the owner marks as
+// test accounts.
+function pmCountedMember(p) {
+  return !!p && !p.sample && !p.is_demo && !p.testAccount && p.status === 'approved' && !p.deactivated && !ADMINS.includes(_lc(p.email));
+}
 // Notifications are capped per member (newest NOTIF_KEEP each), not site-wide,
 // so one busy period can't push everyone else's alerts out.
 const NOTIF_KEEP = parseInt(process.env.PM_NOTIF_KEEP || '', 10) || 100;
@@ -1319,7 +1327,7 @@ app.get('/api/pm/directory', ensureAuth, pmGate, async (req, res) => {
     const isOwner = req.user.role === 'owner';
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
-    const members = profs.filter(p => p && p.status === 'approved').map(p => ({ email: p.email, name: p.name || '', brokerage: p.brokerage || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', license: isOwner ? (p.license || '') : '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, pof: pmPofPublic(p), deals: counts[_lc(p.email)] || 0, joined: p.createdAt || '' })).sort((a, b) => (b.deals - a.deals) || String(a.name || a.email).localeCompare(String(b.name || b.email)));
+    const members = profs.filter(pmCountedMember).map(p => ({ email: p.email, name: p.name || '', brokerage: p.brokerage || '', markets: p.markets || '', bio: p.bio || '', phone: p.phone || '', license: isOwner ? (p.license || '') : '', linkedin: p.linkedin || '', instagram: p.instagram || '', facebook: p.facebook || '', x: p.x || '', website: p.website || '', verified: !!p.verified, pof: pmPofPublic(p), deals: counts[_lc(p.email)] || 0, joined: p.createdAt || '' })).sort((a, b) => (b.deals - a.deals) || String(a.name || a.email).localeCompare(String(b.name || b.email)));
     res.json({ ok: true, members, count: members.length, me: { email: req.user.email, role: req.user.role } });
   } catch (e) { pmFail(res, e); }
 });
@@ -1330,7 +1338,7 @@ app.get('/api/pm/admin/members', ensureAuth, pmGate, async (req, res) => {
   try {
     const [profs, listings] = await Promise.all([pmLoad('pm_profiles'), pmLoad(PM_KEYS.listings)]);
     const counts = {}; listings.forEach(l => { if (l) counts[_lc(l.owner)] = (counts[_lc(l.owner)] || 0) + 1; });
-    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', state: p.state || 'MA', status: p.status || 'pending', denialCause: p.denialCause || '', verified: !!p.verified, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', attested: !!(p.attestation && p.attestation.accepted), attestedAt: (p.attestation && p.attestation.at) || '', deactivated: !!p.deactivated, deactivatedAt: p.deactivatedAt || '', marketingOptIn: p.marketingOptIn !== false, marketingConsentAt: p.marketingConsentAt || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.deactivated ? 1 : 0) - (b.deactivated ? 1 : 0) || (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
+    const members = profs.filter(Boolean).map(p => ({ email: p.email, name: p.name || '', license: p.license || '', brokerage: p.brokerage || '', phone: p.phone || '', markets: p.markets || '', state: p.state || 'MA', status: p.status || 'pending', denialCause: p.denialCause || '', testAccount: !!p.testAccount, verified: !!p.verified, pof: (p.pof && p.pof.status) || 'none', pofAmount: (p.pof && p.pof.amount) || '', pofDoc: (p.pof && p.pof.doc) || '', attested: !!(p.attestation && p.attestation.accepted), attestedAt: (p.attestation && p.attestation.at) || '', deactivated: !!p.deactivated, deactivatedAt: p.deactivatedAt || '', marketingOptIn: p.marketingOptIn !== false, marketingConsentAt: p.marketingConsentAt || '', createdAt: p.createdAt || '', deals: counts[_lc(p.email)] || 0 })).sort((a, b) => (a.deactivated ? 1 : 0) - (b.deactivated ? 1 : 0) || (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || String(b.createdAt).localeCompare(String(a.createdAt)));
     res.json({ ok: true, members, pending: members.filter(m => m.status === 'pending').length, unchecked: pmUncheckedMembers(profs).length, pofPending: members.filter(m => m.pof === 'pending').length });
   } catch (e) { pmFail(res, e); }
 });
@@ -1773,7 +1781,7 @@ async function pmPublicSnapshot() {
   const [listings, boxes, profs] = await Promise.all([pmLoad(PM_KEYS.listings), pmLoad(PM_KEYS.buyboxes), pmLoad('pm_profiles')]);
   const now = new Date();
   const live = listings.filter(l => pmIsLiveListing(l, now));
-  const members = profs.filter(p => p && !p.sample && !p.is_demo && p.status === 'approved' && !p.deactivated && !ADMINS.includes(_lc(p.email)));
+  const members = profs.filter(pmCountedMember);
   const foundingCap = compliance.FOUNDING_CAP;
   const foundingTaken = Math.min(foundingCap, members.filter(p => p.foundingRate).length);
   // Teaser cards: only broadly-shared live deals (never private/matched-only).
@@ -2045,7 +2053,7 @@ function pmBillingReady() {
   if (!process.env.STRIPE_WEBHOOK_SECRET) missing.push('STRIPE_WEBHOOK_SECRET');
   return { ready: !missing.length, missing };
 }
-const pmRealMembers = profs => profs.filter(p => p && !p.sample && p.status === 'approved' && !p.deactivated && !ADMINS.includes(_lc(p.email)));
+const pmRealMembers = profs => profs.filter(pmCountedMember);
 app.get('/api/pm/admin/billing', ensureAuth, pmGate, async (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
@@ -2635,7 +2643,7 @@ app.post('/api/pm/admin/report/resolve', ensureAuth, pmGate, async (req, res) =>
 // against the state registry. Once a day, if any member's license hasn't been
 // checked yet, the owner gets one email listing them with a registry link.
 function pmUncheckedMembers(profs) {
-  return (profs || []).filter(p => p && !p.sample && !p.is_demo && p.status === 'approved' && !p.deactivated && !p.verified && !ADMINS.includes(_lc(p.email)));
+  return (profs || []).filter(p => pmCountedMember(p) && !p.verified);
 }
 async function pmLicenseReminder(force) {
   const s = await pmSettings();
@@ -2651,6 +2659,17 @@ async function pmLicenseReminder(force) {
 setTimeout(() => { pmLicenseReminder(false).catch(() => {}); }, 5 * 60 * 1000);
 setInterval(() => { pmLicenseReminder(false).catch(() => {}); }, 3600 * 1000);
 
+// Owner marks/unmarks a test account (e.g. a second email used for walk-throughs):
+// it keeps working, but never counts as a member anywhere.
+app.post('/api/pm/admin/test-account', ensureAuth, pmGate, async (req, res) => {
+  if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const email = _lc((req.body || {}).email), on = (req.body || {}).on !== false;
+  try {
+    const r = await pmMutate('pm_profiles', arr => { const p = arr.find(x => x && _lc(x.email) === email); if (p) { p.testAccount = on; p.testAccountAt = on ? new Date().toISOString() : ''; } return { save: arr, result: !!p }; });
+    if (!r) return res.status(404).json({ ok: false, error: 'not_found' });
+    res.json({ ok: true, email, testAccount: on });
+  } catch (e) { pmFail(res, e); }
+});
 // Owner: recent security-policy violation reports (since the last restart).
 app.get('/api/pm/admin/csp', ensureAuth, pmGate, (req, res) => {
   if (!pmIsAdmin(req)) return res.status(403).json({ ok: false, error: 'forbidden' });

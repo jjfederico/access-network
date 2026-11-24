@@ -404,7 +404,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
   <div class="feat">
     <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg></div><h4>Only the deals you actually work</h4><p>Tune every alert to your property types and your markets. No pings about houses in a town you never touch — only what fits your lane.</p></div>
     <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8.5" width="7" height="11.5" rx="1"/><rect x="13" y="4" width="7" height="16" rx="1"/><line x1="7" y1="12" x2="8" y2="12"/><line x1="7" y1="16" x2="8" y2="16"/><line x1="16" y1="8" x2="17" y2="8"/><line x1="16" y1="12" x2="17" y2="12"/></svg></div><h4>Every type, pre-market</h4><p>Single-family to multifamily to commercial and land — pre-market and seller-directed inventory, all in one members’ feed.</p></div>
-    <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11l-1 8.5L19.5 10H13z"/></svg></div><h4>It works your deals for you</h4><p>Post what your client needs and get matched the moment a deal fits. Post your own in about 30 seconds. It's a tool, not a bulletin board.</p></div>
+    <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11l-1 8.5L19.5 10H13z"/></svg></div><h4>It works your deals for you</h4><p>Post what your client needs and get matched the moment a deal fits. Post your own in about 60 seconds. It's a tool, not a bulletin board.</p></div>
     <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3"/><path d="M16.5 6.5 19 9"/><path d="M14.5 8.5 17 11"/></svg></div><h4>Your deal, your rules</h4><p>Keep the address private until you approve an intro. Share it with the network, privately, or by introduction only — your call.</p></div>
     <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="M14.6 9.4c-.5-1-1.5-1.5-2.7-1.5-1.5 0-2.6.8-2.6 2 0 2.9 5.6 1.4 5.6 4.3 0 1.3-1.2 2.1-2.8 2.1-1.3 0-2.4-.6-2.9-1.6"/><line x1="12" y1="6" x2="12" y2="7.6"/><line x1="12" y1="16.4" x2="12" y2="18"/></svg></div><h4>Flat subscription only</h4><p>AXESS is paid a monthly membership fee and nothing else. We never take a cut of a transaction. Membership is free while the network grows, and you'll get advance notice by email before anything is ever charged.</p></div>
     <div class="fc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.6-3.1 7.7-7 9-3.9-1.3-7-4.4-7-9V6z"/></svg></div><h4>Licensed professionals</h4><p>Every member’s Massachusetts license and brokerage are verified at sign-up. High-signal, spam-free — agent to agent.</p></div>
@@ -455,7 +455,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
   <div style="position:relative">
     <h2>Pre-market property, agent to agent.</h2>
     <p>Join licensed Massachusetts agents sharing seller-directed property — on the seller’s terms.</p>
-    <div class="cta" style="justify-content:center"><button class="btn p big" style="background:var(--bone);color:var(--navy)" onclick="openReq()">Create account</button><a class="btn ghostlight big" href="/demo.html" id="browseFeedCta">Browse the feed</a></div>
+    <div class="cta" style="justify-content:center"><button class="btn p big" style="background:var(--bone);color:var(--navy)" onclick="openReq()">Create account</button><a class="btn ghostlight big" href="#feed" id="browseFeedCta">Browse the feed</a></div>
   </div>
 </div></div></section>
 
@@ -533,6 +533,13 @@ function sendContact(){
       else{msg.textContent=(j&&j.message)||'Something went wrong — please try again.';msg.style.color='#C0492E';btn.disabled=false;btn.textContent='Send message';}
     }).catch(function(){msg.textContent='Network error — please try again.';msg.style.color='#C0492E';btn.disabled=false;btn.textContent='Send message';});
 }
+/* "Browse the feed": signed-in members go straight to the real feed in the app;
+   visitors scroll to the live feed preview above (real listings, addresses
+   locked), which leads into the join flow. */
+(function(){var a=document.getElementById('browseFeedCta');if(!a)return;
+  fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).then(function(me){
+    if(me&&me.ok&&(me.role==='owner'||me.status==='approved'))a.setAttribute('href','/app.html');
+  }).catch(function(){});})();
 /* Run entry triggers after the whole page (and openReq/openContact) is ready. */
 function showPendingModal(title,msg,pending){
   var wrap=document.createElement('div');

@@ -32,9 +32,11 @@ assert.ok(mk, 'marketing opt-in checkbox still present');
 assert.ok(!/\bchecked\b/.test(mk[0]), 'marketing opt-in is not pre-checked');
 assert.ok(!/\bchecked\b/.test(index.match(/<input[^>]*id="qAttest"[^>]*>/)[0]));
 
-// 4. "Browse the feed" goes somewhere a visitor can browse listings.
+// 4. "Browse the feed" goes to the real feed: visitors to the live feed preview
+// (real listings, addresses locked), signed-in members to the app.
 const browse = index.match(/<a[^>]*id="browseFeedCta"[^>]*>Browse the feed<\/a>/);
-assert.ok(browse && /href="\/demo\.html"/.test(browse[0]), '"Browse the feed" links to /demo.html');
+assert.ok(browse && /href="#feed"/.test(browse[0]), '"Browse the feed" points at the live feed preview');
+assert.ok(/browseFeedCta[\s\S]{0,200}api\/me[\s\S]{0,300}\/app\.html/.test(index), 'members are sent to the real feed in the app');
 assert.ok(/<section id="feed">/.test(index), 'homepage feed teaser section is kept');
 
 // 5. Demo counters and heading are labeled as sample data.
